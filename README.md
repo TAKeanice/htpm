@@ -4,16 +4,16 @@ HTPM-Framework
 This is a framework based on the paper "Discovering hybrid temporal patterns from sequences consisting of point-and interval-based events" by SY Wu & YL Chen.
 BibTeX:
 ```
-@article{wu2007mining,
-   title={Mining nonambiguous temporal patterns for interval-based events},
-   author={Wu, Shin-Yi and Chen, Yen-Liang},
-   journal={Knowledge and Data Engineering, IEEE Transactions on},
-   volume={19},
-   number={6},
-   pages={742--758},
-   year={2007},
-   publisher={IEEE}
- }
+@article{wu2009discovering,
+  title={Discovering hybrid temporal patterns from sequences consisting of point-and interval-based events},
+  author={Wu, Shin-Yi and Chen, Yen-Liang},
+  journal={Data \& Knowledge Engineering},
+  volume={68},
+  number={11},
+  pages={1309--1330},
+  year={2009},
+  publisher={Elsevier}
+}
 ```
 
 It adds some index-structures and modifications to increase the performance.
