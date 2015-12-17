@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * This is an extension of the HTPM Algorithm.
+ * It introduces the max-gap constraint in order to reduce the result set.
  * Created by Wolfgang Jentner <wolfgang.jentner@uni.kn> on 12/17/2015 10:55 AM.
  */
 public class eHTPM extends HTPM {
@@ -21,6 +23,7 @@ public class eHTPM extends HTPM {
      *
      * @param d           - The Database containing the series.
      * @param min_support - The minimum support.
+     * @param maxgap      - The max gap constraint, if 0 maxgap will be ignored.
      */
     public eHTPM(HybridEventSequenceDatabase d, double min_support, int maxgap) {
         super(d, min_support);
@@ -76,7 +79,7 @@ public class eHTPM extends HTPM {
 
             dif = occurrence.get(i).getTimePoint() - occurrence.get(i-1).getTimePoint();
             if(dif < 0) {
-                throw new RuntimeException("dif was negtavie, we have to sort the list first");
+                throw new RuntimeException("dif was negative, we have to sort the list first but it should be already sorted");
             }
             if(dif > this.maxgap) {
                 return true;
