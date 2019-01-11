@@ -17,11 +17,11 @@ import java.util.stream.Collectors;
 /**
  * This class implements the HybridEventSequence.
  * 
- * @author Andreas Weiler, Wolfgang Jentner
+ * @author Andreas Stoffel, Wolfgang Jentner
  *
  */
 public class DefaultHybridEventSequence implements HybridEventSequence {
-	// Thank goes to Andreas Weiler (Data Analysis & Visualization Group, 
+	// Thank goes to Andreas Stoffel (Data Analysis & Visualization Group,
 	// University of Konstanz) for the help with the occur() methods.
 	/**
 	 * A list holding all the HybridEvents
