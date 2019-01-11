@@ -16,3 +16,7 @@ test-jdk9:
 test-jdk10:
   extends: .test-template
   image: dbvis/maven-openjfx:3.5-jdk-10
+
+test-jdk11:
+  extends: .test-template
+  image: dbvis/maven-openjfx:3.5-jdk-11
