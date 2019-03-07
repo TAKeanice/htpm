@@ -34,33 +34,28 @@ public class eHTPM extends HTPM {
         return this.maxgap;
     }
 
-    protected Map<HybridTemporalPattern, List<Occurrence>> join(final HybridTemporalPattern prefix, final HybridTemporalPattern p1, final List<Occurrence> or1, final HybridTemporalPattern p2, final List<Occurrence> or2, final int k) {
+    @Override
+    protected Map<HybridTemporalPattern, List<Occurrence>> join(final HybridTemporalPattern prefix, final HybridTemporalPattern p1, final List<Occurrence> or1, final HybridTemporalPattern p2, final List<Occurrence> or2) {
         final Map<HybridTemporalPattern, List<Occurrence>> map = new HashMap<>();
 
         for (final Occurrence s1 : or1) {
             for (final Occurrence s2 : or2) {
-                if (!s1.getHybridEventSequence().getSequenceId().equals(s2.getHybridEventSequence().getSequenceId())) {
+                //make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
+                if (occurrencePrefixTree.get(s1) != occurrencePrefixTree.get(s2)) {
                     continue;
                 }
 
                 final Map<HybridTemporalPattern, Occurrence> m = ORAlign(prefix, p1, s1, p2, s2);
 
-                m.entrySet()
-                        .stream()
-                        .filter(e -> e.getKey().length() == k)
-                        .forEach(e -> {
+                m.forEach((p, o) -> {
+                    if (!map.containsKey(p)) {
+                        map.put(p, new LinkedList<>());
+                    }
 
-                            final HybridTemporalPattern p = e.getKey();
-                            final Occurrence o = e.getValue();
-
-                            if (!map.containsKey(p)) {
-                                map.put(p, new LinkedList<>());
-                            }
-
-                            if (!map.get(p).contains(o) && !this.isOverMaxGap(o)) {
-                                map.get(p).add(o);
-                            }
-                        });
+                    if (!map.get(p).contains(o) && !this.isOverMaxGap(o)) {
+                        map.get(p).add(o);
+                    }
+                });
             }
         }
 

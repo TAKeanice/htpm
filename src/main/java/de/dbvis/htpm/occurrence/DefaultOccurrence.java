@@ -68,7 +68,7 @@ public class DefaultOccurrence implements Occurrence {
 	}
 	
 	public boolean equals(Object o) {
-		if(o != null && o instanceof Occurrence) {
+		if(o instanceof Occurrence) {
 			Occurrence o1 = (Occurrence) o;
 			
 			//check HES.ID
