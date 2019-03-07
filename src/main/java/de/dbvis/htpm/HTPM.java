@@ -235,8 +235,6 @@ public class HTPM implements Runnable {
 	protected Map<HybridTemporalPattern, List<Occurrence>> genLk(final Map<HybridTemporalPattern, List<Occurrence>> map) throws InterruptedException {
 		final Map<HybridTemporalPattern, List<Occurrence>> res = new ConcurrentHashMap<>();
 
-		final boolean parallel = false;
-
 		List<HybridTemporalPattern> list = new ArrayList<>(map.keySet());
 
 		ExecutorService es = Executors.newCachedThreadPool();
@@ -253,11 +251,8 @@ public class HTPM implements Runnable {
 				}
 
 				final List<Occurrence> l2 = map.get(p2);
-				if (parallel) {
-					es.execute(() -> res.putAll(HTPM.this.join(prefix, p1, l1, p2, l2)));
-				} else {
-					res.putAll(HTPM.this.join(prefix, p1, l1, p2, l2));
-				}
+				
+				es.execute(() -> res.putAll(HTPM.this.join(prefix, p1, l1, p2, l2)));
 			}
 		}
 		
