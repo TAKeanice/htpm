@@ -36,15 +36,14 @@ public class eHTPM extends HTPM {
     protected Map<HybridTemporalPattern, List<Occurrence>> join(final HybridTemporalPattern prefix, final HybridTemporalPattern p1, final List<Occurrence> or1, final HybridTemporalPattern p2, final List<Occurrence> or2) {
         final Map<HybridTemporalPattern, List<Occurrence>> map = new HashMap<>();
 
-        for (int i = 0; i < or1.size(); i++) {
-            Occurrence s1 = or1.get(i);
+        for (int i1 = 0; i1 < or1.size(); i1++) {
+            Occurrence s1 = or1.get(i1);
             Occurrence occPref = ((DefaultOccurrence) s1).getPrefix();
-            for (int i1 = 0; i1 < or2.size(); i1++) {
-                Occurrence s2 = or2.get(i1);
+            int i2 = or1 == or2 ? i1 + 1 : 0;
+            for (; i2 < or2.size(); i2++) {
+                Occurrence s2 = or2.get(i2);
                 //make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
-                //other rare case: when we perform self-join on pattern, both ORs could be the same - makes no sense to join (and in fact joins wrong)
-                if (occPref != ((DefaultOccurrence) s2).getPrefix()
-                        || or1 == or2) {
+                if (occPref != ((DefaultOccurrence) s2).getPrefix()) {
                     continue;
                 }
 

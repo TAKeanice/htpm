@@ -275,12 +275,11 @@ public class HTPM implements Runnable {
 		for (int i1 = 0; i1 < or1.size(); i1++) {
 			Occurrence s1 = or1.get(i1);
 			Occurrence occPref = ((DefaultOccurrence) s1).getPrefix();
-			for (int i2 = 0; i2 < or2.size(); i2++) {
+			int i2 = or1 == or2 ? i1 + 1 : 0;
+			for (; i2 < or2.size(); i2++) {
 				Occurrence s2 = or2.get(i2);
 				//make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
-				//other rare case: when we perform self-join on pattern, both ORs could be the same - makes no sense to join (and in fact joins wrong)
-				if (occPref != ((DefaultOccurrence) s2).getPrefix()
-						|| or1 == or2) {
+				if (occPref != ((DefaultOccurrence) s2).getPrefix()) {
 					continue;
 				}
 				Map<HybridTemporalPattern, Occurrence> m = ORAlign(prefix, p1, s1, p2, s2);
