@@ -19,6 +19,13 @@ public class DefaultOccurrence implements Occurrence {
 	 * The associated HybridEventSequence
 	 */
 	protected HybridEventSequence seq;
+
+	/**
+	 * Holds the child - canonical parent relation for this occurrence.
+	 * The canonical parent of an occurrence must be from the same sequence,
+	 * and have the same length-1 occurrences as temporal prefix
+	 */
+	protected Occurrence prefix;
 	
 	/**
 	 * A list holding the OccurrencePoints
@@ -109,5 +116,13 @@ public class DefaultOccurrence implements Occurrence {
 	 */
 	public void remove(OccurrencePoint op) {
 		this.ops.remove(op);
+	}
+
+	public void setPrefix(Occurrence prefix) {
+		this.prefix = prefix;
+	}
+
+	public Occurrence getPrefix() {
+		return prefix;
 	}
 }

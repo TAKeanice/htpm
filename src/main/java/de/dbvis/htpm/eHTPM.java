@@ -2,12 +2,10 @@ package de.dbvis.htpm;
 
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
+import de.dbvis.htpm.occurrence.DefaultOccurrence;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This is an extension of the HTPM Algorithm.
@@ -38,10 +36,15 @@ public class eHTPM extends HTPM {
     protected Map<HybridTemporalPattern, List<Occurrence>> join(final HybridTemporalPattern prefix, final HybridTemporalPattern p1, final List<Occurrence> or1, final HybridTemporalPattern p2, final List<Occurrence> or2) {
         final Map<HybridTemporalPattern, List<Occurrence>> map = new HashMap<>();
 
-        for (final Occurrence s1 : or1) {
-            for (final Occurrence s2 : or2) {
+        for (int i = 0; i < or1.size(); i++) {
+            Occurrence s1 = or1.get(i);
+            Occurrence occPref = ((DefaultOccurrence) s1).getPrefix();
+            for (int i1 = 0; i1 < or2.size(); i1++) {
+                Occurrence s2 = or2.get(i1);
                 //make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
-                if (occurrencePrefixTree.get(s1) != occurrencePrefixTree.get(s2)) {
+                //other rare case: when we perform self-join on pattern, both ORs could be the same - makes no sense to join (and in fact joins wrong)
+                if (occPref != ((DefaultOccurrence) s2).getPrefix()
+                        || or1 == or2) {
                     continue;
                 }
 
@@ -49,9 +52,12 @@ public class eHTPM extends HTPM {
 
                 m.forEach((p, o) -> {
                     if (!map.containsKey(p)) {
-                        map.put(p, new LinkedList<>());
+                        map.put(p, new ArrayList<>());
                     }
 
+                    //TODO: this is the wrong place for a maxGap constraint.
+                    // Gaps in patterns could be closed later, thus patterns that must be there for successive candidate generation are erraneously pruned.
+                    // Instead, we could introduce a maxDuration constraint, which could be applied here.
                     if (!map.get(p).contains(o) && !this.isOverMaxGap(o)) {
                         map.get(p).add(o);
                     }

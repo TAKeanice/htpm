@@ -57,14 +57,6 @@ public class HTPM implements Runnable {
 	 */
 	protected Map<HybridTemporalPattern, HybridTemporalPattern> patternPrefixTree = new ConcurrentHashMap<>();
 
-	/**
-	 * Prefix tree of occurrence lists. Holds the child - canonical parent relation for occurrences.
-	 * The canonical parent of an occurrence must be from the same sequence,
-	 * and have the same length-1 occurrences as temporal prefix
-	 */
-	protected Map<Occurrence, Occurrence> occurrencePrefixTree = new ConcurrentHashMap<>();
-
-
 	protected List<HTPMListener> listeners;
 	
 	/**
@@ -217,7 +209,9 @@ public class HTPM implements Runnable {
 					final Occurrence occurence = getOccurence(p, seq);
 					map.get(p).add(occurence);
 					//set empty occurrence as parent to be able to distinguish occurrences from different sequences
-					occurrencePrefixTree.put(occurence, emptyOccurrencePrefix);
+					//occurrencePrefixTree.put(occurence, emptyOccurrencePrefix);
+					//this is a not-beautiful workaround for slow hashmap
+					((DefaultOccurrence)occurence).setPrefix(emptyOccurrencePrefix);
 				}
 				
 			}
@@ -278,21 +272,23 @@ public class HTPM implements Runnable {
 	protected Map<HybridTemporalPattern, List<Occurrence>> join(final HybridTemporalPattern prefix, final HybridTemporalPattern p1, final List<Occurrence> or1, final HybridTemporalPattern p2, final List<Occurrence> or2) {
 		final Map<HybridTemporalPattern, List<Occurrence>> map = new HashMap<>();
 
-		for (final Occurrence s1 : or1) {
-			for (final Occurrence s2 : or2) {
+		for (int i1 = 0; i1 < or1.size(); i1++) {
+			Occurrence s1 = or1.get(i1);
+			Occurrence occPref = ((DefaultOccurrence) s1).getPrefix();
+			for (int i2 = 0; i2 < or2.size(); i2++) {
+				Occurrence s2 = or2.get(i2);
 				//make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
 				//other rare case: when we perform self-join on pattern, both ORs could be the same - makes no sense to join (and in fact joins wrong)
-				if (occurrencePrefixTree.get(s1) != occurrencePrefixTree.get(s2)
-					|| or1 == or2) {
+				if (occPref != ((DefaultOccurrence) s2).getPrefix()
+						|| or1 == or2) {
 					continue;
 				}
-
-				final Map<HybridTemporalPattern, Occurrence> m = ORAlign(prefix, p1, s1, p2, s2);
+				Map<HybridTemporalPattern, Occurrence> m = ORAlign(prefix, p1, s1, p2, s2);
 
 				//patterns have correct length automatically. Further, each occurrence is generated only once.
 				m.forEach((p, o) -> {
 					if (!map.containsKey(p)) {
-						map.put(p, new LinkedList<>());
+						map.put(p, new ArrayList<>());
 					}
 					map.get(p).add(o);
 				});
@@ -392,7 +388,7 @@ public class HTPM implements Runnable {
 		final Occurrence newOccurrence = b.getOccurences();
 
 		patternPrefixTree.put(newPattern, patternPrefix);
-		occurrencePrefixTree.put(newOccurrence, occurrencePrefix);
+		((DefaultOccurrence)newOccurrence).setPrefix(occurrencePrefix);
 
 		HashMap<HybridTemporalPattern, Occurrence> result = new HashMap<>();
 		result.put(newPattern, newOccurrence);
