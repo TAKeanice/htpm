@@ -2,10 +2,7 @@ package de.dbvis.htpm;
 
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
-import de.dbvis.htpm.occurrence.DefaultOccurrence;
 import de.dbvis.htpm.occurrence.Occurrence;
-
-import java.util.*;
 
 /**
  * This is an extension of the HTPM Algorithm.
@@ -14,79 +11,37 @@ import java.util.*;
  */
 public class eHTPM extends HTPM {
 
-    private int maxgap;
+    private int maxDuration;
 
     /**
      * Creates a new HTPM-Algorithm-Object.
      *
      * @param d           - The Database containing the series.
      * @param min_support - The minimum support.
-     * @param maxgap      - The max gap constraint, if 0 maxgap will be ignored.
+     * @param maxDuration      - The max gap constraint, if 0 maxDuration will be ignored.
      */
-    public eHTPM(HybridEventSequenceDatabase d, double min_support, int maxgap) {
+    public eHTPM(HybridEventSequenceDatabase d, double min_support, int maxDuration) {
         super(d, min_support);
-        this.maxgap = maxgap;
+        this.maxDuration = maxDuration;
     }
 
-    public int getMaxGap() {
-        return this.maxgap;
+    public int getMaxDuration() {
+        return this.maxDuration;
     }
 
     @Override
-    protected Map<HybridTemporalPattern, List<Occurrence>> join(final HybridTemporalPattern prefix, final HybridTemporalPattern p1, final List<Occurrence> or1, final HybridTemporalPattern p2, final List<Occurrence> or2) {
-        final Map<HybridTemporalPattern, List<Occurrence>> map = new HashMap<>();
-
-        for (int i1 = 0; i1 < or1.size(); i1++) {
-            Occurrence s1 = or1.get(i1);
-            Occurrence occPref = ((DefaultOccurrence) s1).getPrefix();
-            int i2 = or1 == or2 ? i1 + 1 : 0;
-            for (; i2 < or2.size(); i2++) {
-                Occurrence s2 = or2.get(i2);
-                //make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
-                if (occPref != ((DefaultOccurrence) s2).getPrefix()) {
-                    continue;
-                }
-
-                final Map<HybridTemporalPattern, Occurrence> m = ORAlign(prefix, p1, s1, p2, s2);
-
-                m.forEach((p, o) -> {
-                    if (!map.containsKey(p)) {
-                        map.put(p, new ArrayList<>());
-                    }
-
-                    //TODO: this is the wrong place for a maxGap constraint.
-                    // Gaps in patterns could be closed later, thus patterns that must be there for successive candidate generation are erraneously pruned.
-                    // Instead, we could introduce a maxDuration constraint, which could be applied here.
-                    if (!map.get(p).contains(o) && !this.isOverMaxGap(o)) {
-                        map.get(p).add(o);
-                    }
-                });
-            }
-        }
-
-        return filterHybridTemporalPatterns(map);
+    protected boolean newOccurrencePasses(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
+        return super.newOccurrencePasses(pattern, occurrence, k) && (k > 2 || !this.isOverMaxDuration(occurrence));
     }
 
-    protected boolean isOverMaxGap(Occurrence occurrence) {
-        if(this.maxgap <= 0) {
+    protected boolean isOverMaxDuration(Occurrence occurrence) {
+        if(this.maxDuration <= 0) {
             return false;
         }
 
+        double duration = occurrence.get(occurrence.size() - 1).getTimePoint() - occurrence.get(0).getTimePoint();
 
-        double dif;
-
-        for(int i = 1; i < occurrence.size(); i++) {
-
-            dif = occurrence.get(i).getTimePoint() - occurrence.get(i-1).getTimePoint();
-            if(dif < 0) {
-                throw new RuntimeException("dif was negative, we have to sort the list first but it should be already sorted");
-            }
-            if(dif > this.maxgap) {
-                return true;
-            }
-        }
-
-        return false;
+        return duration > maxDuration;
     }
 
 }

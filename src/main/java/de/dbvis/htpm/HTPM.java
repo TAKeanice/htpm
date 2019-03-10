@@ -145,7 +145,7 @@ public class HTPM implements Runnable {
 
 		try {
 			while(m.keySet().size() > 1) {
-				m = this.genLk(m);
+				m = this.genLk(m, k);
 				this.patterns.putAll(m);
 				this.fireHTPMEvent(new HTPMEvent(this, k, m.keySet().size()));
 				k++;
@@ -224,15 +224,18 @@ public class HTPM implements Runnable {
 	/**
 	 * Joins a generation of patterns according to definition 10.
 	 * @param map - The current generation.
+	 * @param k the generation number (length of patterns to be generated)
 	 * @return Returns a map of all patterns that satisfy the minimum support. In addition all occurence series of each pattern are returned.
 	 */
-	protected Map<HybridTemporalPattern, List<Occurrence>> genLk(final Map<HybridTemporalPattern, List<Occurrence>> map) throws InterruptedException {
+	protected Map<HybridTemporalPattern, List<Occurrence>> genLk(final Map<HybridTemporalPattern, List<Occurrence>> map, int k) throws InterruptedException {
 		final Map<HybridTemporalPattern, List<Occurrence>> res = new ConcurrentHashMap<>();
 
 		List<HybridTemporalPattern> list = new ArrayList<>(map.keySet());
 
-		ExecutorService es = Executors.newCachedThreadPool();
-		
+		ExecutorService es = Executors.newFixedThreadPool(10);
+
+		//AtomicInteger joined = new AtomicInteger(0);
+
 		for(int i = 0; i < list.size(); i++) {
 			final HybridTemporalPattern p1 = list.get(i);
 			final List<Occurrence> l1 = map.get(p1);
@@ -246,7 +249,10 @@ public class HTPM implements Runnable {
 
 				final List<Occurrence> l2 = map.get(p2);
 				
-				es.execute(() -> res.putAll(HTPM.this.join(prefix, p1, l1, p2, l2)));
+				es.execute(() -> {
+						res.putAll(HTPM.this.join(prefix, p1, l1, p2, l2, k));
+						//System.out.println("joined " + joined.incrementAndGet() + " with " + l1.size() + " and " + l2.size() + " occurrences.");
+				});
 			}
 		}
 		
@@ -266,10 +272,11 @@ public class HTPM implements Runnable {
 	 * @param or1 - All occurences of the first pattern.
 	 * @param p2 - The second pattern.
 	 * @param or2 - All occurences of the second pattern.
+	 * @param k the generation number (length of patterns to be generated)
 	 * @return Returns a map of patterns that satisfy the min-support and the desired length.
 	 * For each pattern a complete list of its occurences will be returned. 
 	 */
-	protected Map<HybridTemporalPattern, List<Occurrence>> join(final HybridTemporalPattern prefix, final HybridTemporalPattern p1, final List<Occurrence> or1, final HybridTemporalPattern p2, final List<Occurrence> or2) {
+	protected Map<HybridTemporalPattern, List<Occurrence>> join(final HybridTemporalPattern prefix, final HybridTemporalPattern p1, final List<Occurrence> or1, final HybridTemporalPattern p2, final List<Occurrence> or2, int k) {
 		final Map<HybridTemporalPattern, List<Occurrence>> map = new HashMap<>();
 
 		for (int i1 = 0; i1 < or1.size(); i1++) {
@@ -278,29 +285,44 @@ public class HTPM implements Runnable {
 			int i2 = or1 == or2 ? i1 + 1 : 0;
 			for (; i2 < or2.size(); i2++) {
 				Occurrence s2 = or2.get(i2);
-				//make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
-				if (occPref != ((DefaultOccurrence) s2).getPrefix()) {
+				if (!occurrenceRecordsQualifyForJoin(occPref, s1, (DefaultOccurrence) s2)) {
 					continue;
 				}
-				Map<HybridTemporalPattern, Occurrence> m = ORAlign(prefix, p1, s1, p2, s2);
 
-				//patterns have correct length automatically. Further, each occurrence is generated only once.
+				Map<HybridTemporalPattern, Occurrence> m = ORAlign(prefix, p1, s1, p2, s2);
 				m.forEach((p, o) -> {
+					if (newOccurrencePasses(p, o, k)) {
 					if (!map.containsKey(p)) {
 						map.put(p, new ArrayList<>());
 					}
 					map.get(p).add(o);
-				});
+				}});
 			}
 		}
 
-		return filterHybridTemporalPatterns(map);
+		removeUnsupportedPatterns(map);
+
+		return map;
 	}
 
-	protected Map<HybridTemporalPattern, List<Occurrence>> filterHybridTemporalPatterns(final Map<HybridTemporalPattern, List<Occurrence>> map) {
+	protected boolean newOccurrencePasses(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
+		//patterns have correct length automatically. Further, each occurrence is generated only once.
+		return true;
+	}
+
+	protected boolean occurrenceRecordsQualifyForJoin(Occurrence occurrencePrefix,
+													  Occurrence firstOccurrence, DefaultOccurrence secondOccurrence) {
+		//make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
+		if (occurrencePrefix != secondOccurrence.getPrefix()) {
+			return false;
+		}
+		return true;
+	}
+
+	protected void removeUnsupportedPatterns(
+			final Map<HybridTemporalPattern, List<Occurrence>> map) {
 		//prune patterns which do not fulfill minimum support
 		map.entrySet().removeIf(e -> !this.isSupported(e.getValue()));
-		return map;
 	}
 	
 
