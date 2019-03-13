@@ -3,10 +3,8 @@ package de.dbvis.htpm.hes;
 import de.dbvis.htpm.hes.events.DefaultHybridEvent;
 import de.dbvis.htpm.hes.events.HybridEvent;
 import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
-import de.dbvis.htpm.htp.eventnodes.IntervalEndEventNode;
-import de.dbvis.htpm.htp.eventnodes.IntervalStartEventNode;
-import de.dbvis.htpm.htp.eventnodes.PointEventNode;
 import de.dbvis.htpm.occurrence.DefaultOccurrence;
+import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
 import org.junit.Before;
 import org.junit.Rule;
@@ -14,6 +12,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -75,12 +75,12 @@ public final class HybridEventSequenceTest {
 		//one PointEventNode
 		List<Occurrence> exp = new ArrayList<>();
 		
-		DefaultOccurrence oc = new DefaultOccurrence(this.seq);
-		oc.add(new PointEventNode("a", 1));
+		DefaultOccurrence oc = new DefaultOccurrence(this.seq,
+				Collections.singletonList(new DefaultOccurrencePoint(this.seq.getEvents().get(0))));
 		exp.add(oc);
 		
-		oc = new DefaultOccurrence(this.seq);
-		oc.add(new PointEventNode("a", 2));
+		oc = new DefaultOccurrence(this.seq,
+				Collections.singletonList(new DefaultOccurrencePoint(this.seq.getEvents().get(2))));
 		exp.add(oc);
 		
 		assertEquals(exp, act);
@@ -98,14 +98,14 @@ public final class HybridEventSequenceTest {
 		//one PointEventNode
 		List<Occurrence>exp = new ArrayList<>();
 		
-		DefaultOccurrence oc = new DefaultOccurrence(this.seq);
-		oc.add(new IntervalStartEventNode("b", 1, 0));
-		oc.add(new IntervalEndEventNode("b", 4, 0));
+		DefaultOccurrence oc = new DefaultOccurrence(this.seq,
+				Arrays.asList(new DefaultOccurrencePoint(this.seq.getEvents().get(1), true),
+						new DefaultOccurrencePoint(this.seq.getEvents().get(1), false)));
 		exp.add(oc);
 		
-		oc = new DefaultOccurrence(this.seq);
-		oc.add(new IntervalStartEventNode("b", 3, 0));
-		oc.add(new IntervalEndEventNode("b", 6, 0));
+		oc = new DefaultOccurrence(this.seq,
+				Arrays.asList(new DefaultOccurrencePoint(this.seq.getEvents().get(3), true),
+						new DefaultOccurrencePoint(this.seq.getEvents().get(3), false)));
 		exp.add(oc);
 		
 		assertEquals(exp, act);
@@ -129,11 +129,11 @@ public final class HybridEventSequenceTest {
 	
 	@Test
 	public void testOccurByHybridTemporalPattern() {
-		assertEquals(this.seq.occur("a"), this.seq.occur(new DefaultHybridTemporalPattern("1", "a")));
-		assertEquals(this.seq.occur("b"), this.seq.occur(new DefaultHybridTemporalPattern("1", "b+0<b-0")));
-		assertEquals(this.seq.occur("c"), this.seq.occur(new DefaultHybridTemporalPattern("1", "c")));
-		assertEquals("[test(1.0,1.0,4.0), test(1.0,3.0,6.0)]", this.seq.occur(new DefaultHybridTemporalPattern("1", "a=b+0<b-0")).toString());
-		assertEquals("[test(1.0,1.0,2.0,3.0,4.0,6.0)]", this.seq.occur(new DefaultHybridTemporalPattern("1", "a=b+0<a<b+1<b-0<b-1")).toString());
+		assertEquals(this.seq.occur("a"), this.seq.occur(new DefaultHybridTemporalPattern("a")));
+		assertEquals(this.seq.occur("b"), this.seq.occur(new DefaultHybridTemporalPattern("b+0<b-0")));
+		assertEquals(this.seq.occur("c"), this.seq.occur(new DefaultHybridTemporalPattern("c")));
+		assertEquals("[test(1.0,1.0,4.0), test(1.0,3.0,6.0)]", this.seq.occur(new DefaultHybridTemporalPattern("a=b+0<b-0")).toString());
+		assertEquals("[test(1.0,1.0,2.0,3.0,4.0,6.0)]", this.seq.occur(new DefaultHybridTemporalPattern("a=b+0<a<b+1<b-0<b-1")).toString());
 	}
 
 	@Test
@@ -142,12 +142,11 @@ public final class HybridEventSequenceTest {
 		HybridEvent ev = new DefaultHybridEvent("c", 6);
 		seq.add(ev);
 
-		DefaultOccurrence o = new DefaultOccurrence(seq);
-		o.add(new PointEventNode(ev));
+		DefaultOccurrence o = new DefaultOccurrence(seq, Collections.singletonList(new DefaultOccurrencePoint(ev)));
 
 		assertTrue(seq.isValid(o));
 
-		o.add(new PointEventNode(ev));
+		o = new DefaultOccurrence(seq, Arrays.asList(new DefaultOccurrencePoint(ev), new DefaultOccurrencePoint(ev)));
 
 		assertFalse(seq.isValid(o));
 	}

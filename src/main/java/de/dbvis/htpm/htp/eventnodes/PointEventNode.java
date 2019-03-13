@@ -1,6 +1,7 @@
 package de.dbvis.htpm.htp.eventnodes;
 
-import de.dbvis.htpm.hes.events.HybridEvent;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 /**
  * This final class implements a PointEventNode.
  * @author Wolfgang Jentner
@@ -8,23 +9,20 @@ import de.dbvis.htpm.hes.events.HybridEvent;
  */
 public final class PointEventNode extends EventNode {
 
-	/**
-	 * Creates a new PointEventNode based on the information of the HybridEvent (id & time point).
-	 * This PointEventNode will be associated to the HybridEvent
-	 * @param hybridevent the HybridEvent
-	 */
-	public PointEventNode(HybridEvent hybridevent) {
-		super(hybridevent, true, false);
+	public PointEventNode(EventNode node) {
+		super(node);
+		if (!(node instanceof PointEventNode)) {
+			throw new IllegalArgumentException("Point event node can only be created from other point event node");
+		}
 	}
-	
+
 	/**
 	 * Creates a new PointEventNode based on an id and a time point.
 	 * This PointEventNode will not be associated to an HybridEvent.
 	 * @param id the id
-	 * @param timepoint the time point
 	 */
-	public PointEventNode(String id, double timepoint) {
-		super(id, timepoint, true, false);
+	public PointEventNode(String id) {
+		super(id);
 	}
 	
 	/**
@@ -34,9 +32,16 @@ public final class PointEventNode extends EventNode {
 	 */
 	@Override
 	public String toString() {
-		return this.getEventNodeId();
+		return this.getStringEventNodeId();
 	}
-	
+
+	@Override
+	public int hashCode() {
+		return new HashCodeBuilder(5, 17)
+				.append(id)
+				.toHashCode();
+	}
+
 	/**
 	 * Checks for equality, true if the other object is also a PointEventNode and their ids are equal
 	 * @param o the object (HTPItem) to check against with
@@ -44,9 +49,7 @@ public final class PointEventNode extends EventNode {
 	 */
 	@Override
 	public boolean equals(Object o) {
-		if(o != null && o instanceof PointEventNode) {
-			return ((PointEventNode) o).getEventNodeId().equals(this.getEventNodeId());
-		}
-		return false;
+		return o instanceof PointEventNode
+				&& ((PointEventNode) o).id == this.id;
 	}
 }

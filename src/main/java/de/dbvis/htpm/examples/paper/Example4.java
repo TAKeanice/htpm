@@ -6,6 +6,8 @@ import de.dbvis.htpm.hes.events.DefaultHybridEvent;
 import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 
+import static de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder.buildFromSequence;
+
 /**
  * This example shows how a hybrid temporal pattern is built and
  * how the occurrences within a sequence are determined.
@@ -31,10 +33,10 @@ public class Example4 {
 		s5.add(new DefaultHybridEvent("a", 0,2));
 		s5.add(new DefaultHybridEvent("b", 0,3));
 		
-		HybridTemporalPattern p2 = new DefaultHybridTemporalPattern("2", s2);
-		HybridTemporalPattern p3 = new DefaultHybridTemporalPattern("3", s3);
-		HybridTemporalPattern p4 = new DefaultHybridTemporalPattern("4", s4);
-		HybridTemporalPattern p5 = new DefaultHybridTemporalPattern("5", s5);
+		HybridTemporalPattern p2 = buildFromSequence(s2).getPattern();
+		HybridTemporalPattern p3 = buildFromSequence(s3).getPattern();
+		HybridTemporalPattern p4 = buildFromSequence(s4).getPattern();
+		HybridTemporalPattern p5 = buildFromSequence(s5).getPattern();
 		
 		System.out.println(">>"+s1.occur(p2));
 		System.out.println(">>"+s1.occur(p3));

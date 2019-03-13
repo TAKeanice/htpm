@@ -1,7 +1,5 @@
 package de.dbvis.htpm.htp.eventnodes;
 
-import de.dbvis.htpm.hes.events.HybridEvent;
-
 /**
  * This abstract class implements a general IntervalEventNode and
  * extends the definition of an EventNode by an occurrence mark.
@@ -14,30 +12,21 @@ public abstract class IntervalEventNode extends EventNode {
 	/**
 	 * The occurrence mark
 	 */
-	protected int occurrencemark;
-	
-	/**
-	 * Creates a new IntervalEventNode based on a HybridEvent, a given occurrencemark,
-	 * has to know if this constructor is called by an start or end interval node.
-	 * This IntervalEventNode will be associated to the given HybridEvent.
-	 * @param hybridevent the HybridEvent that provides the information
-	 * @param occurrencemark the occurrence mark
-	 * @param isendevent true if called by IntervalEndEventNode
-	 */
-	protected IntervalEventNode(HybridEvent hybridevent, int occurrencemark, boolean isendevent) {
-		super(hybridevent, false, isendevent);
+	public final int occurrencemark;
+
+	protected IntervalEventNode(EventNode node, int occurrencemark) {
+		super(node);
 		this.occurrencemark = occurrencemark;
 	}
-	
+
 	/**
 	 * Creates a new IntervalEventNode by an explicit id, time point and occurrence mark.
 	 * This IntervalEventNode will not be associated to an HybridEvent.
 	 * @param id
-	 * @param timepoint
 	 * @param occurencemark
 	 */
-	protected IntervalEventNode(String id, double timepoint, int occurencemark, boolean endEvent) {
-		super(id, timepoint, false, endEvent);
+	protected IntervalEventNode(String id, int occurencemark) {
+		super(id);
 		this.occurrencemark = occurencemark;
 	}
 	
@@ -50,8 +39,4 @@ public abstract class IntervalEventNode extends EventNode {
 	}
 	
 	public abstract String toString();
-	
-	public abstract boolean equals(Object o);
-	
-	public abstract boolean isCorrespondingOppositeNode(Object o);
 }

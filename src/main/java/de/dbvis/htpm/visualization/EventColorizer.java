@@ -31,7 +31,7 @@ public class EventColorizer {
 		if(e == null) {
 			return null;
 		}
-		return this.getColor(e.getEventNodeId());
+		return this.getColor(e.getStringEventNodeId());
 	}
 	
 	public Color getColor(HybridEvent e) {

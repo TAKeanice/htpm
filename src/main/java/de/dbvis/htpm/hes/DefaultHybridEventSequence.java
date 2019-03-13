@@ -1,18 +1,20 @@
 package de.dbvis.htpm.hes;
 
 import de.dbvis.htpm.hes.events.HybridEvent;
-import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.*;
 import de.dbvis.htpm.occurrence.DefaultOccurrence;
+import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
 import de.dbvis.htpm.occurrence.OccurrencePoint;
+import de.dbvis.htpm.util.UniqueIDConverter;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
+
+import static de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder.buildFromHybridEventList;
 
 /**
  * This class implements the HybridEventSequence.
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
  *
  */
 public class DefaultHybridEventSequence implements HybridEventSequence {
+
 	// Thank goes to Andreas Stoffel (Data Analysis & Visualization Group,
 	// University of Konstanz) for the help with the occur() methods.
 	/**
@@ -31,7 +34,7 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 	/**
 	 * The id of the HybridEventSequence
 	 */
-	protected String id;
+	protected Integer id;
 	
 	//stored for performance reasons
 	/**
@@ -65,51 +68,53 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		if(sid == null) {
 			throw new NullPointerException("The HybridEventSequence id must not be null");
 		}
-		this.id = sid;
+		this.id = UniqueIDConverter.getIntegerId(sid);
 		this.events = new ArrayList<>();
 		this.eventids = new HashSet<>();
 	}
 	
 	@Override
 	public String toString() {
-		String s = this.id+"=";
+		StringBuilder s = new StringBuilder(this.getSequenceId() + "=");
 		for(int i = 0; i < events.size(); i++) {
-			s += events.get(i);
+			s.append(events.get(i));
 			if(i < (events.size() -1)) {
-				s += ";";
+				s.append(";");
 			}
 		}
-		return s;
+		return s.toString();
 	}
 	
 	@Override
 	public String getSequenceId() {
-		return this.id;
+		return UniqueIDConverter.getStringId(this.id);
 	}
 	
 	@Override
 	public void add(HybridEvent e) {
 		if(e != null) {
 			this.events.add(e);
-			if(!this.eventids.contains(e.getEventId())) {
-				this.eventids.add(e.getEventId());
-			}
+			this.eventids.add(e.getEventId());
 
 			//build up index structure:
-			if(e.isPointEvent()) {
-				this.addHybridEventToIndex(e.getTimePoint(), EventType.point, e);
-
-				this.addToIndex(this.myIndex, new MyItem(e, e.getTimePoint()));
-
-			} else {
-				this.addHybridEventToIndex(e.getStartPoint(), EventType.start, e);
-				this.addHybridEventToIndex(e.getEndPoint(), EventType.end, e);
-
-				this.addToIndex(this.myIndex, new MyItem(e, e.getStartPoint()));
-				this.addToIndex(this.myIndex, new MyItem(e, e.getEndPoint()));
-			}
+			//addToIndex(e);
 
 			this.containedEvents.add(e);
+		}
+	}
+
+	public void addToIndex(HybridEvent e) {
+		if(e.isPointEvent()) {
+			this.addHybridEventToIndex(e.getTimePoint(), EventType.point, e);
+
+			this.addToIndex(this.myIndex, new MyItem(e, e.getTimePoint()));
+
+		} else {
+			this.addHybridEventToIndex(e.getStartPoint(), EventType.start, e);
+			this.addHybridEventToIndex(e.getEndPoint(), EventType.end, e);
+
+			this.addToIndex(this.myIndex, new MyItem(e, e.getStartPoint()));
+			this.addToIndex(this.myIndex, new MyItem(e, e.getEndPoint()));
 		}
 	}
 
@@ -147,17 +152,19 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		//occurrence marks can be only 0 since it will be the
 		//only node in that occurrence
 		events.stream().filter(e -> e.getEventId().equals(id)).forEach(e -> {
-			DefaultOccurrence oc = new DefaultOccurrence(this);
 
+			List<OccurrencePoint> ops;
 			if (e.isPointEvent()) {
-				oc.add(new PointEventNode(e));
+				ops = Collections.singletonList(new DefaultOccurrencePoint(e));
 			} else {
 				//occurrence marks can be only 0 since it will be the
 				//only node in that occurrence
-				oc.add(new IntervalStartEventNode(e, 0));
-				oc.add(new IntervalEndEventNode(e, 0));
+				ops = Arrays.asList(
+						new DefaultOccurrencePoint(e, true),
+						new DefaultOccurrencePoint(e, false));
 			}
 
+			DefaultOccurrence oc = new DefaultOccurrence(this, ops);
 			res.add(oc);
 		});
 		return Collections.unmodifiableList(res);
@@ -188,7 +195,7 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		//since the HybridEvent equals with
 		final Map<MyItem, Integer> seenItems = new HashMap<>();
 
-		for(OccurrencePoint op : o) {
+		for(OccurrencePoint op : o.ops()) {
 			if(!occurs(op, seenItems)) {
 				return false;
 			}
@@ -208,22 +215,6 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 			return false;
 		}
 
-//		//we have no event at all at the timepoint we are looking for
-//		if(!this.occurrenceIndex.containsKey(op.getTimePoint())) {
-//			return false;
-//		}
-
-//		EventType searchType;
-//		if(toSearchFor.isPointEvent() && op.getTimePoint() == toSearchFor.getTimePoint()) {
-//			searchType = EventType.point;
-//		} else if(!toSearchFor.isPointEvent() && op.getTimePoint() == toSearchFor.getStartPoint()) {
-//			searchType = EventType.start;
-//		} else if(!toSearchFor.isPointEvent() && op.getTimePoint() == toSearchFor.getEndPoint()) {
-//			searchType = EventType.end;
-//		} else {
-//			throw new RuntimeException("Uhoh this should not happen");
-//		}
-
 		MyItem searchItem = new MyItem(toSearchFor, op.getTimePoint());
 
 		if(!this.myIndex.containsKey(searchItem)) {
@@ -232,49 +223,8 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 
 		this.addToIndex(seenEvents, searchItem);
 
-		if(seenEvents.get(searchItem) <= this.myIndex.get(searchItem)) {
-			return true;
-		}
+		return seenEvents.get(searchItem) <= this.myIndex.get(searchItem);
 
-		return false;
-
-		//final int seen = (seenEvents.containsKey(toSearchFor)) ? seenEvents.get(toSearchFor) : 0;
-
-
-
-//		//we do not have that event stored the we are looking for
-//		if(!this.occurrenceIndex.get(op.getTimePoint()).containsKey(searchType)) {
-//			return false;
-//		}
-//
-//		//now it gets a little complicated..
-//		int seenInIndex = 0;
-//		boolean found = false;
-//		for(HybridEvent e : this.occurrenceIndex.get(op.getTimePoint()).get(searchType)) {
-//			//okay so this event is already in there
-//			if(toSearchFor.equals(e) && seenInIndex > ) {
-//				if(toSearchFor.isPointEvent()) {
-//					if(op.getTimePoint() == e.getTimePoint()) {
-//						found = true;
-//						break;
-//					}
-//				} else {
-//					if(op.getTimePoint() == e.getStartPoint()) {
-//						found = true;
-//						break;
-//					} else if(op.getTimePoint() == e.getEndPoint()) {
-//						found = true;
-//						break;
-//					}
-//				}
-//			}
-//		}
-//
-//		if(found) {
-//			seenInIndex++
-//		}
-
-//		return found;
 	}
 
 	protected void addHybridEventToIndex(final double timepoint, final EventType type, final HybridEvent e) {
@@ -316,20 +266,21 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		
 		//transform both, the pattern and this sequence into a
 		//list of HTPItems to find occurrences
-		List<HTPItem> own = Arrays.asList(new DefaultHybridTemporalPattern(this.getSequenceId(), pevents).getPatternItems()); 
-		List<HTPItem> ext = Arrays.asList(p.getPatternItems());
+		List<HTPItem> own = buildFromHybridEventList(this, pevents).getPattern().getPatternItems();
+		List<HTPItem> ext = p.getPatternItems();
 		
-		return occur2impl(own, ext, findfirst);
+		//return occur2impl(own, ext, findfirst);
+		return Collections.emptyList();
 	}
 	
-	/**
+	/** TODO: this is currently not working. fix or remove.
 	 * Finds occurrences based on the HTPItem-Lists.
 	 * @param own the own HTPItems
 	 * @param pattern the HTPItems of the pattern
 	 * @param findfirst if true, abort search after we found the first occurrence (speedup)
 	 * @return A list of occurrences
 	 */
-	protected List<Occurrence> occur2impl(List<HTPItem> own, List<HTPItem> pattern, boolean findfirst) {
+	/*protected List<Occurrence> occur2impl(List<HTPItem> own, List<HTPItem> pattern, boolean findfirst) {
 		List<Occurrence> results = new ArrayList<>();
 		List<List<HTPItem>> partials = new CopyOnWriteArrayList<>();
 		for (HTPItem item : own) {
@@ -347,7 +298,9 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 				child.add(item);
 				if (child.size() == pattern.size()) {
 					DefaultOccurrence oc = new DefaultOccurrence(this);
-					child.stream().filter(part -> part instanceof EventNode).forEach(part -> oc.add((EventNode) part));
+					child.stream().filter(part -> part instanceof EventNode).forEach(part -> oc.add(
+							new DefaultOccurrencePoint(((EventNode) part).getHybridEvent(),
+									part instanceof IntervalStartEventNode)));
 					results.add(oc);
 					if(findfirst) {
 						return results;
@@ -365,7 +318,8 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 					DefaultOccurrence oc = new DefaultOccurrence(this);
 					if (item instanceof EventNode) {
 						//resultOccurence.add(((EventNode) item).getTimePoint(), ((EventNode) item).getMetadata());
-						oc.add((EventNode) item);
+						oc.add(new DefaultOccurrencePoint(((EventNode) item).getHybridEvent(),
+								item instanceof IntervalStartEventNode));
 					}
 					//results.add(resultOccurence);
 					results.add(oc);
@@ -373,12 +327,12 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 						return results;
 					}
 				} else {
-					partials.add(new ArrayList<>(Arrays.asList(new HTPItem[]{item})));
+					partials.add(Collections.singletonList(item));
 				}
 			}
 		}
 		return results;
-	}
+	}*/
 	
 	/**
 	 * Checks if a given HTPItem (end event) has a corresponding start event in the partial list.
@@ -392,7 +346,7 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		for (HTPItem p : partial) {
 			if (p instanceof IntervalStartEventNode) {
 				IntervalStartEventNode pEvent = (IntervalStartEventNode) p;
-				if (pEvent.getEventNodeId().equals(itemEvent.getEventNodeId()) && pEvent.getOccurrenceMark() == itemEvent.getOccurrenceMark()) {
+				if (pEvent.getStringEventNodeId().equals(itemEvent.getStringEventNodeId()) && pEvent.getOccurrenceMark() == itemEvent.getOccurrenceMark()) {
 					return true;
 				}
 			}
@@ -426,13 +380,12 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		HTPItem head = pattern.get(0);
 		if (!item.getClass().equals(head.getClass())) return false;
 		if (item instanceof OrderRelation) {
-			if (!item.equals(head)) return false;
+			return item.equals(head);
 		} else if (item instanceof EventNode) {
-			if (!((EventNode) item).getEventNodeId().equals(((EventNode) head).getEventNodeId())) return false;
+			return ((EventNode) item).getStringEventNodeId().equals(((EventNode) head).getStringEventNodeId());
 		} else {
 			throw new IllegalStateException("Unknown item type " + item.getClass().getName());
 		}
-		return true;
 	}
 	
 	/**
@@ -467,25 +420,23 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 	protected boolean isMatching(Map<String, Integer> occurenceMap, HTPItem item, HTPItem pat) {
 		if (!item.getClass().equals(pat.getClass())) return false;
 		if (item instanceof OrderRelation) {
-			if (!item.equals(pat)) return false;
+			return item.equals(pat);
 		} else if (item instanceof PointEventNode) {
-			if (!((PointEventNode) item).getEventNodeId().equals(((PointEventNode) pat).getEventNodeId())) return false;
+			return ((PointEventNode) item).getStringEventNodeId().equals(((PointEventNode) pat).getStringEventNodeId());
 		} else if (item instanceof IntervalStartEventNode) {
 			IntervalStartEventNode itemNode = (IntervalStartEventNode) item;
 			IntervalStartEventNode patNode = (IntervalStartEventNode) pat;
-			if (!itemNode.getEventNodeId().equals(patNode.getEventNodeId())) return false;
-			occurenceMap.put(patNode.getEventNodeId() + "+" + patNode.getOccurrenceMark(), itemNode.getOccurrenceMark());
+			if (!itemNode.getStringEventNodeId().equals(patNode.getStringEventNodeId())) return false;
+			occurenceMap.put(patNode.getStringEventNodeId() + "+" + patNode.getOccurrenceMark(), itemNode.getOccurrenceMark());
 		} else {
 			if (item instanceof IntervalEndEventNode) {
 				IntervalEndEventNode itemNode = (IntervalEndEventNode) item;
 				IntervalEndEventNode patNode = (IntervalEndEventNode) pat;
-				if (!itemNode.getEventNodeId().equals(patNode.getEventNodeId())) return false;
-				Integer occurenceMark = occurenceMap.get(patNode.getEventNodeId() + "+" + patNode.getOccurrenceMark());
+				if (!itemNode.getStringEventNodeId().equals(patNode.getStringEventNodeId())) return false;
+				Integer occurenceMark = occurenceMap.get(patNode.getStringEventNodeId() + "+" + patNode.getOccurrenceMark());
 				if (occurenceMark == null)
 					throw new IllegalArgumentException("End event " + pat + " before start event.");
-				if (itemNode.getOccurrenceMark() != occurenceMark) {
-					return false;
-				}
+				return itemNode.getOccurrenceMark() == occurenceMark;
 			} else {
 				throw new IllegalStateException("Unknown item type " + item.getClass().getName());
 			}

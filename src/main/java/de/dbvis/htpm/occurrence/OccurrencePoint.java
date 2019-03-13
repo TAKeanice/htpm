@@ -7,7 +7,7 @@ import de.dbvis.htpm.hes.events.HybridEvent;
  * 
  * @author Wolfgang Jentner
  */
-public interface OccurrencePoint {
+public interface OccurrencePoint extends Comparable<OccurrencePoint> {
 	
 	/**
 	 * Returns the time point of the occurrence.

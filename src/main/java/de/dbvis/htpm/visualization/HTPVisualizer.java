@@ -1,25 +1,15 @@
 package de.dbvis.htpm.visualization;
 
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
-import de.dbvis.htpm.htp.eventnodes.EventNode;
-import de.dbvis.htpm.htp.eventnodes.HTPItem;
-import de.dbvis.htpm.htp.eventnodes.IntervalEndEventNode;
-import de.dbvis.htpm.htp.eventnodes.IntervalEventNode;
-import de.dbvis.htpm.htp.eventnodes.IntervalStartEventNode;
-import de.dbvis.htpm.htp.eventnodes.OrderRelation;
-import de.dbvis.htpm.htp.eventnodes.PointEventNode;
+import de.dbvis.htpm.htp.eventnodes.*;
+
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HTPVisualizer extends JComponent {
 	/**
@@ -73,7 +63,7 @@ public class HTPVisualizer extends JComponent {
 		this.pattern = pattern;
 		this.events = null;
 		if (pattern != null) {
-			this.events = pattern.getPatternItems();
+			this.events = pattern.getPatternItems().toArray(new HTPItem[0]);
 		}
 		
 		this.total_Xgps = this.getNumberOfXGridPoints();
@@ -118,7 +108,7 @@ public class HTPVisualizer extends JComponent {
 
 		g.setColor(Color.black);
 		
-		g.drawString(node.getEventNodeId(), x + radius + 5, y + (radius / 2));
+		g.drawString(node.getStringEventNodeId(), x + radius + 5, y + (radius / 2));
 	}
 	
 	protected void paintEventNode(IntervalStartEventNode node, int grpx, int grpy) {
@@ -140,7 +130,7 @@ public class HTPVisualizer extends JComponent {
 
 		g.setColor(Color.black);
 		
-		g.drawString(node.getEventNodeId(), x + radius + 5, y + (radius / 2));
+		g.drawString(node.getStringEventNodeId(), x + radius + 5, y + (radius / 2));
 	}
 	
 	protected void paintEventNodeLine(IntervalEventNode node, int fromgrpx, int togprx, int grpy) {
@@ -164,7 +154,7 @@ public class HTPVisualizer extends JComponent {
 				EventNode e = (EventNode) events[i];
 				if (events[i] instanceof IntervalEventNode) {
 
-					String e_key = e.getEventNodeId()
+					String e_key = e.getStringEventNodeId()
 							+ ((IntervalEventNode) events[i])
 									.getOccurrenceMark();
 					if (events[i] instanceof IntervalStartEventNode) {
@@ -174,7 +164,7 @@ public class HTPVisualizer extends JComponent {
 						for (int j = (i + 1); j < events.length; j++) {
 							if (events[j] instanceof IntervalEndEventNode) {
 								IntervalEndEventNode e2 = (IntervalEndEventNode) events[j];
-								String e_key2 = e2.getEventNodeId()
+								String e_key2 = e2.getStringEventNodeId()
 										+ e2.getOccurrenceMark();
 
 								if (e_key.equals(e_key2)) {
@@ -223,12 +213,12 @@ public class HTPVisualizer extends JComponent {
 		int curgpry = 0;
 		for (int i = 0; i < events.length; i++) {
 			if (events[i] instanceof EventNode) {
-				g.setColor(this.ec.getColor(((EventNode) events[i]).getEventNodeId()));
+				g.setColor(this.ec.getColor(((EventNode) events[i]).getStringEventNodeId()));
 				if (events[i] instanceof PointEventNode) {
 					this.paintEventNode((PointEventNode) events[i], curgprx, curgpry);
 					curgpry++;
 				} else if (events[i] instanceof IntervalEventNode) {
-					String e_key = ((IntervalEventNode) events[i]).getEventNodeId()
+					String e_key = ((IntervalEventNode) events[i]).getStringEventNodeId()
 							+ ((IntervalEventNode) events[i])
 									.getOccurrenceMark();
 					if (events[i] instanceof IntervalStartEventNode) {
@@ -260,7 +250,7 @@ public class HTPVisualizer extends JComponent {
 	}
 	
 	public static void main(String[] args) {
-		HybridTemporalPattern pattern = new DefaultHybridTemporalPattern("Test", "a<b+0=c<b-0");
+		HybridTemporalPattern pattern = new DefaultHybridTemporalPattern("a<b+0=c<b-0");
 		
 		HTPVisualizer v = new HTPVisualizer(new EventColorizer());
 		

@@ -2,8 +2,7 @@ package de.dbvis.htpm.occurrence;
 
 import de.dbvis.htpm.hes.HybridEventSequence;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -18,7 +17,12 @@ public class DefaultOccurrence implements Occurrence {
 	/**
 	 * The associated HybridEventSequence
 	 */
-	protected HybridEventSequence seq;
+	protected final HybridEventSequence seq;
+	
+	/**
+	 * A list holding the OccurrencePoints
+	 */
+	protected final OccurrencePoint[] ops;
 
 	/**
 	 * Holds the child - canonical parent relation for this occurrence.
@@ -26,22 +30,18 @@ public class DefaultOccurrence implements Occurrence {
 	 * and have the same length-1 occurrences as temporal prefix
 	 */
 	protected Occurrence prefix;
-	
-	/**
-	 * A list holding the OccurrencePoints
-	 */
-	protected List<OccurrencePoint> ops;
-	
-	/**
-	 * Creates a new, empty DefaultOccurrence with a associated HybridEventSequence.
-	 * @param seq the HybridEventSequence, may not be null
-	 */
-	public DefaultOccurrence(HybridEventSequence seq) {
+
+	public DefaultOccurrence(HybridEventSequence seq, List<OccurrencePoint> ops) {
+		this(seq, ops, null);
+	}
+
+	public DefaultOccurrence(HybridEventSequence seq, List<OccurrencePoint> ops, Occurrence prefix) {
 		if(seq == null) {
 			throw new NullPointerException("DefaultHybridEventSequence must not be null");
 		}
 		this.seq = seq;
-		this.ops = new ArrayList<>();
+		this.ops = ops.toArray(new OccurrencePoint[0]);
+		this.prefix = prefix;
 	}
 	
 	@Override
@@ -50,27 +50,31 @@ public class DefaultOccurrence implements Occurrence {
 	}
 	
 	@Override
-	public Iterator<OccurrencePoint> iterator() {
-		return this.ops.iterator();
+	public List<OccurrencePoint> ops() {
+		return Arrays.asList(this.ops);
 	}
 
 	@Override
 	public OccurrencePoint get(int i) {
-		return this.ops.get(i);
+		return this.ops[i];
 	}
 
 	@Override
 	public int size() {
-		return this.ops.size();
+		return this.ops.length;
 	}
 	
 	public String toString() {
-		StringBuilder sb = new StringBuilder(this.getHybridEventSequence().getSequenceId()+"(");
-		for(OccurrencePoint op : this) {
-			sb.append(op.getTimePoint());
-			sb.append(",");
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getHybridEventSequence().getSequenceId());
+		sb.append("(");
+		for(int i = 0; i < ops.length; i++) {
+			sb.append(ops[i].getTimePoint());
+			if (i < ops.length - 1) {
+				sb.append(",");
+			}
 		}
-		sb.setCharAt(sb.length()-1, ')');
+		sb.append(")");
 		return sb.toString();
 	}
 	
@@ -98,28 +102,6 @@ public class DefaultOccurrence implements Occurrence {
 			return true;
 		}
 		return false;
-	}
-	
-	/**
-	 * Adds an OccurrencePoint to the Occurrence.
-	 * @param op the OccurrencePoint to add
-	 */
-	public void add(OccurrencePoint op) {
-		if(op != null) {
-			this.ops.add(op);
-		}
-	}
-	
-	/**
-	 * Removes an OccurrencePoint from the Occurrence.
-	 * @param op the OccurrencePoint to remove
-	 */
-	public void remove(OccurrencePoint op) {
-		this.ops.remove(op);
-	}
-
-	public void setPrefix(Occurrence prefix) {
-		this.prefix = prefix;
 	}
 
 	public Occurrence getPrefix() {

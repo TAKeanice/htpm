@@ -5,6 +5,9 @@ import de.dbvis.htpm.hes.events.DefaultHybridEvent;
 import de.dbvis.htpm.htp.eventnodes.*;
 import org.junit.Test;
 
+import java.util.List;
+
+import static de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder.buildFromSequence;
 import static org.junit.Assert.*;
 
 public class HybridTemporalPatternTest {
@@ -18,39 +21,33 @@ public class HybridTemporalPatternTest {
 		s.add(new DefaultHybridEvent("a", 1, 2));
 		s.add(new DefaultHybridEvent("b", 3));
 		
-		this.p = new DefaultHybridTemporalPattern("1", s); //a<b<a
+		this.p = buildFromSequence(s).getPattern(); //a<b<a
 		
 		s = new DefaultHybridEventSequence("2");
 		s.add(new DefaultHybridEvent("a", 1, 3));
 		s.add(new DefaultHybridEvent("b", 2, 4));
 		
-		this.p2 = new DefaultHybridTemporalPattern("2", s); //a<b<a<b
+		this.p2 = buildFromSequence(s).getPattern(); //a<b<a<b
 		
 		s = new DefaultHybridEventSequence("3");
 		s.add(new DefaultHybridEvent("a", 1));
 		s.add(new DefaultHybridEvent("b", 2, 4));
 		
-		this.p3 = new DefaultHybridTemporalPattern("3", s); //a<b<b
+		this.p3 = buildFromSequence(s).getPattern(); //a<b<b
 	}
 
 	@Test
 	public void testPointEvents() {
-		HTPItem[] items = this.p.getPatternItems();
-		assertTrue(items[0] instanceof IntervalStartEventNode);
-		assertFalse(((IntervalStartEventNode) items[0]).isPointEvent());
-		assertFalse(((IntervalStartEventNode) items[0]).isEndEvent());
+		List<HTPItem> items = this.p.getPatternItems();
+		assertTrue(items.get(0) instanceof IntervalStartEventNode);
 
-		assertTrue(items[1] instanceof OrderRelation);
+		assertTrue(items.get(1) instanceof OrderRelation);
 
-		assertTrue(items[2] instanceof IntervalEndEventNode);
-		assertFalse(((IntervalEndEventNode) items[2]).isPointEvent());
-		assertTrue(((IntervalEndEventNode) items[2]).isEndEvent());
+		assertTrue(items.get(2) instanceof IntervalEndEventNode);
 
-		assertTrue(items[3] instanceof OrderRelation);
+		assertTrue(items.get(3) instanceof OrderRelation);
 
-		assertTrue(items[4] instanceof PointEventNode);
-		assertTrue(((PointEventNode) items[4]).isPointEvent());
-		assertFalse(((PointEventNode) items[4]).isEndEvent());
+		assertTrue(items.get(4) instanceof PointEventNode);
 	}
 	
 	@Test
@@ -68,6 +65,7 @@ public class HybridTemporalPatternTest {
 		assertEquals("htp3=(a<b+0<b-0)", this.p3.toString());
 	}
 	
+	/* TODO: these tests are now invalid since we removed modifying method
 	@Test
 	public void testdeleteP1() {
 		assertEquals("htp1=(a+0<a-0)", this.p.deleteLastEvent().toString());
@@ -82,10 +80,11 @@ public class HybridTemporalPatternTest {
 	public void testdeleteP3() {
 		assertEquals("htp3=(a)", this.p3.deleteLastEvent().toString());
 	}
+	*/
 
 	@Test
 	public void testInitiationByPatternRepresentation() {
-		assertEquals("htp1=(a<b+0=c<b-0<b+1<b-1)", 
-		new DefaultHybridTemporalPattern("1", "a<b+0=c<b-0<b+1<b-1").toString());
+		assertEquals("(a<b+0=c<b-0<b+1<b-1)",
+				new DefaultHybridTemporalPattern("a<b+0=c<b-0<b+1<b-1").toString());
 	}
 }

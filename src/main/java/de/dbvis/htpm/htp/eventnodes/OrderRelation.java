@@ -7,23 +7,16 @@ package de.dbvis.htpm.htp.eventnodes;
  * @author Wolfgang Jentner
  *
  */
-public final class OrderRelation implements HTPItem {
-	/**
-	 * &lt;
-	 */
-	public static final OrderRelation SMALLER = new OrderRelation();
-	
-	/**
-	 * =
-	 */
-	public static final OrderRelation EQUAL = new OrderRelation();
-	
-	/**
-	 * Do not allow any different objects than the two defined above
-	 */
-	private OrderRelation() {}
+public enum OrderRelation implements HTPItem {
 
-	public String toString() {
+	SMALLER,
+	EQUAL;
+
+	public static OrderRelation fromChar(char c) {
+		return c == '<' ? SMALLER : EQUAL;
+	}
+
+    public String toString() {
 		if(this == OrderRelation.SMALLER) {
 			return "<";
 		} else {

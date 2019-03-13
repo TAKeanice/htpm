@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultHybridEventSequenceDatabase implements HybridEventSequenceDatabase {
 	protected List<HybridEventSequence> sequences;
+
+	protected Map<String, Integer> sequenceIDs;
 	
 	protected Map<HybridTemporalPattern, Double> support_cache;
 	

@@ -2,6 +2,8 @@ package de.dbvis.htpm.occurrence;
 
 import de.dbvis.htpm.hes.HybridEventSequence;
 
+import java.util.List;
+
 /**
  * An Occurrence is basically a sequence containing OccurrencePoints.
  * There is no guarantee by this interface that the OccurrencePoints are sorted.
@@ -14,7 +16,7 @@ import de.dbvis.htpm.hes.HybridEventSequence;
  * @author Wolfgang Jentner
  *
  */
-public interface Occurrence extends Iterable<OccurrencePoint> {
+public interface Occurrence {
 	
 	/**
 	 * Returns the HybridEventSequence where the Occurrence comes from.
@@ -35,6 +37,11 @@ public interface Occurrence extends Iterable<OccurrencePoint> {
 	 * @return the size of the Occurrence / number of OccurrencePoints
 	 */
 	public int size();
+
+	/**
+	 * Returns the list of occurrence points in order of occurrence
+	 */
+	public List<OccurrencePoint> ops();
 	
 	/**
 	 * Returns a String representation of the Occurrence, the representation

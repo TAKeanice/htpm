@@ -15,6 +15,8 @@ import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 import de.dbvis.htpm.occurrence.OccurrencePoint;
 
+import static de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder.buildFromSequence;
+
 /**
  * Just a little demonstration and tutorial of how to use
  * the framework.
@@ -111,19 +113,19 @@ public class Demo {
 		
 		
 		//Now you know the notation let us code this.
-		System.out.println(mo.occur(new DefaultHybridTemporalPattern("id-does-not-matter", "b+0<a<b-0")));
+		System.out.println(mo.occur(new DefaultHybridTemporalPattern("b+0<a<b-0")));
 		//Output: [Monday(1.0,3.0,5.0)]
 		//Same as with the events we can conclude that the pattern defined above
 		//occurs once and "b" starts at 1, then "a" occurs at 3 and "b" closes at 5.
 		
 		//Also we say that the sequence supports the pattern.
-		System.out.println(mo.supports(new DefaultHybridTemporalPattern("id-does-not-matter", "b+0<a<b-0")));
+		System.out.println(mo.supports(new DefaultHybridTemporalPattern("b+0<a<b-0")));
 		//Output: true
 		
 		//Note: Also Patterns have IDs, it does not matter what we set here.
 		
 		//We can also generate a pattern out of a whole sequence.
-		System.out.println(new DefaultHybridTemporalPattern("1", mo).toString());
+		System.out.println(buildFromSequence(mo).getPattern().toString());
 		//Output: htp1=(b+0<a=c<b-0)
 		//You should be able now to identify what that means.
 		//Okay you are probably lazy so I'll tell you.
@@ -181,7 +183,7 @@ public class Demo {
 			//All occurrences
 			for(Occurrence o : frequent_patterns.get(p)) {
 				//All time points in each occurrence (called OccurrencePoints).
-				for(OccurrencePoint op : o) {
+				for(OccurrencePoint op : o.ops()) {
 					//When you only use a unique id for your own event,
 					//you can also this as a reference.
 					if(op.getHybridEvent() instanceof MyHybridEvent) {

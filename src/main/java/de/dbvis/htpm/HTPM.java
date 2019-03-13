@@ -4,9 +4,11 @@ import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.hes.HybridEventSequence;
 import de.dbvis.htpm.hes.events.HybridEvent;
 import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
+import de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.*;
 import de.dbvis.htpm.occurrence.DefaultOccurrence;
+import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
 import de.dbvis.htpm.occurrence.OccurrencePoint;
 import de.dbvis.htpm.util.HTPMEvent;
@@ -36,6 +38,9 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class HTPM implements Runnable {
+
+	private final boolean parallel = false;
+
 	/**
 	 * The database the HTPM operates on
 	 */
@@ -50,12 +55,6 @@ public class HTPM implements Runnable {
 	 * The resulting patterns
 	 */
 	protected Map<HybridTemporalPattern, List<Occurrence>> patterns;
-
-	/**
-	 * Prefix tree of hybrid temporal patterns. Holds the child - canonical parent relations of patterns
-	 * The canonical parent has the same events with the same order for the first length-1 events
-	 */
-	protected Map<HybridTemporalPattern, HybridTemporalPattern> patternPrefixTree = new ConcurrentHashMap<>();
 
 	protected List<HTPMListener> listeners;
 	
@@ -191,33 +190,40 @@ public class HTPM implements Runnable {
 	protected Map<HybridTemporalPattern, List<Occurrence>> genL1() {
 		Map<HybridTemporalPattern, List<Occurrence>> map =
 				new HashMap<>();
-		
+
 		for(HybridEventSequence seq : d.getSequences()) {
 
-			Occurrence emptyOccurrencePrefix = new DefaultOccurrence(seq);
-			
-			for(HybridEvent e : seq.getEvents()) {
-				
-				HybridTemporalPattern p = new DefaultHybridTemporalPattern("1", e);
-				
-				if(this.d.support(p) >= this.min_sup) {
-					
-					if(!map.containsKey(p)) {
-						map.put(p, new ArrayList<>());
-					}
+			Occurrence emptyOccurrencePrefix = new DefaultOccurrence(seq, Collections.emptyList());
 
-					final Occurrence occurence = getOccurence(p, seq);
-					map.get(p).add(occurence);
-					//set empty occurrence as parent to be able to distinguish occurrences from different sequences
-					//occurrencePrefixTree.put(occurence, emptyOccurrencePrefix);
-					//this is a not-beautiful workaround for slow hashmap
-					((DefaultOccurrence)occurence).setPrefix(emptyOccurrencePrefix);
+			for(HybridEvent e : seq.getEvents()) {
+
+				DefaultHybridTemporalPatternBuilder builder = new DefaultHybridTemporalPatternBuilder(seq, 1);
+
+				if (e.isPointEvent()) {
+					builder.append(0, new PointEventNode(e.getEventId()), new DefaultOccurrencePoint(e));
+				} else {
+					builder.append(0, new IntervalStartEventNode(e.getEventId(), 0),
+							new DefaultOccurrencePoint(e, true));
+					builder.append(0, new IntervalEndEventNode(e.getEventId(), 0),
+							new DefaultOccurrencePoint(e, false));
 				}
-				
+
+				builder.setPrefixes(null, emptyOccurrencePrefix);
+
+				//set empty occurrence as prefix
+				Occurrence oc = builder.getOccurence();
+				HybridTemporalPattern p = builder.getPattern();
+
+				if(!map.containsKey(p)) {
+					map.put(p, new ArrayList<>());
+				}
+				map.get(p).add(oc);
 			}
-			
+
 		}
-		
+		//prune unsupported patterns
+
+		map.entrySet().removeIf(entry -> !patternFulfillsConstraints(entry.getKey(), entry.getValue()));
 		return map;
 	}
 	
@@ -239,20 +245,27 @@ public class HTPM implements Runnable {
 		for(int i = 0; i < list.size(); i++) {
 			final HybridTemporalPattern p1 = list.get(i);
 			final List<Occurrence> l1 = map.get(p1);
-			final HybridTemporalPattern prefix = patternPrefixTree.get(p1);
+			final HybridTemporalPattern prefix = ((DefaultHybridTemporalPattern)p1).getPrefix();
 			for(int j = i; j < list.size(); j++) {
 				final HybridTemporalPattern p2 = list.get(j);
 				//only join patterns whose prefixes match
-				if (patternPrefixTree.get(p2) != prefix) {
+				if (((DefaultHybridTemporalPattern)p2).getPrefix() != prefix) {
 					continue;
 				}
 
 				final List<Occurrence> l2 = map.get(p2);
-				
-				es.execute(() -> {
-						res.putAll(HTPM.this.join(prefix, p1, l1, p2, l2, k));
-						//System.out.println("joined " + joined.incrementAndGet() + " with " + l1.size() + " and " + l2.size() + " occurrences.");
-				});
+
+
+				final Runnable join = () -> {
+					res.putAll(HTPM.this.join(prefix, p1, l1, p2, l2, k));
+					//System.out.println("joined " + joined.incrementAndGet() + " with " + l1.size() + " and " + l2.size() + " occurrences.");
+				};
+
+				if (parallel) {
+					es.execute(join);
+				} else {
+					join.run();
+				}
 			}
 		}
 		
@@ -281,50 +294,49 @@ public class HTPM implements Runnable {
 
 		for (int i1 = 0; i1 < or1.size(); i1++) {
 			Occurrence s1 = or1.get(i1);
-			Occurrence occPref = ((DefaultOccurrence) s1).getPrefix();
-			int i2 = or1 == or2 ? i1 + 1 : 0;
+			//avoid join of same occurrences twice (happens if both are from the same occurrence record)
+			int i2 = (or1 == or2 ? i1 + 1 : 0);
 			for (; i2 < or2.size(); i2++) {
 				Occurrence s2 = or2.get(i2);
-				if (!occurrenceRecordsQualifyForJoin(occPref, s1, (DefaultOccurrence) s2)) {
+				if (!occurrenceRecordsQualifyForJoin((DefaultOccurrence) s1, (DefaultOccurrence) s2)) {
 					continue;
 				}
 
-				Map<HybridTemporalPattern, Occurrence> m = ORAlign(prefix, p1, s1, p2, s2);
-				m.forEach((p, o) -> {
-					if (newOccurrencePasses(p, o, k)) {
-					if (!map.containsKey(p)) {
-						map.put(p, new ArrayList<>());
+				DefaultHybridTemporalPatternBuilder b = ORAlign(prefix, p1, s1, p2, s2, k);
+				HybridTemporalPattern newPattern = b.getPattern();
+				Occurrence newOccurrence = b.getOccurence();
+
+				//prune new occurrence records
+				if (newOccurrenceFulfillsConstraints(newPattern, newOccurrence, k)) {
+					if (!map.containsKey(newPattern)) {
+						map.put(newPattern, new ArrayList<>());
 					}
-					map.get(p).add(o);
-				}});
+
+					map.get(newPattern).add(newOccurrence);
+				}
 			}
 		}
 
-		removeUnsupportedPatterns(map);
+		//prune new patterns
+		map.entrySet().removeIf(e -> !patternFulfillsConstraints(e.getKey(), e.getValue()));
 
 		return map;
 	}
 
-	protected boolean newOccurrencePasses(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
+	protected boolean occurrenceRecordsQualifyForJoin(DefaultOccurrence firstOccurrence, DefaultOccurrence secondOccurrence) {
+		//make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
+		return firstOccurrence.getPrefix() == secondOccurrence.getPrefix();
+	}
+
+	protected boolean newOccurrenceFulfillsConstraints(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
 		//patterns have correct length automatically. Further, each occurrence is generated only once.
 		return true;
 	}
 
-	protected boolean occurrenceRecordsQualifyForJoin(Occurrence occurrencePrefix,
-													  Occurrence firstOccurrence, DefaultOccurrence secondOccurrence) {
-		//make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
-		if (occurrencePrefix != secondOccurrence.getPrefix()) {
-			return false;
-		}
-		return true;
-	}
-
-	protected void removeUnsupportedPatterns(
-			final Map<HybridTemporalPattern, List<Occurrence>> map) {
+	protected boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences) {
 		//prune patterns which do not fulfill minimum support
-		map.entrySet().removeIf(e -> !this.isSupported(e.getValue()));
+		return this.isSupported(occurrences);
 	}
-	
 
 	/**
 	 * This method aligns two pattern according to "Example 7 (Joining two occurrence records)."
@@ -334,11 +346,12 @@ public class HTPM implements Runnable {
 	 * @param or1 - The occurence points of the first pattern.
 	 * @param p2 - The second pattern.
 	 * @param or2 - The occurence points of the second pattern.
+	 * @param k
 	 * @return Returns a map containing one pattern with one SeriesOccurence.
 	 */
-	protected Map<HybridTemporalPattern, Occurrence> ORAlign(final HybridTemporalPattern prefix,
-															 final HybridTemporalPattern p1, final Occurrence or1,
-															 final HybridTemporalPattern p2, final Occurrence or2) {
+	protected DefaultHybridTemporalPatternBuilder ORAlign(final HybridTemporalPattern prefix,
+														  final HybridTemporalPattern p1, final Occurrence or1,
+														  final HybridTemporalPattern p2, final Occurrence or2, int k) {
 		int i1 = 0;
 		int i2 = 0;
 		int ip = 0;
@@ -350,16 +363,17 @@ public class HTPM implements Runnable {
 		List<EventNode> pa1 = p1.getEventNodes();
 		List<EventNode> pa2 = p2.getEventNodes();
 		
-		List<EventNode> pre = null;
+		List<EventNode> pre;
 		
 		if(prefix != null) {
 			pre = prefix.getEventNodes();
+		} else {
+			pre = Collections.emptyList();
 		}
 
-		HTPBuilder b = new HTPBuilder(or1.getHybridEventSequence());
+		DefaultHybridTemporalPatternBuilder b = new DefaultHybridTemporalPatternBuilder(or1.getHybridEventSequence(), k);
 
-		HybridTemporalPattern patternPrefix = null;
-		Occurrence occurrencePrefix = null;
+		boolean foundPrefix = false;
 
 		while (i1 < pa1.size() && i2 < pa2.size()) {
 			final OccurrencePoint op1 = or1.get(i1);
@@ -368,52 +382,43 @@ public class HTPM implements Runnable {
 			double occurrence2 = op2.getTimePoint();
 			final EventNode n1 = pa1.get(i1);
 			final EventNode n2 = pa2.get(i2);
-			final EventNode nP = pre != null && pre.size() > ip ? pre.get(ip) : null;
+			final EventNode nP = pre.size() > ip ? pre.get(ip) : null;
 
 			if (n1.equals(nP) && n2.equals(nP)) {
 				//both nodes are part of the "prefix", so it does not matter what we append
-				b.append("p1", n1, op1);
+				b.append(0, n1, op1);
 				i1++;
 				i2++;
 				ip++;
 			} else if (compare(n1, occurrence1, n2, occurrence2) < 0) {
-				if (patternPrefix == null) {
-					patternPrefix = p1;
-					occurrencePrefix = or1;
+				if (!foundPrefix) {
+					b.setPrefixes(p1, or1);
+					foundPrefix = true;
 				}
-				b.append("p1", n1, op1);
+				b.append(0, n1, op1);
 				i1++;
 			} else {
-				if (patternPrefix == null) {
-					patternPrefix = p2;
-					occurrencePrefix = or2;
+				if (!foundPrefix) {
+					b.setPrefixes(p2, or2);
+					foundPrefix = true;
 				}
-				b.append("p2", n2, op2);
+				b.append(1, n2, op2);
 				i2++;
 			}
 		}
 
 		if (i1 < pa1.size()) {
 			do {
-				b.append("p1", pa1.get(i1), or1.get(i1));
+				b.append(0, pa1.get(i1), or1.get(i1));
 				i1++;
 			} while (i1 < pa1.size());
 		} else if (i2 < pa2.size()) {
 			do {
-				b.append("p2", pa2.get(i2), or2.get(i2));
+				b.append(1, pa2.get(i2), or2.get(i2));
 				i2++;
 			} while (i2 < pa2.size());
 		}
-
-		final HybridTemporalPattern newPattern = b.getPattern(p1.getPatternId());
-		final Occurrence newOccurrence = b.getOccurences();
-
-		patternPrefixTree.put(newPattern, patternPrefix);
-		((DefaultOccurrence)newOccurrence).setPrefix(occurrencePrefix);
-
-		HashMap<HybridTemporalPattern, Occurrence> result = new HashMap<>();
-		result.put(newPattern, newOccurrence);
-		return result;
+		return b;
 	}
 	
 	/**
@@ -425,71 +430,16 @@ public class HTPM implements Runnable {
 	 * @param ob - The occurence point of the second EventNode.
 	 * @return <0 If a is before b, >0 if b is before a, 0 if equal.
 	 */
-	protected static int compare(EventNode a, double oa, EventNode b, double ob) {
-		if(oa != ob) {
-			if(oa > ob) {
-				return 1;
-			} else if(oa < ob) {
-				return -1;
-			}
-			//return (int) Math.round(oa - ob);
+	public static int compare(EventNode a, double oa, EventNode b, double ob) {
+
+		//1 time
+		int timeComparison = Double.compare(oa, ob);
+		if (timeComparison != 0) {
+			return timeComparison;
 		}
-		
-		if(!a.getEventNodeId().equals(b.getEventNodeId())) {
-			return a.getEventNodeId().compareTo(b.getEventNodeId());
-		}
-		
-		//3 types
-		//a
-		if(a instanceof IntervalStartEventNode && b instanceof IntervalEndEventNode) {
-			return -1;
-		}
-		//a-reverse
-		if(b instanceof IntervalStartEventNode && a instanceof IntervalEndEventNode) {
-			return 1;
-		}
-		
-		//b
-		if(a instanceof IntervalStartEventNode && b instanceof PointEventNode) {
-			return -1;
-		}
-		//b-reverse
-		if(b instanceof IntervalStartEventNode && a instanceof PointEventNode) {
-			return 1;
-		}
-		
-		//c
-		if(a instanceof PointEventNode && b instanceof IntervalEndEventNode) {
-			return -1;
-		}
-		//c-reverse
-		if(b instanceof PointEventNode && a instanceof IntervalEndEventNode) {
-			return 1;
-		}
-		
-		//4 occurencemark
-		if(a instanceof IntervalEventNode && b instanceof IntervalEventNode) {
-			return ((IntervalEventNode) a).getOccurrenceMark() - ((IntervalEventNode) b).getOccurrenceMark();
-		}
-		
-		//tie
-		return 0;
-	}
-	
-	/**
-	 * Generates the occurence of a pattern in a EventSequence.
-	 * @param p - The pattern.
-	 * @param seq - The sequence.
-	 * @return - A GeneralSeriesOccurence-Object that holds all the occurence points of the pattern.
-	 */
-	protected Occurrence getOccurence(HybridTemporalPattern p, HybridEventSequence seq) {
-		DefaultOccurrence oc = new DefaultOccurrence(seq);
-		for(HTPItem i : p.getPatternItems()) {
-			if(i instanceof EventNode) {
-				oc.add((EventNode) i);
-			}
-		}
-		return oc;
+
+		//remainder is about event nodes themselves
+		return EventNode.compare(a, b);
 	}
 
 	/**
@@ -516,85 +466,4 @@ public class HTPM implements Runnable {
 
 		return ((double) sequenceIds.size()) / ((double) this.d.size());
 	}
-	
-	/**
-	 * A helper class that appends EventNodes and their occurrences in order to build a pattern.
-	 * 
-	 * @author Wolfgang Jentner
-	 *
-	 */
-	protected class HTPBuilder {
-
-		protected List<EventNode> ev;
-		protected Map<String, Integer> occurrencemarks;
-		protected Map<String, Integer> occurrencemark_of_startinterval;
-		protected DefaultOccurrence go;
-		
-		public HTPBuilder(HybridEventSequence seq) {
-			this.ev = new ArrayList<>();
-			this.occurrencemarks = new HashMap<>();
-			this.occurrencemark_of_startinterval = new HashMap<>();
-			this.go = new DefaultOccurrence(seq);
-		}
-		
-		protected String generateKeyForOccurrenceMarks(String frompattern, String eventid, int occurrencemark) {
-			return this.generateKeyForOpenIntervals(frompattern, eventid)+":"+occurrencemark;
-		}
-		
-		protected String generateKeyForOpenIntervals(String frompattern, String eventid) {
-			return frompattern+":"+eventid;
-		}
-		
-		/**
-		 * This method appends an EventNode to a list. It takes care of start and end nodes.
-		 * @param e - The EventNode to add.
-		 * @param op - The occurence point of the event node.
-		 */
-		public void append(String frompattern, EventNode e, OccurrencePoint op) {
-			if(e instanceof PointEventNode) {
-				ev.add(new PointEventNode(e.getEventNodeId(), op.getTimePoint()));
-				go.add(op);
-			} else if(e instanceof IntervalStartEventNode) {
-				int occurrencemark = (this.occurrencemarks.containsKey(e.getEventNodeId())) ? this.occurrencemarks.get(e.getEventNodeId()) + 1 : 0;
-				this.occurrencemarks.put(e.getEventNodeId(), occurrencemark); //update
-				
-				String key = this.generateKeyForOccurrenceMarks(frompattern, e.getEventNodeId(), ((IntervalEventNode) e).getOccurrenceMark());
-				this.occurrencemark_of_startinterval.put(key, occurrencemark);
-				//this.openintervals.add(this.generateKeyForOpenIntervals(frompattern, e.getId()));
-				
-				ev.add(new IntervalStartEventNode(e.getEventNodeId(), op.getTimePoint(), occurrencemark));
-				go.add(op);
-			} else if(e instanceof IntervalEndEventNode) {
-				IntervalEndEventNode ie = (IntervalEndEventNode) e;
-				String key = this.generateKeyForOccurrenceMarks(frompattern, ie.getEventNodeId(), ie.getOccurrenceMark());
-				int occurrencemark;
-				if(this.occurrencemark_of_startinterval.containsKey(key)) {
-					occurrencemark = this.occurrencemark_of_startinterval.get(key);
-				} else {
-					throw new RuntimeException("Could not find corresponding IntervalStartEventNode for key " + key);
-				}
-				
-				ev.add(new IntervalEndEventNode(ie.getEventNodeId(), op.getTimePoint(), occurrencemark));
-				go.add(op);
-			} else {
-				throw new UnsupportedOperationException("Unknown EventNode type");
-			}
-		}
-		
-		public HybridTemporalPattern getPattern(String id) {
-			EventNode[] evs = new EventNode[ev.size()];
-			evs = this.ev.toArray(evs);
-			HybridTemporalPattern p = new DefaultHybridTemporalPattern(id, evs);
-			if(!p.isValid()) {
-				throw new RuntimeException("invalid pattern after join " + p);
-			}
-			return p;
-		}
-		
-		public Occurrence getOccurences() {
-			return this.go;
-		}
-		
-	}
-
 }

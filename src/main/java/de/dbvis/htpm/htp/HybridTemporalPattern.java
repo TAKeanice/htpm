@@ -1,9 +1,9 @@
 package de.dbvis.htpm.htp;
 
-import java.util.List;
-
 import de.dbvis.htpm.htp.eventnodes.EventNode;
 import de.dbvis.htpm.htp.eventnodes.HTPItem;
+
+import java.util.List;
 
 /**
  * A HybridTemporalPattern represents basically the ordering of events.
@@ -16,20 +16,14 @@ import de.dbvis.htpm.htp.eventnodes.HTPItem;
 public interface HybridTemporalPattern {
 	
 	/**
-	 * Returns the id of the pattern.
-	 * @return the id of the pattern
-	 */
-	public String getPatternId();
-	
-	/**
 	 * Returns a String representation of the pattern similar to the definition in the paper.
 	 * @return a String representation of the pattern
 	 */
 	public String toString();
 	
 	/**
-	 * Returns the pattern string without the prefix of the HybridTemporalPattern.
-	 * @return the pattern string without prefix
+	 * Returns the pattern string.
+	 * @return the pattern string
 	 */
 	public String patternStr();
 	
@@ -40,22 +34,23 @@ public interface HybridTemporalPattern {
 	public List<EventNode> getEventNodes();
 
 	/**
-	 * The length defines the number of event occurences. 
-	 * Not the number of event nodes.
-	 * @return
+	 * The length defines the number of events.
+	 * Start and end node of the same event are counted as one.
+	 * @return the number of events in the pattern
 	 */
 	public int length();
 	
 	/**
-	 * The equality of a pattern is checked by the pattern itself, not by its id.
+	 * The equality of a pattern is checked by the pattern itself.
 	 * @param o - another object / pattern
-	 * @return true if the two patterns are equal and contain the same pattern, false otherwise
+	 * @return true if this and o describe the same pattern, false otherwise
 	 */
 	public boolean equals(Object o);
 	
 	/**
-	 * A hash code based on the string representation of the pattern.
+	 * A hash code based on the pattern.
 	 * Necessary for the HTPM algorithm since multiple HashMaps are used there.
+	 * Two equal patterns (where equals returns true) must also return the same hash
 	 * @return the hash code of the pattern
 	 */
 	public int hashCode();
@@ -64,20 +59,13 @@ public interface HybridTemporalPattern {
 	 * Returns the complete ordered array of pattern items. These may be OrderRelations or any type of EventNodes.
 	 * @return an array of ordered pattern items
 	 */
-	public HTPItem[] getPatternItems();
+	public List<HTPItem> getPatternItems();
 	
 	/**
-	 * Returns a list of all EventIds.
+	 * Returns a list of all EventIds contained in the pattern.
 	 * @return a list of all EventIds
 	 */
 	public List<String> getEventIds();
-	
-	/**
-	 * Deletes the last event of the pattern according to the definition in the paper.
-	 * Returns a new HybridTemporalPattern with the same id.
-	 * @return a new HybridTemporalPattern with the same id where the last event is deleted
-	 */
-	public HybridTemporalPattern deleteLastEvent();
 	
 	/**
 	 * Checks the pattern for consistency and validity.

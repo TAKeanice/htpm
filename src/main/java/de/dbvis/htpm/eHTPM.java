@@ -30,8 +30,8 @@ public class eHTPM extends HTPM {
     }
 
     @Override
-    protected boolean newOccurrencePasses(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
-        return super.newOccurrencePasses(pattern, occurrence, k) && (k > 2 || !this.isOverMaxDuration(occurrence));
+    protected boolean newOccurrenceFulfillsConstraints(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
+        return super.newOccurrenceFulfillsConstraints(pattern, occurrence, k) && (k > 2 || !this.isOverMaxDuration(occurrence));
     }
 
     protected boolean isOverMaxDuration(Occurrence occurrence) {
