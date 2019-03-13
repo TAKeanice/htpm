@@ -29,7 +29,7 @@ public final class UniqueIDConverter {
     public static boolean eventIDValid(String eventId) {
         return !(eventId == null
                 || eventId.equals("")
-                || eventId.contains("[\\+\\-<=]"));
+                || eventId.matches(".*[+\\-<=].*"));
     }
 
     public static String getStringId(int id) {

@@ -23,6 +23,9 @@ public abstract class EventNode implements HTPItem, Comparable<EventNode> {
 	 * @param id the id of the EventNode
 	 */
 	protected EventNode(String id) {
+		if (id == null) {
+			throw new NullPointerException("id of pattern must not be null");
+		}
 		this.id = UniqueIDConverter.getIntegerId(id);
 	}
 	

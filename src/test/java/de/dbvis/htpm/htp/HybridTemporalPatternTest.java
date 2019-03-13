@@ -52,17 +52,17 @@ public class HybridTemporalPatternTest {
 	
 	@Test
 	public void testPattern() {
-		assertEquals("htp1=(a+0<a-0<b)", this.p.toString());
+		assertEquals("(a+0<a-0<b)", this.p.toString());
 	}
 	
 	@Test
 	public void testPattern2() {
-		assertEquals("htp2=(a+0<b+0<a-0<b-0)", this.p2.toString());
+		assertEquals("(a+0<b+0<a-0<b-0)", this.p2.toString());
 	}
 	
 	@Test
 	public void testPattern3() {
-		assertEquals("htp3=(a<b+0<b-0)", this.p3.toString());
+		assertEquals("(a<b+0<b-0)", this.p3.toString());
 	}
 	
 	/* TODO: these tests are now invalid since we removed modifying method

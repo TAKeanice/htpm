@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class HTPM implements Runnable {
 
-	private final boolean parallel = false;
+	private final boolean parallel = true;
 
 	/**
 	 * The database the HTPM operates on
