@@ -2,7 +2,6 @@ package de.dbvis.htpm;
 
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
-import de.dbvis.htpm.occurrence.DefaultOccurrence;
 import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.HashSet;
@@ -21,12 +20,23 @@ public class DefaultHTPMConstraint implements HTPMConstraint {
      */
     private final HybridEventSequenceDatabase d;
 
-    public DefaultHTPMConstraint(HybridEventSequenceDatabase d, double min_sup) {
+    /**
+     * The maximum allowed length for patterns
+     */
+    private final int maxPatternLength;
+
+    public DefaultHTPMConstraint(HybridEventSequenceDatabase d, double minSupport, int maxPatternLength) {
         this.d = d;
-        if(min_sup <= 0 || min_sup > 1) {
+        this.maxPatternLength = maxPatternLength;
+        if(minSupport <= 0 || minSupport > 1) {
             throw new IllegalArgumentException("Minimum support must be 0 < min_support <= 1");
         }
-        this.min_sup = min_sup;
+        this.min_sup = minSupport;
+    }
+
+    @Override
+    public boolean shouldGeneratePatternsOfLength(int k) {
+        return k <= maxPatternLength;
     }
 
     public boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern) {

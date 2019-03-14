@@ -8,8 +8,8 @@ public class MaxDurationConstraint extends DefaultHTPMConstraint {
 
     private final double maxDuration;
 
-    public MaxDurationConstraint(HybridEventSequenceDatabase d, double min_sup, double maxDuration) {
-        super(d, min_sup);
+    public MaxDurationConstraint(HybridEventSequenceDatabase d, double minSupport, double maxDuration, int maxPatternLength) {
+        super(d, minSupport, maxPatternLength);
         this.maxDuration = maxDuration;
     }
 

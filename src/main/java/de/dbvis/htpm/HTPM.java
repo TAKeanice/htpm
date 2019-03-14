@@ -54,7 +54,7 @@ public class HTPM implements Runnable {
 	 * the constraints for determining which patterns or occurrences to join,
 	 * and which patterns or occurrences to prune
 	 */
-	private final HTPMConstraint constraint;
+	protected final HTPMConstraint constraint;
 	
 	/**
 	 * The resulting patterns
@@ -126,6 +126,10 @@ public class HTPM implements Runnable {
 	@Override
 	public void run() {
 		this.patterns = new ArrayList<>();
+
+		if (!constraint.shouldGeneratePatternsOfLength(1)) {
+			return;
+		}
 		
 		List<PatternOccurrence> m;
 		
@@ -138,7 +142,7 @@ public class HTPM implements Runnable {
 		int k = 2;
 
 		try {
-			while(m.size() > 1) {
+			while(m.size() > 1 && constraint.shouldGeneratePatternsOfLength(k)) {
 				m = this.genLk(m, k);
 				this.patterns.add(m);
 				this.fireHTPMEvent(new HTPMEvent(this, k, m.size()));

@@ -45,7 +45,7 @@ public class HTPMTest {
 	
 	@Test
 	public void algorithmTest() {
-		HTPM htpm = new HTPM(d, new DefaultHTPMConstraint(d, 0.5));
+		HTPM htpm = new HTPM(d, new DefaultHTPMConstraint(d, 0.5, Integer.MAX_VALUE));
 		
 		htpm.addHTPMListener(event -> System.out.println("Generation: "+event.getGeneration() + " Number of patterns: " + event.getNumberOfPatterns()));
 		
