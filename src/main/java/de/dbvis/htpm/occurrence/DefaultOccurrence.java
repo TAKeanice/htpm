@@ -63,7 +63,8 @@ public class DefaultOccurrence implements Occurrence {
 	public int size() {
 		return this.ops.length;
 	}
-	
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getHybridEventSequence().getSequenceId());
@@ -77,7 +78,8 @@ public class DefaultOccurrence implements Occurrence {
 		sb.append(")");
 		return sb.toString();
 	}
-	
+
+	@Override
 	public boolean equals(Object o) {
 		if(o instanceof Occurrence) {
 			Occurrence o1 = (Occurrence) o;
@@ -104,6 +106,7 @@ public class DefaultOccurrence implements Occurrence {
 		return false;
 	}
 
+	@Override
 	public Occurrence getPrefix() {
 		return prefix;
 	}

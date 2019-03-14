@@ -1,9 +1,7 @@
 package de.dbvis.htpm.examples;
 
-import java.util.List;
-import java.util.Map;
-
 import de.dbvis.htpm.HTPM;
+import de.dbvis.htpm.DefaultHTPMConstraint;
 import de.dbvis.htpm.db.DefaultHybridEventSequenceDatabase;
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.hes.DefaultHybridEventSequence;
@@ -14,6 +12,9 @@ import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 import de.dbvis.htpm.occurrence.OccurrencePoint;
+
+import java.util.List;
+import java.util.Map;
 
 import static de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder.buildFromSequence;
 
@@ -152,7 +153,7 @@ public class Demo {
 		//has to be occur at least by 50% of the sequences to be
 		//considered as frequent. It does not matter how often it occurs
 		//in each sequence!
-		HTPM htpm = new HTPM(db, 0.5);
+		HTPM htpm = new HTPM(db, new DefaultHTPMConstraint(db, 0.5));
 		
 		//Let it run, you can do that as a separate thread.
 		//This class implements the Runnable interface.

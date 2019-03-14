@@ -3,10 +3,12 @@ package de.dbvis.htpm;
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.hes.HybridEventSequence;
 import de.dbvis.htpm.hes.events.HybridEvent;
-import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
-import de.dbvis.htpm.htp.eventnodes.*;
+import de.dbvis.htpm.htp.eventnodes.EventNode;
+import de.dbvis.htpm.htp.eventnodes.IntervalEndEventNode;
+import de.dbvis.htpm.htp.eventnodes.IntervalStartEventNode;
+import de.dbvis.htpm.htp.eventnodes.PointEventNode;
 import de.dbvis.htpm.occurrence.DefaultOccurrence;
 import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
@@ -19,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * This is the core class which actually contains the HTPM-Algorithm.
@@ -40,49 +43,40 @@ import java.util.concurrent.TimeUnit;
 public class HTPM implements Runnable {
 
 	private final boolean parallel = true;
+	private final int threadPoolSize = 10;
 
 	/**
 	 * The database the HTPM operates on
 	 */
 	protected HybridEventSequenceDatabase d;
-	
+
 	/**
-	 * The minimum support each pattern has to satisfy
+	 * the constraints for determining which patterns or occurrences to join,
+	 * and which patterns or occurrences to prune
 	 */
-	protected double min_sup;
+	private final HTPMConstraint constraint;
 	
 	/**
 	 * The resulting patterns
 	 */
-	protected Map<HybridTemporalPattern, List<Occurrence>> patterns;
+	protected List<Map<HybridTemporalPattern, List<Occurrence>>> patterns;
 
-	protected List<HTPMListener> listeners;
+	protected final List<HTPMListener> listeners;
 	
 	/**
 	 * Creates a new HTPM-Algorithm-Object.
 	 * @param d - The Database containing the series.
-	 * @param min_support - The minimum support.
+	 * @param constraint - The constraint determining the pre- and post-joining pruning behavior.
 	 */
-	public HTPM(HybridEventSequenceDatabase d, double min_support) {
+	public HTPM(HybridEventSequenceDatabase d, HTPMConstraint constraint) {
+
 		if(d == null) {
 			throw new NullPointerException("HybridEventDatabase must not be null");
 		}
 		this.d = d;
-		this.setMinimumSupport(min_support);
+		this.constraint = constraint;
 		
 		this.listeners = new LinkedList<>();
-	}
-	
-	/**
-	 * Sets a different minimum support.
-	 * 
-	 * @param min_support - The minimum support
-	 */
-	public void setMinimumSupport(double min_support) {
-		if(min_support <= 0 || min_support > 1) {
-			throw new IllegalArgumentException("Minimum support must be 0 < min_support <= 1");
-		}
-		this.min_sup = min_support;
 	}
 	
 	/**
@@ -98,7 +92,8 @@ public class HTPM implements Runnable {
 		if(this.patterns == null) {
 			return null;
 		}
-		return Collections.unmodifiableMap(this.patterns);
+		return this.patterns.stream().flatMap(map -> map.entrySet().stream())
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 	}
 	
 	/**
@@ -120,9 +115,9 @@ public class HTPM implements Runnable {
             return o1.length() - o2.length();
         });
 		
-		sortedmap.putAll(this.patterns);
+		sortedmap.putAll(getPatterns());
 		
-		return Collections.unmodifiableMap(sortedmap);
+		return sortedmap;
 	}
 	
 	/**
@@ -130,23 +125,23 @@ public class HTPM implements Runnable {
 	 */
 	@Override
 	public void run() {
-		this.patterns = new HashMap<>();
+		this.patterns = new ArrayList<>();
 		
 		Map<HybridTemporalPattern, List<Occurrence>> m;
 		
 		m = this.genL1();
 		
-		this.patterns.putAll(m);
+		this.patterns.add(m);
 		
 		this.fireHTPMEvent(new HTPMEvent(this, 1, m.keySet().size()));
 		
 		int k = 2;
 
 		try {
-			while(m.keySet().size() > 1) {
+			while(m.size() > 1) {
 				m = this.genLk(m, k);
-				this.patterns.putAll(m);
-				this.fireHTPMEvent(new HTPMEvent(this, k, m.keySet().size()));
+				this.patterns.add(m);
+				this.fireHTPMEvent(new HTPMEvent(this, k, m.size()));
 				k++;
 			}
 		} catch (InterruptedException e) {
@@ -214,16 +209,17 @@ public class HTPM implements Runnable {
 				Occurrence oc = builder.getOccurence();
 				HybridTemporalPattern p = builder.getPattern();
 
-				if(!map.containsKey(p)) {
-					map.put(p, new ArrayList<>());
+				if (constraint.newOccurrenceFulfillsConstraints(p, oc, 1)) {
+					if (!map.containsKey(p)) {
+						map.put(p, new ArrayList<>());
+					}
+					map.get(p).add(oc);
 				}
-				map.get(p).add(oc);
 			}
-
 		}
 		//prune unsupported patterns
 
-		map.entrySet().removeIf(entry -> !patternFulfillsConstraints(entry.getKey(), entry.getValue()));
+		map.entrySet().removeIf(entry -> !constraint.patternFulfillsConstraints(entry.getKey(), entry.getValue()));
 		return map;
 	}
 	
@@ -234,38 +230,45 @@ public class HTPM implements Runnable {
 	 * @return Returns a map of all patterns that satisfy the minimum support. In addition all occurence series of each pattern are returned.
 	 */
 	protected Map<HybridTemporalPattern, List<Occurrence>> genLk(final Map<HybridTemporalPattern, List<Occurrence>> map, int k) throws InterruptedException {
+
 		final Map<HybridTemporalPattern, List<Occurrence>> res = new ConcurrentHashMap<>();
 
-		List<HybridTemporalPattern> list = new ArrayList<>(map.keySet());
+		List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> list = new ArrayList<>(map.entrySet());
 
-		ExecutorService es = Executors.newFixedThreadPool(10);
+		ExecutorService es = Executors.newFixedThreadPool(threadPoolSize);
 
 		//AtomicInteger joined = new AtomicInteger(0);
 
 		for(int i = 0; i < list.size(); i++) {
-			final HybridTemporalPattern p1 = list.get(i);
-			final List<Occurrence> l1 = map.get(p1);
-			final HybridTemporalPattern prefix = ((DefaultHybridTemporalPattern)p1).getPrefix();
-			for(int j = i; j < list.size(); j++) {
-				final HybridTemporalPattern p2 = list.get(j);
-				//only join patterns whose prefixes match
-				if (((DefaultHybridTemporalPattern)p2).getPrefix() != prefix) {
-					continue;
-				}
+			final HybridTemporalPattern p1 = list.get(i).getKey();
+			final List<Occurrence> l1 = list.get(i).getValue();
 
-				final List<Occurrence> l2 = map.get(p2);
+			final int finalI = i;
 
+			final Runnable join = () -> {
 
-				final Runnable join = () -> {
-					res.putAll(HTPM.this.join(prefix, p1, l1, p2, l2, k));
+				final Map<HybridTemporalPattern, List<Occurrence>> intermediaryResult = new HashMap<>();
+
+				for (int j = 0; j <= finalI; j++) {
+					final HybridTemporalPattern p2 = list.get(j).getKey();
+					//only join patterns whose prefixes match
+					if (!constraint.patternsQualifyForJoin(p1, p2)) {
+						continue;
+					}
+
+					final List<Occurrence> l2 = list.get(j).getValue();
+
+					intermediaryResult.putAll(HTPM.this.join(p1.getPrefix(), p1, l1, p2, l2, k));
 					//System.out.println("joined " + joined.incrementAndGet() + " with " + l1.size() + " and " + l2.size() + " occurrences.");
-				};
-
-				if (parallel) {
-					es.execute(join);
-				} else {
-					join.run();
 				}
+
+				res.putAll(intermediaryResult);
+			};
+
+			if (parallel) {
+				es.execute(join);
+			} else {
+				join.run();
 			}
 		}
 		
@@ -298,7 +301,7 @@ public class HTPM implements Runnable {
 			int i2 = (or1 == or2 ? i1 + 1 : 0);
 			for (; i2 < or2.size(); i2++) {
 				Occurrence s2 = or2.get(i2);
-				if (!occurrenceRecordsQualifyForJoin((DefaultOccurrence) s1, (DefaultOccurrence) s2)) {
+				if (!constraint.occurrenceRecordsQualifyForJoin((DefaultOccurrence) s1, (DefaultOccurrence) s2)) {
 					continue;
 				}
 
@@ -307,7 +310,7 @@ public class HTPM implements Runnable {
 				Occurrence newOccurrence = b.getOccurence();
 
 				//prune new occurrence records
-				if (newOccurrenceFulfillsConstraints(newPattern, newOccurrence, k)) {
+				if (constraint.newOccurrenceFulfillsConstraints(newPattern, newOccurrence, k)) {
 					if (!map.containsKey(newPattern)) {
 						map.put(newPattern, new ArrayList<>());
 					}
@@ -318,24 +321,9 @@ public class HTPM implements Runnable {
 		}
 
 		//prune new patterns
-		map.entrySet().removeIf(e -> !patternFulfillsConstraints(e.getKey(), e.getValue()));
+		map.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(), e.getValue()));
 
 		return map;
-	}
-
-	protected boolean occurrenceRecordsQualifyForJoin(DefaultOccurrence firstOccurrence, DefaultOccurrence secondOccurrence) {
-		//make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
-		return firstOccurrence.getPrefix() == secondOccurrence.getPrefix();
-	}
-
-	protected boolean newOccurrenceFulfillsConstraints(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
-		//patterns have correct length automatically. Further, each occurrence is generated only once.
-		return true;
-	}
-
-	protected boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences) {
-		//prune patterns which do not fulfill minimum support
-		return this.isSupported(occurrences);
 	}
 
 	/**
@@ -440,30 +428,5 @@ public class HTPM implements Runnable {
 
 		//remainder is about event nodes themselves
 		return EventNode.compare(a, b);
-	}
-
-	/**
-	 * Checks if a List of Occurrences has the minimum support
-	 * @param occurrences the Occurrences to check
-	 * @return true if minimum support is fulfilled, false otherwise
-	 */
-	protected boolean isSupported(final List<Occurrence> occurrences) {
-		return !(this.support(occurrences) < this.min_sup);
-	}
-
-	/**
-	 * Returns the support of a List of Occurrences
-	 * @param occurrences the occurrences
-	 * @return the support
-	 */
-	protected double support(final List<Occurrence> occurrences) {
-		Set<String> sequenceIds = new HashSet<>();
-
-		//support is implicitly counted by joining all joinable occurrence records once
-		for(final Occurrence o : occurrences) {
-			sequenceIds.add(o.getHybridEventSequence().getSequenceId());
-		}
-
-		return ((double) sequenceIds.size()) / ((double) this.d.size());
 	}
 }

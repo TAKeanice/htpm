@@ -10,12 +10,8 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	private final EventNode[] eventnodes;
 	private final OrderRelation[] orderrelations;
 
-	/**
-	 * Holds the child - canonical parent relations of pattern
-	 * The canonical parent has the same events with the same order for the first length-1 events
-	 */
 	private HybridTemporalPattern prefix;
-	
+
 	//stored for performance reasons
 	private Integer length = null;
 	private String patternstr = null;
@@ -102,7 +98,8 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	public String toString() {
 		return this.patternStr();
 	}
-	
+
+	@Override
 	public String patternStr() {
 		if (patternstr == null) {
 			StringBuilder str = new StringBuilder("(");
@@ -116,16 +113,18 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		}
 		return this.patternstr;
 	}
-	
+
+	@Override
 	public List<EventNode> getEventNodes() {
 		return Arrays.asList(eventnodes);
 	}
-	
+
 	/**
 	 * The length is defined by the number of events in the pattern.
 	 * Start and end of an interval count as one.
 	 * @return number of events
 	 */
+	@Override
 	public int length() {
 		if (length == null) {
 			this.length = 0;
@@ -138,7 +137,8 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		}
 		return this.length;
 	}
-	
+
+	@Override
 	public boolean equals(Object o) {
 		if (o instanceof DefaultHybridTemporalPattern) {
 			DefaultHybridTemporalPattern other = (DefaultHybridTemporalPattern) o;
@@ -150,7 +150,8 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		}
 		return false;
 	}
-	
+
+	@Override
 	public int hashCode() {
 		if (hashcode == null) {
 			HashCodeBuilder hcb = new HashCodeBuilder(13, 31);
@@ -161,7 +162,8 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		}
 		return this.hashcode;
 	}
-	
+
+	@Override
 	public List<HTPItem> getPatternItems() {
 		if (this.patternItems == null) {
 			this.patternItems = new ArrayList<>(this.orderrelations.length * 2 + 1);
@@ -174,7 +176,8 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		}
 		return patternItems;
 	}
-	
+
+	@Override
 	public List<String> getEventIds() {
 		if (eventids == null) {
 			this.eventids = new ArrayList<>(eventnodes.length);
@@ -188,7 +191,7 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		}
 		return Collections.unmodifiableList(this.eventids);
 	}
-	
+
 	private static OrderRelation small(List<OrderRelation> ors) {
 		for(OrderRelation o : ors) {
 			if(o != null && o.equals(OrderRelation.SMALLER)) {
@@ -197,21 +200,22 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		}
 		return OrderRelation.EQUAL;
 	}
-	
+
+	@Override
 	public boolean isValid() {
 		if (this.isValid == null) {
 			this.isValid = this.checkPattern(this.getPatternItems());
 		}
 		return this.isValid;
 	}
-	
+
 	private boolean checkPattern(List<HTPItem> items) {
 		if(items.size() == 0) {
 			return true;
 		}
-		
+
 		Map<String, Integer> m = new HashMap<>();
-		
+
 		for(int i = 0; i < items.size(); i+=2) {
 			if((i < items.size()-1 && !(items.get(i) instanceof EventNode) && !(items.get(i+1) instanceof OrderRelation))
 					|| (i == items.size()-1 && !(items.get(i) instanceof PointEventNode) && !(items.get(i) instanceof IntervalEndEventNode))) {
@@ -223,7 +227,7 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 				}
 				m.put(((EventNode) items.get(i)).getStringEventNodeId(), m.get(((EventNode) items.get(i)).getStringEventNodeId()) + 1);
 			}
-			
+
 			if(items.get(i) instanceof IntervalEndEventNode) {
 				if(!m.containsKey(((EventNode) items.get(i)).getStringEventNodeId())) {
 					m.put(((EventNode) items.get(i)).getStringEventNodeId(), 0);
@@ -231,16 +235,17 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 				m.put(((EventNode) items.get(i)).getStringEventNodeId(), m.get(((EventNode) items.get(i)).getStringEventNodeId()) - 1);
 			}
 		}
-		
+
 		for(String s : m.keySet()) {
 			if(m.get(s) != 0) {
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
 
+	@Override
 	public HybridTemporalPattern getPrefix() {
 		return prefix;
 	}
