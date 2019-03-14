@@ -5,10 +5,7 @@ import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 import de.dbvis.htpm.util.HTPMEvent;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class HTPMDFS extends HTPM {
@@ -34,7 +31,7 @@ public class HTPMDFS extends HTPM {
             return;
         }
 
-        List<PatternOccurrence> m;
+        List<List<PatternOccurrence>> m;
 
         m = this.genL1();
 
@@ -42,50 +39,59 @@ public class HTPMDFS extends HTPM {
 
         this.fireHTPMEvent(new HTPMEvent(this, 1, m.size()));
 
-        this.patterns.add(patternDFS(m, 2));
+        final List<List<List<PatternOccurrence>>> patternOccurrences = patternDFS(m.get(0), 2);
+        this.patterns.addAll(patternOccurrences);
 
         System.out.println("generated a total of " + (this.patterns.get(0).size() + this.patterns.get(1).size()) + " patterns");
     }
 
-    private List<PatternOccurrence> patternDFS(List<PatternOccurrence> m, int depth) {
+    private List<List<List<PatternOccurrence>>> patternDFS(List<PatternOccurrence> m, int depth) {
 
-        List<List<PatternOccurrence>> children = new ArrayList<>();
+        List<List<List<PatternOccurrence>>> results = new ArrayList<>();
+
+        List<List<PatternOccurrence>> partitions = new ArrayList<>();
+        results.add(partitions);
 
         for (int i = 0; i < m.size(); i++) {
-            children.add(new ArrayList<>());
+            partitions.add(new ArrayList<>());
         }
 
         for (int i = 0; i < m.size(); i++) {
             PatternOccurrence first = m.get(i);
             for (int j = i; j < m.size(); j++) {
                 PatternOccurrence second = m.get(j);
-                Map<HybridTemporalPattern, List<Occurrence>> joined =
+                List<Map<HybridTemporalPattern, List<Occurrence>>> joined =
                         join(first.pattern.getPrefix(),
                                 first.pattern, first.occurrences,
                                 second.pattern, second.occurrences,
                                 depth);
-                List<PatternOccurrence> parentFirst = joined.entrySet().stream()
-                        .filter(entry -> entry.getKey().getPrefix() == first.pattern)
+
+                //parse into pattern occurrences
+                List<PatternOccurrence> parentFirst = joined.get(0).entrySet().stream()
                         .map(entry -> new PatternOccurrence(entry.getKey(), entry.getValue()))
                         .collect(Collectors.toList());
-                List<PatternOccurrence> parentSecond = joined.entrySet().stream()
-                        .filter(entry -> entry.getKey().getPrefix() == second.pattern)
+                List<PatternOccurrence> parentSecond = joined.get(1).entrySet().stream()
                         .map(entry -> new PatternOccurrence(entry.getKey(), entry.getValue()))
                         .collect(Collectors.toList());
 
-                children.get(i).addAll(parentFirst);
-                children.get(j).addAll(parentSecond);
+                partitions.get(i).addAll(parentFirst);
+                partitions.get(j).addAll(parentSecond);
             }
 
-            final List<PatternOccurrence> collapsedChildren;
             if (constraint.shouldGeneratePatternsOfLength(depth + 1)) {
-                collapsedChildren = patternDFS(children.get(i), depth + 1);
-            } else {
-                collapsedChildren = children.get(i);
+                List<List<List<PatternOccurrence>>> partitionChildren = patternDFS(partitions.get(i), depth + 1);
+                //add children level by level
+                for (int j = 0; j < partitionChildren.size(); j++) {
+                    if (j >= results.size()) {
+                        //we came one level deeper
+                        results.add(partitionChildren.get(j));
+                    } else {
+                        results.get(j).addAll(partitionChildren.get(j));
+                    }
+                }
             }
-            children.set(i, collapsedChildren);
         }
 
-        return children.stream().flatMap(Collection::stream).collect(Collectors.toList());
+        return results;
     }
 }

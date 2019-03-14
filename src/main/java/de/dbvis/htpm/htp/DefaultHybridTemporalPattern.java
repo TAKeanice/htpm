@@ -142,10 +142,13 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	public boolean equals(Object o) {
 		if (o instanceof DefaultHybridTemporalPattern) {
 			DefaultHybridTemporalPattern other = (DefaultHybridTemporalPattern) o;
+			//we know that the other pattern is defined by its two arrays, just like this pattern
+			//thus we can directly compare them.
 			return Arrays.equals(this.eventnodes, other.eventnodes)
 					&& Arrays.equals(this.orderrelations, other.orderrelations);
 		} else if(o instanceof HybridTemporalPattern) {
 			HybridTemporalPattern other = (HybridTemporalPattern) o;
+			//resort to comparison of pattern string, since we do not know the other´s internal structure
 			return this.patternStr().equals(other.patternStr());
 		}
 		return false;
@@ -194,7 +197,7 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 
 	private static OrderRelation small(List<OrderRelation> ors) {
 		for(OrderRelation o : ors) {
-			if(o != null && o.equals(OrderRelation.SMALLER)) {
+			if(o == OrderRelation.SMALLER) {
 				return OrderRelation.SMALLER;
 			}
 		}

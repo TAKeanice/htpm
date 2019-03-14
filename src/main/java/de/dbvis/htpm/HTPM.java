@@ -57,9 +57,9 @@ public class HTPM implements Runnable {
 	protected final HTPMConstraint constraint;
 	
 	/**
-	 * The resulting patterns
+	 * One list per level, consisting of lists of search space partitions, which hold the resulting patterns
 	 */
-	protected List<List<PatternOccurrence>> patterns;
+	protected List<List<List<PatternOccurrence>>> patterns;
 
 	protected final List<HTPMListener> listeners;
 	
@@ -92,7 +92,7 @@ public class HTPM implements Runnable {
 		if(this.patterns == null) {
 			return null;
 		}
-		return this.patterns.stream().flatMap(Collection::stream)
+		return this.patterns.stream().flatMap(Collection::stream).flatMap(Collection::stream)
 				.collect(Collectors.toMap(po -> po.pattern, po -> po.occurrences));
 	}
 	
@@ -131,21 +131,23 @@ public class HTPM implements Runnable {
 			return;
 		}
 		
-		List<PatternOccurrence> m;
-		
+		List<List<PatternOccurrence>> m;
+
 		m = this.genL1();
-		
+		int totalNumPatterns = m.get(0).size();
+
 		this.patterns.add(m);
 		
-		this.fireHTPMEvent(new HTPMEvent(this, 1, m.size()));
+		this.fireHTPMEvent(new HTPMEvent(this, 1, totalNumPatterns));
 		
 		int k = 2;
 
 		try {
-			while(m.size() > 1 && constraint.shouldGeneratePatternsOfLength(k)) {
+			while(totalNumPatterns > 1 && constraint.shouldGeneratePatternsOfLength(k)) {
 				m = this.genLk(m, k);
 				this.patterns.add(m);
-				this.fireHTPMEvent(new HTPMEvent(this, k, m.size()));
+				totalNumPatterns = m.stream().mapToInt(List::size).sum();
+				this.fireHTPMEvent(new HTPMEvent(this, k, totalNumPatterns));
 				k++;
 			}
 		} catch (InterruptedException e) {
@@ -186,7 +188,7 @@ public class HTPM implements Runnable {
 	 * Generates the first generation out of the previously given database.
 	 * @return Returns the first generation of patterns that already satisfy the min-support.
 	 */
-	protected List<PatternOccurrence> genL1() {
+	protected List<List<PatternOccurrence>> genL1() {
 		Map<HybridTemporalPattern, List<Occurrence>> map =
 				new HashMap<>();
 
@@ -214,69 +216,88 @@ public class HTPM implements Runnable {
 				HybridTemporalPattern p = builder.getPattern();
 
 				if (constraint.newOccurrenceFulfillsConstraints(p, oc, 1)) {
-					if (!map.containsKey(p)) {
-						map.put(p, new ArrayList<>());
-					}
-					map.get(p).add(oc);
+					map.computeIfAbsent(p, pattern -> new ArrayList<>()).add(oc);
 				}
 			}
 		}
-		//prune unsupported patterns
 
+		//prune unsupported patterns
 		map.entrySet().removeIf(entry -> !constraint.patternFulfillsConstraints(entry.getKey(), entry.getValue()));
-		return map.entrySet().stream().map(entry ->
+
+		//parse maps into patternOccurrence objects
+		final List<PatternOccurrence> patternOccurrences = map.entrySet().stream().map(entry ->
 				new PatternOccurrence(entry.getKey(), entry.getValue())).collect(Collectors.toList());
+
+		//level 1: all patterns have the same parent, so they belong to the same partition
+		return Collections.singletonList(patternOccurrences);
 	}
 	
 	/**
 	 * Joins a generation of patterns according to definition 10.
-	 * @param list - The current generation.
+	 * @param partitionedOccurrences - The current generation, partitioned by parent.
 	 * @param k the generation number (length of patterns to be generated)
 	 * @return Returns a map of all patterns that satisfy the minimum support. In addition all occurence series of each pattern are returned.
 	 */
-	protected List<PatternOccurrence> genLk(final List<PatternOccurrence> list, int k) throws InterruptedException {
+	protected List<List<PatternOccurrence>> genLk(final List<List<PatternOccurrence>> partitionedOccurrences, int k) throws InterruptedException {
 
-		final Map<HybridTemporalPattern, List<Occurrence>> res;
-		if (parallel) {
-			res = new ConcurrentHashMap<>();
-		} else {
-			res = new HashMap<>();
-		}
+		List<List<Map<HybridTemporalPattern, List<Occurrence>>>> partitionResults = new ArrayList<>(partitionedOccurrences.size());
 
 		ExecutorService es = Executors.newFixedThreadPool(threadPoolSize);
 
 		//AtomicInteger joined = new AtomicInteger(0);
 
-		for(int i = 0; i < list.size(); i++) {
-			final HybridTemporalPattern p1 = list.get(i).pattern;
-			final List<Occurrence> l1 = list.get(i).occurrences;
+		for (int partition = 0; partition < partitionedOccurrences.size(); partition++) {
+			List<PatternOccurrence> joinablePatterns = partitionedOccurrences.get(partition);
 
-			final int finalI = i;
+			List<Map<HybridTemporalPattern, List<Occurrence>>> partitionResult = new ArrayList<>(joinablePatterns.size());
+			for (int i = 0; i < joinablePatterns.size(); i++) {
+				if (parallel) {
+					partitionResult.add(new ConcurrentHashMap<>());
+				} else {
+					partitionResult.add(new HashMap<>());
+				}
+			}
+			partitionResults.add(partitionResult);
 
-			final Runnable join = () -> {
+			for (int i = 0; i < joinablePatterns.size(); i++) {
+				final HybridTemporalPattern p1 = joinablePatterns.get(i).pattern;
+				final List<Occurrence> l1 = joinablePatterns.get(i).occurrences;
 
-				final Map<HybridTemporalPattern, List<Occurrence>> intermediaryResult = new HashMap<>();
+				final int finalI = i;
 
-				for (int j = 0; j <= finalI; j++) {
-					final HybridTemporalPattern p2 = list.get(j).pattern;
-					//only join patterns whose prefixes match
-					if (!constraint.patternsQualifyForJoin(p1, p2)) {
-						continue;
+				final Runnable join = () -> {
+
+					List<Map<HybridTemporalPattern, List<Occurrence>>> subResult = new ArrayList<>(finalI + 1);
+					for (int j = 0; j <= finalI; j++) {
+						subResult.add(new HashMap<>());
 					}
 
-					final List<Occurrence> l2 = list.get(j).occurrences;
+					for (int j = 0; j <= finalI; j++) {
+						final HybridTemporalPattern p2 = joinablePatterns.get(j).pattern;
+						//only join qualifying patterns
+						if (!constraint.patternsQualifyForJoin(p1, p2)) {
+							continue;
+						}
 
-					intermediaryResult.putAll(HTPM.this.join(p1.getPrefix(), p1, l1, p2, l2, k));
-					//System.out.println("joined " + joined.incrementAndGet() + " with " + l1.size() + " and " + l2.size() + " occurrences.");
+						final List<Occurrence> l2 = joinablePatterns.get(j).occurrences;
+
+						final List<Map<HybridTemporalPattern, List<Occurrence>>> joined = HTPM.this.join(p1.getPrefix(), p1, l1, p2, l2, k);
+						subResult.get(finalI).putAll(joined.get(0));
+						subResult.get(j).putAll(joined.get(1));
+						//System.out.println("joined " + joined.incrementAndGet() + " with " + l1.size() + " and " + l2.size() + " occurrences.");
+					}
+
+					//merge results from one run into results of complete partition
+					for (int j = 0; j < subResult.size(); j++) {
+						partitionResult.get(j).putAll(subResult.get(j));
+					}
+				};
+
+				if (parallel) {
+					es.execute(join);
+				} else {
+					join.run();
 				}
-
-				res.putAll(intermediaryResult);
-			};
-
-			if (parallel) {
-				es.execute(join);
-			} else {
-				join.run();
 			}
 		}
 		
@@ -284,8 +305,14 @@ public class HTPM implements Runnable {
 
 		es.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 
-		return res.entrySet().stream().map(entry ->
-				new PatternOccurrence(entry.getKey(), entry.getValue())).collect(Collectors.toList());
+		//Flatten and parse occurrence maps into PatternOccurrence list
+		return partitionResults.stream()
+				.flatMap(partitionResult ->
+						partitionResult.stream().map(map ->
+								map.entrySet().stream().map(entry ->
+										new PatternOccurrence(entry.getKey(), entry.getValue()))
+										.collect(Collectors.toList())))
+				.collect(Collectors.toList());
 	}
 	
 	/**
@@ -298,21 +325,38 @@ public class HTPM implements Runnable {
 	 * @param p2 - The second pattern.
 	 * @param or2 - All occurences of the second pattern.
 	 * @param k the generation number (length of patterns to be generated)
-	 * @return Returns a map of patterns that satisfy the min-support and the desired length.
-	 * For each pattern a complete list of its occurences will be returned. 
+	 * @return Returns two maps of patterns that satisfy the min-support and the desired length.
+	 * For each pattern a complete map of its occurences will be returned.
+	 * The first map are the patterns with parent p1, the second one those with parent p2
 	 */
-	protected Map<HybridTemporalPattern, List<Occurrence>> join(final HybridTemporalPattern prefix,
-																final HybridTemporalPattern p1, final List<Occurrence> or1,
-																final HybridTemporalPattern p2, final List<Occurrence> or2,
-																int k) {
+	protected List<Map<HybridTemporalPattern, List<Occurrence>>> join(final HybridTemporalPattern prefix,
+																	  final HybridTemporalPattern p1, final List<Occurrence> or1,
+																	  final HybridTemporalPattern p2, final List<Occurrence> or2,
+																	  int k) {
 
-		final Map<HybridTemporalPattern, List<Occurrence>> map = new HashMap<>();
+		//final int newOccurrenceCountHeuristic = or1.size() * or2.size() / d.size();
 
+		final List<Map<HybridTemporalPattern, List<Occurrence>>> partitionedResult = new ArrayList<>(2);
+		final Map<HybridTemporalPattern, List<Occurrence>> parentP1 = new HashMap<>();
+		final Map<HybridTemporalPattern, List<Occurrence>> parentP2 = new HashMap<>();
+		partitionedResult.add(parentP1);
+		partitionedResult.add(parentP2);
+
+		//int i1 = 0;
+
+		//for (Occurrence s1 : or1) {
 		for (int i1 = 0; i1 < or1.size(); i1++) {
 			Occurrence s1 = or1.get(i1);
+
+		//	int i2 = 0;
+
 			//avoid join of same occurrences twice (happens if both are from the same occurrence record)
-			int i2 = (or1 == or2 ? i1 + 1 : 0);
-			for (; i2 < or2.size(); i2++) {
+			int minI2 = or1 == or2 ? i1 + 1 : 0;
+			//for (Occurrence s2 : or2) {
+			//	if (i2 < minI2) {
+			//		continue;
+			//	}
+			for (int i2 = minI2; i2 < or2.size(); i2++) {
 				Occurrence s2 = or2.get(i2);
 				if (!constraint.occurrenceRecordsQualifyForJoin(s1, s2)) {
 					continue;
@@ -324,19 +368,32 @@ public class HTPM implements Runnable {
 
 				//prune new occurrence records
 				if (constraint.newOccurrenceFulfillsConstraints(newPattern, newOccurrence, k)) {
-					if (!map.containsKey(newPattern)) {
-						map.put(newPattern, new ArrayList<>());
-					}
-
-					map.get(newPattern).add(newOccurrence);
+					Map<HybridTemporalPattern, List<Occurrence>> map = newPattern.getPrefix() == p1 ? parentP1 : parentP2;
+					//initialize with capacity as the average number per sequence of ORs multiplied
+					map.computeIfAbsent(
+							newPattern, p -> new ArrayList<>())
+							//newPattern, p -> new LinkedList<>())
+							//newPattern, p -> new ArrayList<>(newOccurrenceCountHeuristic))
+							.add(newOccurrence);
 				}
+				//i2++;
 			}
+			//i1++;
 		}
 
 		//prune new patterns
-		map.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(), e.getValue()));
+		parentP1.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(), e.getValue()));
+		parentP2.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(), e.getValue()));
 
-		return map;
+		//convert linkedlists into arraylists for better performance later
+		//parentP1.entrySet().forEach(e -> e.setValue(new ArrayList<>(e.getValue())));
+		//parentP2.entrySet().forEach(e -> e.setValue(new ArrayList<>(e.getValue())));
+
+		//shrink arraylists allocated with large amount of memory
+		//parentP1.forEach((key, value) -> ((ArrayList) value).trimToSize());
+		//parentP2.forEach((key, value) -> ((ArrayList) value).trimToSize());
+
+		return partitionedResult;
 	}
 
 	/**

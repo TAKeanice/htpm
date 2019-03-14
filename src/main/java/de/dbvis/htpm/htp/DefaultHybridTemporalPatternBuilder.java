@@ -75,7 +75,7 @@ public class DefaultHybridTemporalPatternBuilder {
     protected final HybridEventSequence seq;
 
     protected final Map<Integer, Integer> occurrencemarks;
-    protected final Map<String, Integer> occurrencemark_of_startinterval;
+    protected final Map<Integer, Map<Integer, Map<Integer, Integer>>> occurrencemarkOfStartinterval;
 
     private HybridTemporalPattern patternPrefix;
     private Occurrence occurrencePrefix;
@@ -91,14 +91,10 @@ public class DefaultHybridTemporalPatternBuilder {
     public DefaultHybridTemporalPatternBuilder(HybridEventSequence seq, int length) {
         this.ev = new ArrayList<>(length * 2);
         this.ors = new ArrayList<>(length * 2);
-        this.occurrencemarks = new HashMap<>(length);
-        this.occurrencemark_of_startinterval = new HashMap<>(length);
+        this.occurrencemarks = new HashMap<>(2);
+        this.occurrencemarkOfStartinterval = new HashMap<>(length);
         this.ops = new ArrayList<>(length * 2);
         this.seq = seq;
-    }
-
-    protected String generateKeyForOccurrenceMarks(int frompattern, int eventid, int occurrencemark) {
-        return frompattern + ":" + eventid + ":" + occurrencemark;
     }
 
     /**
@@ -119,29 +115,37 @@ public class DefaultHybridTemporalPatternBuilder {
         } else if(e instanceof IntervalStartEventNode) {
             final IntervalStartEventNode is = (IntervalStartEventNode) e;
 
-            int occurrencemark = this.occurrencemarks.getOrDefault(eventNodeId, -1) + 1;
-            this.occurrencemarks.put(eventNodeId, occurrencemark); //update
+            int newOccurrenceMark = this.occurrencemarks.getOrDefault(eventNodeId, -1) + 1;
+            this.occurrencemarks.put(eventNodeId, newOccurrenceMark); //update
 
             final int originalOccurrenceMark = is.getOccurrenceMark();
-            String key = this.generateKeyForOccurrenceMarks(frompattern, eventNodeId, originalOccurrenceMark);
-            this.occurrencemark_of_startinterval.put(key, occurrencemark);
 
-            node = new IntervalStartEventNode(e, occurrencemark);
+            occurrencemarkOfStartinterval
+                    .computeIfAbsent(frompattern, i -> new HashMap<>())
+                    .computeIfAbsent(eventNodeId, i -> new HashMap<>())
+                    .put(originalOccurrenceMark, newOccurrenceMark);
+
+            node = new IntervalStartEventNode(e, newOccurrenceMark);
 
         } else if(e instanceof IntervalEndEventNode) {
             IntervalEndEventNode ie = (IntervalEndEventNode) e;
 
             final int originalOccurrenceMark = ie.getOccurrenceMark();
-            String key = this.generateKeyForOccurrenceMarks(frompattern, eventNodeId, originalOccurrenceMark);
 
-            int occurrencemark;
-            if(this.occurrencemark_of_startinterval.containsKey(key)) {
-                occurrencemark = this.occurrencemark_of_startinterval.get(key);
-            } else {
-                throw new RuntimeException("Could not find corresponding IntervalStartEventNode for key " + key);
+            int newOccurrenceMark;
+            try {
+                newOccurrenceMark = occurrencemarkOfStartinterval
+                        .get(frompattern)
+                        .get(eventNodeId)
+                        .get(originalOccurrenceMark);
+
+            } catch (NullPointerException npe) {
+                throw new RuntimeException("Could not find corresponding IntervalStartEventNode for key "
+                        + frompattern + " - " + eventNodeId + " - " + originalOccurrenceMark,
+                        npe);
             }
 
-            node = new IntervalEndEventNode(e, occurrencemark);
+            node = new IntervalEndEventNode(e, newOccurrenceMark);
 
         } else {
             throw new UnsupportedOperationException("Unknown EventNode type");
