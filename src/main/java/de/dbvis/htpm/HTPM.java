@@ -338,6 +338,9 @@ public class HTPM implements Runnable {
 																	  final HybridTemporalPattern p2, final List<Occurrence> or2,
 																	  int k) {
 
+		//heuristic: the occurrence records are joined, from each pair in the same sequence we can have a new one.
+		// assumption here is that the number of occurrences is evenly distributed over sequences (which reduces the result)
+		// and that all joins yield the same pattern (which increases the result)
 		final int newOccurrenceCountHeuristic = or1.size() * or2.size() / (d.size() * d.size());
 
 		final List<Map<HybridTemporalPattern, List<Occurrence>>> partitionedResult = new ArrayList<>(2);
