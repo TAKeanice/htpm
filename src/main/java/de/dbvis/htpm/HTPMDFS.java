@@ -37,12 +37,12 @@ public class HTPMDFS extends HTPM {
 
         this.patterns.add(m);
 
-        this.fireHTPMEvent(new HTPMEvent(this, 1, m.size()));
+        this.fireHTPMEvent(new HTPMEvent(this, 1, m.get(0).size()));
 
         final List<List<List<PatternOccurrence>>> patternOccurrences = patternDFS(m.get(0), 2);
         this.patterns.addAll(patternOccurrences);
 
-        System.out.println("generated a total of " + (this.patterns.get(0).size() + this.patterns.get(1).size()) + " patterns");
+        System.out.println("generated a total of " + getPatterns().size() + " patterns");
     }
 
     private List<List<List<PatternOccurrence>>> patternDFS(List<PatternOccurrence> m, int depth) {

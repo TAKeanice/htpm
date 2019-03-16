@@ -134,10 +134,10 @@ public class HTPM implements Runnable {
 		List<List<PatternOccurrence>> m;
 
 		m = this.genL1();
-		int totalNumPatterns = m.get(0).size();
 
 		this.patterns.add(m);
 		
+		int totalNumPatterns = m.get(0).size();
 		this.fireHTPMEvent(new HTPMEvent(this, 1, totalNumPatterns));
 		
 		int k = 2;
@@ -146,8 +146,10 @@ public class HTPM implements Runnable {
 			while(totalNumPatterns > 1 && constraint.shouldGeneratePatternsOfLength(k)) {
 				m = this.genLk(m, k);
 				this.patterns.add(m);
+
 				totalNumPatterns = m.stream().mapToInt(List::size).sum();
 				this.fireHTPMEvent(new HTPMEvent(this, k, totalNumPatterns));
+
 				k++;
 			}
 		} catch (InterruptedException e) {
@@ -250,14 +252,16 @@ public class HTPM implements Runnable {
 			List<PatternOccurrence> joinablePatterns = partitionedOccurrences.get(partition);
 
 			List<Map<HybridTemporalPattern, List<Occurrence>>> partitionResult = new ArrayList<>(joinablePatterns.size());
+			partitionResults.add(partitionResult);
+
 			for (int i = 0; i < joinablePatterns.size(); i++) {
 				if (parallel) {
 					partitionResult.add(new ConcurrentHashMap<>());
+					//partitionResult.add(Collections.synchronizedMap(new HashMap<>()));
 				} else {
 					partitionResult.add(new HashMap<>());
 				}
 			}
-			partitionResults.add(partitionResult);
 
 			for (int i = 0; i < joinablePatterns.size(); i++) {
 				final HybridTemporalPattern p1 = joinablePatterns.get(i).pattern;
@@ -334,7 +338,7 @@ public class HTPM implements Runnable {
 																	  final HybridTemporalPattern p2, final List<Occurrence> or2,
 																	  int k) {
 
-		//final int newOccurrenceCountHeuristic = or1.size() * or2.size() / d.size();
+		final int newOccurrenceCountHeuristic = or1.size() * or2.size() / (d.size() * d.size());
 
 		final List<Map<HybridTemporalPattern, List<Occurrence>>> partitionedResult = new ArrayList<>(2);
 		final Map<HybridTemporalPattern, List<Occurrence>> parentP1 = new HashMap<>();
@@ -342,21 +346,27 @@ public class HTPM implements Runnable {
 		partitionedResult.add(parentP1);
 		partitionedResult.add(parentP2);
 
-		//int i1 = 0;
-
+		//int i1 = -1;
 		//for (Occurrence s1 : or1) {
+		//	i1++;
 		for (int i1 = 0; i1 < or1.size(); i1++) {
 			Occurrence s1 = or1.get(i1);
 
-		//	int i2 = 0;
-
 			//avoid join of same occurrences twice (happens if both are from the same occurrence record)
-			int minI2 = or1 == or2 ? i1 + 1 : 0;
+			//int minI2 = or1 == or2 ? i1 + 1 : 0;
+			int maxI2 = or1 == or2 ? i1 - 1 : or2.size() - 1;
+
+			//int i2 = -1;
 			//for (Occurrence s2 : or2) {
-			//	if (i2 < minI2) {
-			//		continue;
+			//	i2++;
+			//	//if (i2 < minI2) {
+			//	//	continue;
+			//	//}
+			//	if (i2 > maxI2) {
+			//		break;
 			//	}
-			for (int i2 = minI2; i2 < or2.size(); i2++) {
+			for (int i2 = 0; i2 <= maxI2; i2++) {
+			//for (int i2 = minI2; i2 < or2.size(); i2++) {
 				Occurrence s2 = or2.get(i2);
 				if (!constraint.occurrenceRecordsQualifyForJoin(s1, s2)) {
 					continue;
@@ -371,14 +381,12 @@ public class HTPM implements Runnable {
 					Map<HybridTemporalPattern, List<Occurrence>> map = newPattern.getPrefix() == p1 ? parentP1 : parentP2;
 					//initialize with capacity as the average number per sequence of ORs multiplied
 					map.computeIfAbsent(
-							newPattern, p -> new ArrayList<>())
+							//newPattern, p -> new ArrayList<>())
 							//newPattern, p -> new LinkedList<>())
-							//newPattern, p -> new ArrayList<>(newOccurrenceCountHeuristic))
+							newPattern, p -> new ArrayList<>(newOccurrenceCountHeuristic))
 							.add(newOccurrence);
 				}
-				//i2++;
 			}
-			//i1++;
 		}
 
 		//prune new patterns
@@ -390,8 +398,8 @@ public class HTPM implements Runnable {
 		//parentP2.entrySet().forEach(e -> e.setValue(new ArrayList<>(e.getValue())));
 
 		//shrink arraylists allocated with large amount of memory
-		//parentP1.forEach((key, value) -> ((ArrayList) value).trimToSize());
-		//parentP2.forEach((key, value) -> ((ArrayList) value).trimToSize());
+		parentP1.forEach((key, value) -> ((ArrayList) value).trimToSize());
+		parentP2.forEach((key, value) -> ((ArrayList) value).trimToSize());
 
 		return partitionedResult;
 	}

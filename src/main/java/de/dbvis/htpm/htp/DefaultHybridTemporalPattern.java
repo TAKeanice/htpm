@@ -148,20 +148,23 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 					&& Arrays.equals(this.orderrelations, other.orderrelations);
 		} else if(o instanceof HybridTemporalPattern) {
 			HybridTemporalPattern other = (HybridTemporalPattern) o;
-			//resort to comparison of pattern string, since we do not know the other´s internal structure
-			return this.patternStr().equals(other.patternStr());
+			//resort to comparison of pattern elements, since we do not know the other´s internal structure
+			return this.getPatternItems().equals(other.getPatternItems());
 		}
 		return false;
 	}
 
 	@Override
 	public int hashCode() {
+		//build hashcode from all htpitems
 		if (hashcode == null) {
 			HashCodeBuilder hcb = new HashCodeBuilder(13, 31);
-			hcb.append(eventnodes);
+			for (int i = 0; i < this.orderrelations.length; i++) {
+				hcb.append(eventnodes[i]);
+				hcb.append(orderrelations[i]);
+			}
+			hcb.append(eventnodes[eventnodes.length - 1]);
 			this.hashcode = hcb.toHashCode();
-			//String patternstr = this.patternStr();
-			//this.hashcode = patternstr.hashCode();
 		}
 		return this.hashcode;
 	}

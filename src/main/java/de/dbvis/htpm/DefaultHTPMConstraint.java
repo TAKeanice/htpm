@@ -64,7 +64,7 @@ public class DefaultHTPMConstraint implements HTPMConstraint {
      * @return true if minimum support is fulfilled, false otherwise
      */
     protected boolean isSupported(final List<Occurrence> occurrences) {
-        return !(this.support(occurrences) < this.min_sup);
+        return this.support(occurrences) >= this.min_sup;
     }
 
     /**
