@@ -39,11 +39,11 @@ public class DefaultHTPMConstraint implements HTPMConstraint {
         return k <= maxPatternLength;
     }
 
-    public boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern) {
+    public boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
         return firstPattern.getPrefix() == secondPattern.getPrefix();
     }
 
-    public boolean occurrenceRecordsQualifyForJoin(Occurrence firstOccurrence,Occurrence secondOccurrence) {
+    public boolean occurrenceRecordsQualifyForJoin(Occurrence firstOccurrence, Occurrence secondOccurrence, int k) {
         //make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
         return firstOccurrence.getPrefix() == secondOccurrence.getPrefix();
     }
@@ -53,7 +53,7 @@ public class DefaultHTPMConstraint implements HTPMConstraint {
         return true;
     }
 
-    public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
         //prune patterns which do not fulfill minimum support
         return this.isSupported(occurrences);
     }

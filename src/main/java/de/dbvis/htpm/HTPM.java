@@ -224,7 +224,7 @@ public class HTPM implements Runnable {
 		}
 
 		//prune unsupported patterns
-		map.entrySet().removeIf(entry -> !constraint.patternFulfillsConstraints(entry.getKey(), entry.getValue()));
+		map.entrySet().removeIf(entry -> !constraint.patternFulfillsConstraints(entry.getKey(), entry.getValue(), 1));
 
 		//parse maps into patternOccurrence objects
 		final List<PatternOccurrence> patternOccurrences = map.entrySet().stream().map(entry ->
@@ -236,7 +236,7 @@ public class HTPM implements Runnable {
 	
 	/**
 	 * Joins a generation of patterns according to definition 10.
-	 * @param partitionedOccurrences - The current generation, partitioned by parent.
+	 * @param partitionedOccurrences - The current generation of patterns, partitioned by pattern parent.
 	 * @param k the generation number (length of patterns to be generated)
 	 * @return Returns a map of all patterns that satisfy the minimum support. In addition all occurence series of each pattern are returned.
 	 */
@@ -279,7 +279,7 @@ public class HTPM implements Runnable {
 					for (int j = 0; j <= finalI; j++) {
 						final HybridTemporalPattern p2 = joinablePatterns.get(j).pattern;
 						//only join qualifying patterns
-						if (!constraint.patternsQualifyForJoin(p1, p2)) {
+						if (!constraint.patternsQualifyForJoin(p1, p2, k)) {
 							continue;
 						}
 
@@ -371,7 +371,7 @@ public class HTPM implements Runnable {
 			for (int i2 = 0; i2 <= maxI2; i2++) {
 			//for (int i2 = minI2; i2 < or2.size(); i2++) {
 				Occurrence s2 = or2.get(i2);
-				if (!constraint.occurrenceRecordsQualifyForJoin(s1, s2)) {
+				if (!constraint.occurrenceRecordsQualifyForJoin(s1, s2, k)) {
 					continue;
 				}
 
@@ -393,8 +393,8 @@ public class HTPM implements Runnable {
 		}
 
 		//prune new patterns
-		parentP1.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(), e.getValue()));
-		parentP2.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(), e.getValue()));
+		parentP1.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(), e.getValue(), k));
+		parentP2.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(), e.getValue(), k));
 
 		//convert linkedlists into arraylists for better performance later
 		//parentP1.entrySet().forEach(e -> e.setValue(new ArrayList<>(e.getValue())));
@@ -516,9 +516,9 @@ public class HTPM implements Runnable {
 		final HybridTemporalPattern pattern;
 		final List<Occurrence> occurrences;
 
-		PatternOccurrence(HybridTemporalPattern pattern, List<Occurrence> occurrence) {
+		PatternOccurrence(HybridTemporalPattern pattern, List<Occurrence> occurrences) {
 			this.pattern = pattern;
-			this.occurrences = occurrence;
+			this.occurrences = occurrences;
 		}
 	}
 }
