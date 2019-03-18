@@ -214,8 +214,8 @@ public class HTPM implements Runnable {
 				builder.setPrefixes(null, emptyOccurrencePrefix);
 
 				//set empty occurrence as prefix
-				Occurrence oc = builder.getOccurence();
-				HybridTemporalPattern p = builder.getPattern();
+				Occurrence oc = builder.getOccurence(true);
+				HybridTemporalPattern p = builder.getPattern(true);
 
 				if (constraint.newOccurrenceFulfillsConstraints(p, oc, 1)) {
 					map.computeIfAbsent(p, pattern -> new ArrayList<>()).add(oc);
@@ -376,8 +376,8 @@ public class HTPM implements Runnable {
 				}
 
 				DefaultHybridTemporalPatternBuilder b = ORAlign(prefix, p1, s1, p2, s2, k);
-				HybridTemporalPattern newPattern = b.getPattern();
-				Occurrence newOccurrence = b.getOccurence();
+				HybridTemporalPattern newPattern = b.getPattern(true);
+				Occurrence newOccurrence = b.getOccurence(true);
 
 				//prune new occurrence records
 				if (constraint.newOccurrenceFulfillsConstraints(newPattern, newOccurrence, k)) {

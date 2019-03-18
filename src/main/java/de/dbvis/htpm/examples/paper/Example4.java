@@ -3,7 +3,6 @@ package de.dbvis.htpm.examples.paper;
 import de.dbvis.htpm.hes.DefaultHybridEventSequence;
 import de.dbvis.htpm.hes.HybridEventSequence;
 import de.dbvis.htpm.hes.events.DefaultHybridEvent;
-import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 
 import static de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder.buildFromSequence;
@@ -33,10 +32,10 @@ public class Example4 {
 		s5.add(new DefaultHybridEvent("a", 0,2));
 		s5.add(new DefaultHybridEvent("b", 0,3));
 		
-		HybridTemporalPattern p2 = buildFromSequence(s2).getPattern();
-		HybridTemporalPattern p3 = buildFromSequence(s3).getPattern();
-		HybridTemporalPattern p4 = buildFromSequence(s4).getPattern();
-		HybridTemporalPattern p5 = buildFromSequence(s5).getPattern();
+		HybridTemporalPattern p2 = buildFromSequence(s2).getPattern(true);
+		HybridTemporalPattern p3 = buildFromSequence(s3).getPattern(true);
+		HybridTemporalPattern p4 = buildFromSequence(s4).getPattern(true);
+		HybridTemporalPattern p5 = buildFromSequence(s5).getPattern(true);
 		
 		System.out.println(">>"+s1.occur(p2));
 		System.out.println(">>"+s1.occur(p3));

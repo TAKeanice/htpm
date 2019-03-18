@@ -13,9 +13,9 @@ import de.dbvis.htpm.occurrence.DefaultOccurrence;
 import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
 import de.dbvis.htpm.occurrence.OccurrencePoint;
-import de.dbvis.htpm.util.HTPMEvent;
 import de.dbvis.htpm.util.HTPMListener;
 import de.dbvis.htpm.util.HTPMOutputEvent;
+import de.dbvis.htpm.util.HTPMOutputListener;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,8 +41,7 @@ import java.util.stream.Collectors;
  * This version of the algorithm only stores the patterns relevant for proceeding the algorithm,
  * and outputs all others to the listener. This way, storage space for running the algorithm is reduced.
  * Of course, this only makes a difference if the listener does not keep all patterns in memory.
- *
- * TODO: unlink the prefix relation to be able to garbage-collect patterns and occurrences!
+ * The child -> parent relationships between children and their canonical prefixes are not output.
  *
  * @author Wolfgang Jentner, Tassilo Karge
  *
@@ -97,7 +96,9 @@ public class HTPMLowStorage implements Runnable {
 
         int totalNumPatterns = m.get(0).size();
         this.fireHTPMEvent(new HTPMOutputEvent(this, 1, totalNumPatterns,
-                m.stream().flatMap(Collection::stream).collect(Collectors.toMap(po -> po.pattern, po -> po.occurrences))));
+                m.stream().flatMap(Collection::stream).collect(
+                        Collectors.toMap(po -> po.pattern, po -> po.occurrences.stream().map(link -> link.child)
+                                .collect(Collectors.toList())))));
 
         int k = 2;
 
@@ -107,7 +108,9 @@ public class HTPMLowStorage implements Runnable {
 
                 totalNumPatterns = m.stream().mapToInt(List::size).sum();
                 this.fireHTPMEvent(new HTPMOutputEvent(this, k, totalNumPatterns,
-                        m.stream().flatMap(Collection::stream).collect(Collectors.toMap(po -> po.pattern, po -> po.occurrences))));
+                        m.stream().flatMap(Collection::stream).collect(
+                                Collectors.toMap(po -> po.pattern, po -> po.occurrences.stream().map(link -> link.child)
+                                        .collect(Collectors.toList())))));
 
                 k++;
             }
@@ -139,9 +142,12 @@ public class HTPMLowStorage implements Runnable {
      * Fires an HTPMEvent to all the current listeners.
      * @param e - the HTPMEvent to be fired.
      */
-    protected void fireHTPMEvent(HTPMEvent e) {
+    protected void fireHTPMEvent(HTPMOutputEvent e) {
         for(HTPMListener l : this.listeners) {
             l.generationCalculated(e);
+            if (l instanceof HTPMOutputListener) {
+                ((HTPMOutputListener) l).outputGenerated(e);
+            }
         }
     }
 
@@ -150,7 +156,7 @@ public class HTPMLowStorage implements Runnable {
      * @return Returns the first generation of patterns that already satisfy the min-support.
      */
     protected List<List<PatternOccurrence>> genL1() {
-        Map<HybridTemporalPattern, List<Occurrence>> map =
+        Map<HybridTemporalPattern, List<TreeLink>> map =
                 new HashMap<>();
 
         for(HybridEventSequence seq : d.getSequences()) {
@@ -170,20 +176,19 @@ public class HTPMLowStorage implements Runnable {
                             new DefaultOccurrencePoint(e, false));
                 }
 
-                builder.setPrefixes(null, emptyOccurrencePrefix);
-
                 //set empty occurrence as prefix
-                Occurrence oc = builder.getOccurence();
-                HybridTemporalPattern p = builder.getPattern();
+                Occurrence oc = builder.getOccurence(false);
+                HybridTemporalPattern p = builder.getPattern(false);
 
                 if (constraint.newOccurrenceFulfillsConstraints(p, oc, 1)) {
-                    map.computeIfAbsent(p, pattern -> new ArrayList<>()).add(oc);
+                    map.computeIfAbsent(p, pattern -> new ArrayList<>()).add(new TreeLink(oc, emptyOccurrencePrefix));
                 }
             }
         }
 
         //prune unsupported patterns
-        map.entrySet().removeIf(entry -> !constraint.patternFulfillsConstraints(entry.getKey(), entry.getValue(), 1));
+        map.entrySet().removeIf(entry -> !constraint.patternFulfillsConstraints(entry.getKey(),
+                entry.getValue().stream().map(treeLink -> treeLink.child).collect(Collectors.toList()), 1));
 
         //parse maps into patternOccurrence objects
         final List<PatternOccurrence> patternOccurrences = map.entrySet().stream().map(entry ->
@@ -201,7 +206,7 @@ public class HTPMLowStorage implements Runnable {
      */
     protected List<List<PatternOccurrence>> genLk(final List<List<PatternOccurrence>> partitionedOccurrences, int k) throws InterruptedException {
 
-        List<List<Map<HybridTemporalPattern, List<Occurrence>>>> partitionResults = new ArrayList<>(partitionedOccurrences.size());
+        List<List<Map<HybridTemporalPattern, List<TreeLink>>>> partitionResults = new ArrayList<>(partitionedOccurrences.size());
 
         ExecutorService es = Executors.newFixedThreadPool(threadPoolSize);
 
@@ -210,7 +215,7 @@ public class HTPMLowStorage implements Runnable {
         for (int partition = 0; partition < partitionedOccurrences.size(); partition++) {
             List<PatternOccurrence> joinablePatterns = partitionedOccurrences.get(partition);
 
-            List<Map<HybridTemporalPattern, List<Occurrence>>> partitionResult = new ArrayList<>(joinablePatterns.size());
+            List<Map<HybridTemporalPattern, List<TreeLink>>> partitionResult = new ArrayList<>(joinablePatterns.size());
             partitionResults.add(partitionResult);
 
             for (int i = 0; i < joinablePatterns.size(); i++) {
@@ -224,13 +229,13 @@ public class HTPMLowStorage implements Runnable {
 
             for (int i = 0; i < joinablePatterns.size(); i++) {
                 final HybridTemporalPattern p1 = joinablePatterns.get(i).pattern;
-                final List<Occurrence> l1 = joinablePatterns.get(i).occurrences;
+                final List<TreeLink> l1 = joinablePatterns.get(i).occurrences;
 
                 final int finalI = i;
 
                 final Runnable join = () -> {
 
-                    List<Map<HybridTemporalPattern, List<Occurrence>>> subResult = new ArrayList<>(finalI + 1);
+                    List<Map<HybridTemporalPattern, List<TreeLink>>> subResult = new ArrayList<>(finalI + 1);
                     for (int j = 0; j <= finalI; j++) {
                         subResult.add(new HashMap<>());
                     }
@@ -242,9 +247,9 @@ public class HTPMLowStorage implements Runnable {
                             continue;
                         }
 
-                        final List<Occurrence> l2 = joinablePatterns.get(j).occurrences;
+                        final List<TreeLink> l2 = joinablePatterns.get(j).occurrences;
 
-                        final List<Map<HybridTemporalPattern, List<Occurrence>>> joined = HTPMLowStorage.this.join(p1.getPrefix(), p1, l1, p2, l2, k);
+                        final List<Map<HybridTemporalPattern, List<TreeLink>>> joined = HTPMLowStorage.this.join(p1.getPrefix(), p1, l1, p2, l2, k);
                         subResult.get(finalI).putAll(joined.get(0));
                         subResult.get(j).putAll(joined.get(1));
                         //System.out.println("joined " + joined.incrementAndGet() + " with " + l1.size() + " and " + l2.size() + " occurrences.");
@@ -292,9 +297,9 @@ public class HTPMLowStorage implements Runnable {
      * For each pattern a complete map of its occurences will be returned.
      * The first map are the patterns with parent p1, the second one those with parent p2
      */
-    protected List<Map<HybridTemporalPattern, List<Occurrence>>> join(final HybridTemporalPattern prefix,
-                                                                      final HybridTemporalPattern p1, final List<Occurrence> or1,
-                                                                      final HybridTemporalPattern p2, final List<Occurrence> or2,
+    protected List<Map<HybridTemporalPattern, List<TreeLink>>> join(final HybridTemporalPattern prefix,
+                                                                      final HybridTemporalPattern p1, final List<TreeLink> or1,
+                                                                      final HybridTemporalPattern p2, final List<TreeLink> or2,
                                                                       int k) {
 
         //heuristic: the occurrence records are joined, from each pair in the same sequence we can have a new one.
@@ -302,9 +307,9 @@ public class HTPMLowStorage implements Runnable {
         // and that all joins yield the same pattern (which increases the result)
         final int newOccurrenceCountHeuristic = or1.size() * or2.size() / (d.size() * d.size());
 
-        final List<Map<HybridTemporalPattern, List<Occurrence>>> partitionedResult = new ArrayList<>(2);
-        final Map<HybridTemporalPattern, List<Occurrence>> parentP1 = new HashMap<>();
-        final Map<HybridTemporalPattern, List<Occurrence>> parentP2 = new HashMap<>();
+        final List<Map<HybridTemporalPattern, List<TreeLink>>> partitionedResult = new ArrayList<>(2);
+        final Map<HybridTemporalPattern, List<TreeLink>> parentP1 = new HashMap<>();
+        final Map<HybridTemporalPattern, List<TreeLink>> parentP2 = new HashMap<>();
         partitionedResult.add(parentP1);
         partitionedResult.add(parentP2);
 
@@ -312,7 +317,8 @@ public class HTPMLowStorage implements Runnable {
         //for (Occurrence s1 : or1) {
         //	i1++;
         for (int i1 = 0; i1 < or1.size(); i1++) {
-            Occurrence s1 = or1.get(i1);
+            Occurrence occurrencePrefix = or1.get(i1).parent;
+            Occurrence s1 = or1.get(i1).child;
 
             //avoid join of same occurrences twice (happens if both are from the same occurrence record)
             //int minI2 = or1 == or2 ? i1 + 1 : 0;
@@ -329,31 +335,33 @@ public class HTPMLowStorage implements Runnable {
             //	}
             for (int i2 = 0; i2 <= maxI2; i2++) {
                 //for (int i2 = minI2; i2 < or2.size(); i2++) {
-                Occurrence s2 = or2.get(i2);
-                if (!constraint.occurrenceRecordsQualifyForJoin(s1, s2, k)) {
+                Occurrence s2 = or2.get(i2).child;
+                if (occurrencePrefix != or2.get(i2).parent || !constraint.occurrenceRecordsQualifyForJoin(s1, s2, k)) {
                     continue;
                 }
 
                 DefaultHybridTemporalPatternBuilder b = ORAlign(prefix, p1, s1, p2, s2, k);
-                HybridTemporalPattern newPattern = b.getPattern();
-                Occurrence newOccurrence = b.getOccurence();
+                HybridTemporalPattern newPattern = b.getPattern(false);
+                Occurrence newOccurrence = b.getOccurence(false);
 
                 //prune new occurrence records
                 if (constraint.newOccurrenceFulfillsConstraints(newPattern, newOccurrence, k)) {
-                    Map<HybridTemporalPattern, List<Occurrence>> map = newPattern.getPrefix() == p1 ? parentP1 : parentP2;
+                    Map<HybridTemporalPattern, List<TreeLink>> map = b.getPatternPrefix() == p1 ? parentP1 : parentP2;
                     //initialize with capacity as the average number per sequence of ORs multiplied
                     map.computeIfAbsent(
                             //newPattern, p -> new ArrayList<>())
                             //newPattern, p -> new LinkedList<>())
                             newPattern, p -> new ArrayList<>(newOccurrenceCountHeuristic))
-                            .add(newOccurrence);
+                            .add(new TreeLink(newOccurrence, b.getOccurrencePrefix()));
                 }
             }
         }
 
         //prune new patterns
-        parentP1.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(), e.getValue(), k));
-        parentP2.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(), e.getValue(), k));
+        parentP1.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(),
+                e.getValue().stream().map(link -> link.child).collect(Collectors.toList()), k));
+        parentP2.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(),
+                e.getValue().stream().map(link -> link.child).collect(Collectors.toList()), k));
 
         //convert linkedlists into arraylists for better performance later
         //parentP1.entrySet().forEach(e -> e.setValue(new ArrayList<>(e.getValue())));
@@ -473,11 +481,21 @@ public class HTPMLowStorage implements Runnable {
 
     class PatternOccurrence {
         final HybridTemporalPattern pattern;
-        final List<Occurrence> occurrences;
+        final List<TreeLink> occurrences;
 
-        PatternOccurrence(HybridTemporalPattern pattern, List<Occurrence> occurrences) {
+        PatternOccurrence(HybridTemporalPattern pattern, List<TreeLink> occurrences) {
             this.pattern = pattern;
             this.occurrences = occurrences;
+        }
+    }
+
+    class TreeLink {
+        final Occurrence child;
+        final Occurrence parent;
+
+        TreeLink(Occurrence child, Occurrence parent) {
+            this.child = child;
+            this.parent = parent;
         }
     }
 }
