@@ -23,13 +23,13 @@ public class HTPMEvent extends EventObject {
 
 	/**
 	 * Creates a new HTPMEvent.
-	 * @param arg0 - the Object that fired the event.
+	 * @param source - the Object that fired the event.
 	 * @param generation - the current generation.
 	 * @param number_of_patterns - the number of supported patterns in that generation. 
 	 * @param when - the timestamp in milliseconds
 	 */
-	public HTPMEvent(Object arg0, int generation, int number_of_patterns, long when) {
-		super(arg0);
+	public HTPMEvent(Object source, int generation, int number_of_patterns, long when) {
+		super(source);
 		this.generation = generation;
 		this.number_of_patterns = number_of_patterns;
 		this.when = when;
@@ -37,12 +37,12 @@ public class HTPMEvent extends EventObject {
 	
 	/**
 	 * Creates a new HTPMEvent.
-	 * @param arg0 - the Object that fired the event.
+	 * @param source - the Object that fired the event.
 	 * @param generation - the current generation.
 	 * @param number_of_patterns - the number of supported patterns in that generation. 
 	 */
-	public HTPMEvent(Object arg0, int generation, int number_of_patterns) {
-		this(arg0, generation, number_of_patterns, System.currentTimeMillis());
+	public HTPMEvent(Object source, int generation, int number_of_patterns) {
+		this(source, generation, number_of_patterns, System.currentTimeMillis());
 	}
 	
 	/**
