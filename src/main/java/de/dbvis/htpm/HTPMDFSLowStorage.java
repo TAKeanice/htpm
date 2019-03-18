@@ -1,5 +1,6 @@
 package de.dbvis.htpm;
 
+import de.dbvis.htpm.constraints.HTPMConstraint;
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.util.HTPMOutputEvent;
@@ -56,6 +57,11 @@ public class HTPMDFSLowStorage extends HTPMLowStorage {
 
             for (int j = i; j < m.size(); j++) {
                 PatternOccurrence second = m.get(j);
+
+                if (!constraint.patternsQualifyForJoin(first.pattern, second.pattern, depth)) {
+                    continue;
+                }
+
                 List<Map<HybridTemporalPattern, List<TreeLink>>> joined =
                         join(first.pattern.getPrefix(),
                                 first.pattern, first.occurrences,
@@ -75,6 +81,7 @@ public class HTPMDFSLowStorage extends HTPMLowStorage {
             }
 
             //release current pattern, we will not use it any more
+            // also removes it from the partitions stored by the calling subroutine
             m.set(i, null);
 
             //continuously output found patterns

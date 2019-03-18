@@ -1,7 +1,7 @@
 package de.dbvis.htpm.examples;
 
 import de.dbvis.htpm.HTPM;
-import de.dbvis.htpm.DefaultHTPMConstraint;
+import de.dbvis.htpm.constraints.DefaultHTPMConstraint;
 import de.dbvis.htpm.db.DefaultHybridEventSequenceDatabase;
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.hes.DefaultHybridEventSequence;

@@ -1,4 +1,4 @@
-package de.dbvis.htpm;
+package de.dbvis.htpm.constraints;
 
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;

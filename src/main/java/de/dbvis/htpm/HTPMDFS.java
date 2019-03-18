@@ -1,5 +1,6 @@
 package de.dbvis.htpm;
 
+import de.dbvis.htpm.constraints.HTPMConstraint;
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
@@ -60,6 +61,11 @@ public class HTPMDFS extends HTPM {
             PatternOccurrence first = m.get(i);
             for (int j = i; j < m.size(); j++) {
                 PatternOccurrence second = m.get(j);
+
+                if (!constraint.patternsQualifyForJoin(first.pattern, second.pattern, depth)) {
+                    continue;
+                }
+
                 List<Map<HybridTemporalPattern, List<Occurrence>>> joined =
                         join(first.pattern.getPrefix(),
                                 first.pattern, first.occurrences,
