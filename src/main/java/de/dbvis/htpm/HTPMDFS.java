@@ -73,15 +73,18 @@ public class HTPMDFS extends HTPM {
                                 depth);
 
                 //parse into pattern occurrences
+
                 List<PatternOccurrence> parentFirst = joined.get(0).entrySet().stream()
                         .map(entry -> new PatternOccurrence(entry.getKey(), entry.getValue()))
                         .collect(Collectors.toList());
-                List<PatternOccurrence> parentSecond = joined.get(1).entrySet().stream()
-                        .map(entry -> new PatternOccurrence(entry.getKey(), entry.getValue()))
-                        .collect(Collectors.toList());
-
                 partitions.get(i).addAll(parentFirst);
-                partitions.get(j).addAll(parentSecond);
+
+                if (i != j) {
+                    List<PatternOccurrence> parentSecond = joined.get(1).entrySet().stream()
+                            .map(entry -> new PatternOccurrence(entry.getKey(), entry.getValue()))
+                            .collect(Collectors.toList());
+                    partitions.get(j).addAll(parentSecond);
+                }
             }
 
             if (constraint.shouldGeneratePatternsOfLength(depth + 1)) {

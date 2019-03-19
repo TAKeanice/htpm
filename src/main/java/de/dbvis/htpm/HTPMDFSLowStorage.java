@@ -62,22 +62,20 @@ public class HTPMDFSLowStorage extends HTPMLowStorage {
                     continue;
                 }
 
-                List<Map<HybridTemporalPattern, List<TreeLink>>> joined =
-                        join(first.pattern.getPrefix(),
+                List<Map<HybridTemporalPattern, PatternOccurrence>> joined =
+                        join(first.prefix,
                                 first.pattern, first.occurrences,
                                 second.pattern, second.occurrences,
                                 depth);
 
                 //parse into pattern occurrences
-                List<PatternOccurrence> parentFirst = joined.get(0).entrySet().stream()
-                        .map(entry -> new PatternOccurrence(entry.getKey(), entry.getValue()))
-                        .collect(Collectors.toList());
-                List<PatternOccurrence> parentSecond = joined.get(1).entrySet().stream()
-                        .map(entry -> new PatternOccurrence(entry.getKey(), entry.getValue()))
-                        .collect(Collectors.toList());
-
+                List<PatternOccurrence> parentFirst = new ArrayList<>(joined.get(0).values());
                 partitions.get(i).addAll(parentFirst);
-                partitions.get(j).addAll(parentSecond);
+
+                if (i != j) {
+                    List<PatternOccurrence> parentSecond = new ArrayList<>(joined.get(1).values());
+                    partitions.get(j).addAll(parentSecond);
+                }
             }
 
             //release current pattern, we will not use it any more
