@@ -1,5 +1,6 @@
 package de.dbvis.htpm.constraints;
 
+import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.*;
 import de.dbvis.htpm.occurrence.Occurrence;
@@ -25,99 +26,108 @@ public class CMAPConstraint extends AcceptAllConstraint {
 
     @Override
     public boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
-        if (k > 2) {
-
-            //check new two-pattern suffixes which can be made by joining the suffix of first and second pattern
-
-            HybridTemporalPattern prefix = firstPattern.getPrefix();
-
-            List<EventNode> pa1 = firstPattern.getEventNodes();
-            List<EventNode> pa2 = secondPattern.getEventNodes();
-            List<EventNode> pre;
-
-            List<OrderRelation> relations1 = firstPattern.getOrderRelations();
-            List<OrderRelation> relations2 = secondPattern.getOrderRelations();
-
-            if (prefix != null) {
-                pre = prefix.getEventNodes();
-            } else {
-                pre = Collections.emptyList();
-            }
-
-            IndexPair index1 = determineGroupIndices(pa1, pre, relations1);
-            IndexPair index2 = determineGroupIndices(pa2, pre, relations2);
-
-            EventNode firstStart = pa1.get(index1.startIndex);
-            EventNode secondStart = pa2.get(index2.startIndex);
-            EventNode firstEnd = pa1.get(index1.endIndex);
-            EventNode secondEnd = pa2.get(index2.endIndex);
-
-            boolean firstIsInterval = index1.endGroup >= 0;
-            boolean secondIsInterval = index2.endGroup >= 0;
-            final boolean firstAndSecondSameIntervalType = firstIsInterval && secondIsInterval
-                    && firstStart.getIntegerEventID() == secondStart.getIntegerEventID();
-            int firstOccurrenceMark = 0;
-            int secondOccurrenceMark = firstAndSecondSameIntervalType ? 1 : 0;
-
-            //build possible 2-patterns and apply constraint
-            List<List<EventNode>> twoPatternNodes = new ArrayList<>(1);
-            List<List<OrderRelation>> twoPatternRelations = new ArrayList<>(1);
-
-            assert index1.startGroup < index1.endGroup || index1.endGroup < 0;
-            assert index2.startGroup < index2.endGroup || index2.endGroup < 0;
-
-            ArrayList<EventNode> nodes = new ArrayList<>(4);
-            ArrayList<OrderRelation> relations = new ArrayList<>(3);
-            twoPatternNodes.add(nodes);
-            twoPatternRelations.add(relations);
-
-            if (index1.startGroup < index2.startGroup) {
-                //FIRST START FIRST
-                return buildSecondLevelOrder(index1, index2,
-                        firstStart, secondStart, firstEnd, secondEnd,
-                        firstIsInterval, secondIsInterval, false,
-                        firstOccurrenceMark, secondOccurrenceMark,
-                        nodes, relations);
-            } else if (index1.startGroup > index2.startGroup) {
-                //SECOND START FIRST
-                return buildSecondLevelOrder(index2, index1,
-                        secondStart, firstStart, secondEnd, firstEnd,
-                        secondIsInterval, firstIsInterval, true,
-                        firstOccurrenceMark, secondOccurrenceMark,
-                        nodes, relations);
-            } else if (index1.startGroup % 2 == 1) {
-                //both starts are fixed at the same time as some prefix node
-                //FIRST START == SECOND START
-                if (firstStart.compareTo(secondStart) < 0) {
-                    nodes.add(firstIsInterval ? new IntervalStartEventNode(firstStart, firstOccurrenceMark)
-                            : new PointEventNode(firstStart));
-                    nodes.add(secondIsInterval ? new IntervalStartEventNode(secondStart, secondOccurrenceMark)
-                            : new PointEventNode(secondStart));
-                    relations.add(EQUAL);
-                    return buildThirdAndFourthLevelOrder(index1, index2, firstEnd, secondEnd, firstOccurrenceMark, secondOccurrenceMark, nodes, relations);
-                } else {
-                    nodes.add(secondIsInterval ? new IntervalStartEventNode(secondStart, firstOccurrenceMark)
-                            : new PointEventNode(secondStart));
-                    nodes.add(firstIsInterval ? new IntervalStartEventNode(firstStart, secondOccurrenceMark)
-                            : new PointEventNode(firstStart));
-                    relations.add(EQUAL);
-                    return buildThirdAndFourthLevelOrder(index1, index2, firstEnd, secondEnd, secondOccurrenceMark, firstOccurrenceMark, nodes, relations);
-                }
-            } else {
-                //amargeddon for start event nodes
-                //FIRST START ?? SECOND START
-                //TODO: test multiple variants
-                return true;
-            }
+        if (k <= 2) {
+            return true;
         }
-        return true;
+
+        //check new two-pattern suffixes which can be made by joining the suffix of first and second pattern
+
+        HybridTemporalPattern prefix = firstPattern.getPrefix();
+
+        List<EventNode> pa1 = firstPattern.getEventNodes();
+        List<EventNode> pa2 = secondPattern.getEventNodes();
+        List<EventNode> pre;
+
+        List<OrderRelation> relations1 = firstPattern.getOrderRelations();
+        List<OrderRelation> relations2 = secondPattern.getOrderRelations();
+
+        if (prefix != null) {
+            pre = prefix.getEventNodes();
+        } else {
+            pre = Collections.emptyList();
+        }
+
+        IndexPair index1 = determineGroupIndices(pa1, pre, relations1);
+        IndexPair index2 = determineGroupIndices(pa2, pre, relations2);
+
+        //build possible 2-patterns and apply constraint
+        List<List<EventNode>> twoPatternNodes = new ArrayList<>(1);
+        List<List<OrderRelation>> twoPatternRelations = new ArrayList<>(1);
+
+        assert index1.startGroup < index1.endGroup || index1.endGroup < 0;
+        assert index2.startGroup < index2.endGroup || index2.endGroup < 0;
+
+        ArrayList<EventNode> nodes = new ArrayList<>(4);
+        ArrayList<OrderRelation> relations = new ArrayList<>(3);
+        twoPatternNodes.add(nodes);
+        twoPatternRelations.add(relations);
+
+        return testPotentialPatterns(pa1, pa2, index1, index2, nodes, relations);
     }
 
-    public boolean buildSecondLevelOrder(IndexPair index1, IndexPair index2,
-                                      EventNode firstStart, EventNode secondStart, EventNode firstEnd, EventNode secondEnd,
-                                      boolean firstIsInterval, boolean secondIsInterval, boolean inverted,
-                                      int firstOccurrenceMark, int secondOccurrenceMark,
-                                      ArrayList<EventNode> nodes, ArrayList<OrderRelation> relations) {
+    private boolean testPotentialPatterns(List<EventNode> pa1, List<EventNode> pa2,
+                                          IndexPair index1, IndexPair index2,
+                                          ArrayList<EventNode> nodes, ArrayList<OrderRelation> relations) {
+
+        final EventNode firstStart = pa1.get(index1.startIndex);
+        final EventNode secondStart = pa2.get(index2.startIndex);
+        final EventNode firstEnd = pa1.get(index1.endIndex);
+        final EventNode secondEnd = pa2.get(index2.endIndex);
+
+        final boolean firstIsInterval = index1.endGroup >= 0;
+        final boolean secondIsInterval = index2.endGroup >= 0;
+
+        final boolean firstAndSecondSameIntervalType = firstIsInterval && secondIsInterval
+                && firstStart.getIntegerEventID() == secondStart.getIntegerEventID();
+        int firstOccurrenceMark = 0;
+        int secondOccurrenceMark = firstAndSecondSameIntervalType ? 1 : 0;
+
+        if (index1.startGroup < index2.startGroup) {
+            //FIRST START FIRST
+            return testPotentialPatternsLevel2(index1, index2,
+                    firstStart, secondStart, firstEnd, secondEnd, false,
+                    firstOccurrenceMark, secondOccurrenceMark,
+                    nodes, relations);
+        } else if (index1.startGroup > index2.startGroup) {
+            //SECOND START FIRST
+            return testPotentialPatternsLevel2(index2, index1,
+                    secondStart, firstStart, secondEnd, firstEnd, true,
+                    firstOccurrenceMark, secondOccurrenceMark,
+                    nodes, relations);
+        } else if (index1.startGroup % 2 == 1) {
+            //both starts are fixed at the same time as some prefix node
+            //FIRST START == SECOND START
+            if (firstStart.compareTo(secondStart) < 0) {
+                nodes.add(firstIsInterval ? new IntervalStartEventNode(firstStart, firstOccurrenceMark)
+                        : new PointEventNode(firstStart));
+                nodes.add(secondIsInterval ? new IntervalStartEventNode(secondStart, secondOccurrenceMark)
+                        : new PointEventNode(secondStart));
+                relations.add(EQUAL);
+                return testPotentialPatternsLevel3(index1, index2, firstEnd, secondEnd, firstOccurrenceMark, secondOccurrenceMark, nodes, relations);
+            } else {
+                nodes.add(secondIsInterval ? new IntervalStartEventNode(secondStart, firstOccurrenceMark)
+                        : new PointEventNode(secondStart));
+                nodes.add(firstIsInterval ? new IntervalStartEventNode(firstStart, secondOccurrenceMark)
+                        : new PointEventNode(firstStart));
+                relations.add(EQUAL);
+                return testPotentialPatternsLevel3(index1, index2, firstEnd, secondEnd, secondOccurrenceMark, firstOccurrenceMark, nodes, relations);
+            }
+        } else {
+            //amargeddon for start event nodes
+            //FIRST START ?? SECOND START
+            //TODO: test multiple variants
+            return true;
+        }
+    }
+
+    private boolean testPotentialPatternsLevel2(IndexPair index1, IndexPair index2,
+                                                EventNode firstStart, EventNode secondStart, EventNode firstEnd, EventNode secondEnd,
+                                                boolean inverted,
+                                                int firstOccurrenceMark, int secondOccurrenceMark,
+                                                ArrayList<EventNode> nodes, ArrayList<OrderRelation> relations) {
+
+        final boolean firstIsInterval = index1.endGroup >= 0;
+        final boolean secondIsInterval = index2.endGroup >= 0;
 
         //FIRST START FIRST
         nodes.add(firstIsInterval ? new IntervalStartEventNode(firstStart, firstOccurrenceMark)
@@ -129,9 +139,9 @@ public class CMAPConstraint extends AcceptAllConstraint {
                     : new PointEventNode(secondStart));
             relations.add(SMALLER);
             if (inverted) {
-                return buildThirdAndFourthLevelOrder(index2, index1, secondEnd, firstEnd, secondOccurrenceMark, firstOccurrenceMark, nodes, relations);
+                return testPotentialPatternsLevel3(index2, index1, secondEnd, firstEnd, secondOccurrenceMark, firstOccurrenceMark, nodes, relations);
             } else {
-                return buildThirdAndFourthLevelOrder(index1, index2, firstEnd, secondEnd, firstOccurrenceMark, secondOccurrenceMark, nodes, relations);
+                return testPotentialPatternsLevel3(index1, index2, firstEnd, secondEnd, firstOccurrenceMark, secondOccurrenceMark, nodes, relations);
             }
         } else if (index2.startGroup > index1.endGroup) {
             //FIRST END SECOND
@@ -141,13 +151,13 @@ public class CMAPConstraint extends AcceptAllConstraint {
             nodes.add(secondIsInterval ? new IntervalStartEventNode(secondStart, secondOccurrenceMark)
                     : new PointEventNode(secondStart));
             relations.add(SMALLER);
-            if (index2.endGroup >= 0) {
+            if (secondIsInterval) {
                 //SECOND END FOURTH
                 nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
                 relations.add(SMALLER);
             }
-            //TODO: test
-            return true;
+            //test
+            return testPattern(nodes, relations);
         } else if (index2.startGroup % 2 == 1) {
             //both are fixed at the same time as some prefix node
             //SECOND START == FIRST END
@@ -162,13 +172,13 @@ public class CMAPConstraint extends AcceptAllConstraint {
             }
             relations.add(SMALLER);
             relations.add(EQUAL);
-            if (index2.endGroup >= 0) {
+            if (secondIsInterval) {
                 //SECOND END FOURTH
                 nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
                 relations.add(SMALLER);
             }
-            //TODO: test
-            return true;
+            //test
+            return testPattern(nodes, relations);
         } else {
             //amargeddon for first start with second end
             //FIRST START ?? SECOND END
@@ -177,65 +187,77 @@ public class CMAPConstraint extends AcceptAllConstraint {
         }
     }
 
-    public boolean buildThirdAndFourthLevelOrder(IndexPair index1, IndexPair index2,
-                                              EventNode firstEnd, EventNode secondEnd,
-                                              int firstOccurrenceMark, int secondOccurrenceMark,
-                                              ArrayList<EventNode> nodes, ArrayList<OrderRelation> relations) {
-        if (index2.endGroup < 0) {
+    private boolean testPotentialPatternsLevel3(IndexPair index1, IndexPair index2,
+                                                EventNode firstEnd, EventNode secondEnd,
+                                                int firstOccurrenceMark, int secondOccurrenceMark,
+                                                ArrayList<EventNode> nodes, ArrayList<OrderRelation> relations) {
+
+        final boolean firstIsInterval = index1.endGroup >= 0;
+        final boolean secondIsInterval = index2.endGroup >= 0;
+
+        if (!secondIsInterval) {
             //end node of second pattern suffix nonexistent
-            if (index1.endGroup >= 0) {
+            if (firstIsInterval) {
                 //FIRST END THIRD
                 nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
                 relations.add(SMALLER);
             }
-            //TODO: test
-            return true;
-        } else if (index1.endGroup < 0) {
-            //end node of first pattern suffix nonexistent
-            //SECOND END THIRD
-            nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
-            relations.add(SMALLER);
-            //TODO: test
-            return true;
-        } else if (index1.endGroup < index2.endGroup) {
-            //FIRST END THIRD
-            nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
-            relations.add(SMALLER);
-            //SECOND END FOURTH
-            nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
-            relations.add(SMALLER);
-            //TODO: test
-            return true;
-        } else if (index1.endGroup > index2.endGroup) {
-            //SECOND END THIRD
-            nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
-            relations.add(SMALLER);
-            //FIRST END FOURTH
-            nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
-            relations.add(SMALLER);
-            //TODO: test
-            return true;
-        } else if (index1.endGroup % 2 == 1) {
-            //both end nodes are fixed at the same time as some prefix node
-            //FIRST END == SECOND END
-            if (firstEnd.compareTo(secondEnd) < 0) {
-                nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
-                nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
-            } else {
-                nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
-                nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
-            }
-            relations.add(SMALLER);
-            relations.add(EQUAL);
-            //TODO: test
-            return true;
+            //test
+            return testPattern(nodes, relations);
         } else {
-            //amargeddon, for end event nodes
-            //FIRST END ?? SECOND END
-            //TODO: test multiple variants
-            return true;
+            if (!firstIsInterval) {
+                //end node of first pattern suffix nonexistent
+                //SECOND END THIRD
+                nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
+                relations.add(SMALLER);
+                //test
+                return testPattern(nodes, relations);
+            } else if (index1.endGroup < index2.endGroup) {
+                //FIRST END THIRD
+                nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
+                relations.add(SMALLER);
+                //SECOND END FOURTH
+                nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
+                relations.add(SMALLER);
+                //test
+                return testPattern(nodes, relations);
+            } else if (index1.endGroup > index2.endGroup) {
+                //SECOND END THIRD
+                nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
+                relations.add(SMALLER);
+                //FIRST END FOURTH
+                nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
+                relations.add(SMALLER);
+                //test
+                return testPattern(nodes, relations);
+            } else if (index1.endGroup % 2 == 1) {
+                //both end nodes are fixed at the same time as some prefix node
+                //FIRST END == SECOND END
+                if (firstEnd.compareTo(secondEnd) < 0) {
+                    nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
+                    nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
+                } else {
+                    nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
+                    nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
+                }
+                relations.add(SMALLER);
+                relations.add(EQUAL);
+                //test
+                return testPattern(nodes, relations);
+            } else {
+                //amargeddon, for end event nodes
+                //FIRST END ?? SECOND END
+                //TODO: test multiple variants
+                return true;
+            }
         }
     }
+
+
+    private boolean testPattern(List<EventNode> nodes, List<OrderRelation> relations) {
+        return twoPatterns.contains(new DefaultHybridTemporalPattern(nodes, relations, null));
+    }
+
 
     /**
      * Group indices of start and end node:
