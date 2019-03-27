@@ -8,12 +8,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class DefaultHTPMConstraint implements HTPMConstraint {
+public class DefaultHTPMConstraint extends AcceptAllConstraint implements SupportCounter {
 
     /**
      * The minimum support each pattern has to satisfy
      */
-    protected final double min_sup;
+    protected final double minSupport;
 
     /**
      * Database which is used for support calculation
@@ -31,10 +31,9 @@ public class DefaultHTPMConstraint implements HTPMConstraint {
         if(minSupport <= 0 || minSupport > 1) {
             throw new IllegalArgumentException("Minimum support must be 0 < min_support <= 1");
         }
-        this.min_sup = minSupport;
+        this.minSupport = minSupport;
     }
 
-    @Override
     public boolean shouldGeneratePatternsOfLength(int k) {
         return k <= maxPatternLength;
     }
@@ -48,23 +47,29 @@ public class DefaultHTPMConstraint implements HTPMConstraint {
         return firstOccurrence.getPrefix() == secondOccurrence.getPrefix();
     }
 
-    public boolean newOccurrenceFulfillsConstraints(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
-        //patterns have correct length automatically. Further, each occurrence is generated only once.
-        return true;
-    }
-
     public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
         //prune patterns which do not fulfill minimum support
-        return this.isSupported(occurrences);
+        return this.isSupported(p, occurrences, k);
     }
 
+    public long unsupportedCount = 0;
+    public long unsupportedOccurrences = 0;
+    public long supportedCount = 0;
+    public long supportedOccurrences = 0;
+
     /**
-     * Checks if a List of Occurrences has the minimum support
-     * @param occurrences the Occurrences to check
-     * @return true if minimum support is fulfilled, false otherwise
+     * Checks if there are enough sequences supporting the pattern
      */
-    protected boolean isSupported(final List<Occurrence> occurrences) {
-        return this.support(occurrences) >= this.min_sup;
+    public boolean isSupported(HybridTemporalPattern p, final List<Occurrence> occurrences, int k) {
+        final boolean isSupported = this.support(occurrences) >= this.minSupport;
+        if (!isSupported) {
+            unsupportedCount++;
+            unsupportedOccurrences += occurrences.size();
+        } else {
+            supportedCount++;
+            supportedOccurrences += occurrences.size();
+        }
+        return isSupported;
     }
 
     /**

@@ -1,11 +1,12 @@
 package de.dbvis.htpm.constraints;
 
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
+import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.List;
 
-public class EpisodeMiningConstraint extends MaxDurationConstraint {
+public class EpisodeMiningConstraint extends MaxDurationConstraint implements SupportCounter {
 
     private final int minOccurrences;
 
@@ -17,8 +18,11 @@ public class EpisodeMiningConstraint extends MaxDurationConstraint {
         this.minOccurrences = minOccurrences;
     }
 
+    /**
+     * checks if there are enough occurrences of that pattern
+     */
     @Override
-    protected boolean isSupported(List<Occurrence> occurrences) {
+    public boolean isSupported(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
         //The number of sequences is not important in episode mining,
         // rather the absolute number of occurrences.
         return occurrences.size() > minOccurrences;

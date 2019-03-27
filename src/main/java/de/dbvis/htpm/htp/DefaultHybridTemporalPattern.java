@@ -119,6 +119,11 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		return Arrays.asList(eventnodes);
 	}
 
+	@Override
+	public List<OrderRelation> getOrderRelations() {
+		return Arrays.asList(orderrelations);
+	}
+
 	/**
 	 * The length is defined by the number of events in the pattern.
 	 * Start and end of an interval count as one.
@@ -196,15 +201,6 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 			}
 		}
 		return Collections.unmodifiableList(this.eventids);
-	}
-
-	private static OrderRelation small(List<OrderRelation> ors) {
-		for(OrderRelation o : ors) {
-			if(o == OrderRelation.SMALLER) {
-				return OrderRelation.SMALLER;
-			}
-		}
-		return OrderRelation.EQUAL;
 	}
 
 	@Override

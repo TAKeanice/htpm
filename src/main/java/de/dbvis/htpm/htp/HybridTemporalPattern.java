@@ -2,6 +2,7 @@ package de.dbvis.htpm.htp;
 
 import de.dbvis.htpm.htp.eventnodes.EventNode;
 import de.dbvis.htpm.htp.eventnodes.HTPItem;
+import de.dbvis.htpm.htp.eventnodes.OrderRelation;
 
 import java.util.List;
 
@@ -32,6 +33,12 @@ public interface HybridTemporalPattern {
 	 * @return a list of EventNodes
 	 */
 	public List<EventNode> getEventNodes();
+
+	/**
+	 * Returns a list of OrderRelations which are between EventNodes in the pattern.
+	 * @return the OrderRelations of this pattern
+	 */
+	public List<OrderRelation> getOrderRelations();
 
 	/**
 	 * The length defines the number of events.
@@ -80,4 +87,13 @@ public interface HybridTemporalPattern {
 	 * @return true iff the pattern is valid, false otherwise
 	 */
 	public boolean isValid();
+
+	public static OrderRelation small(List<OrderRelation> ors) {
+		for(OrderRelation o : ors) {
+			if(o == OrderRelation.SMALLER) {
+				return OrderRelation.SMALLER;
+			}
+		}
+		return OrderRelation.EQUAL;
+	}
 }
