@@ -4,6 +4,7 @@ import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 public class ConstraintCollection implements HTPMConstraint {
 
@@ -15,38 +16,37 @@ public class ConstraintCollection implements HTPMConstraint {
 
     @Override
     public boolean shouldGeneratePatternsOfLength(int k) {
-        for (HTPMConstraint c : constraints) {
-            if (!c.shouldGeneratePatternsOfLength(k)) {
-                return false;
-            }
-        }
-        return true;
+        return passesAll(c -> c.shouldGeneratePatternsOfLength(k));
     }
 
     @Override
     public boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
-        for (HTPMConstraint c : constraints) {
-            if (!c.patternsQualifyForJoin(firstPattern, secondPattern, k)) {
-                return false;
-            }
-        }
-        return true;
+        return passesAll(c -> c.patternsQualifyForJoin(firstPattern, secondPattern, k));
     }
 
     @Override
     public boolean occurrenceRecordsQualifyForJoin(Occurrence firstOccurrence, Occurrence secondOccurrence, int k) {
-        for (HTPMConstraint c : constraints) {
-            if (!c.occurrenceRecordsQualifyForJoin(firstOccurrence, secondOccurrence, k)) {
-                return false;
-            }
-        }
-        return true;
+        return passesAll(c -> c.occurrenceRecordsQualifyForJoin(firstOccurrence, secondOccurrence, k));
     }
 
     @Override
     public boolean newOccurrenceFulfillsConstraints(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
+        return passesAll(c -> c.newOccurrenceFulfillsConstraints(pattern, occurrence, k));
+    }
+
+    @Override
+    public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+        return passesAll(c -> c.patternFulfillsConstraints(p, occurrences, k));
+    }
+
+    @Override
+    public boolean shouldOutput(HybridTemporalPattern p, List<Occurrence> occurrences) {
+        return passesAll(c -> c.shouldOutput(p, occurrences));
+    }
+
+    private boolean passesAll(Predicate<HTPMConstraint> constraintPredicate) {
         for (HTPMConstraint c : constraints) {
-            if (!c.newOccurrenceFulfillsConstraints(pattern, occurrence, k)) {
+            if (!constraintPredicate.test(c)) {
                 return false;
             }
         }
@@ -54,12 +54,29 @@ public class ConstraintCollection implements HTPMConstraint {
     }
 
     @Override
-    public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+    public void foundPattern(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
         for (HTPMConstraint c : constraints) {
-            if (!c.patternFulfillsConstraints(p, occurrences, k)) {
-                return false;
-            }
+            c.foundPattern(p, occurrences, k);
         }
-        return true;
+    }
+
+    @Override
+    public int getPatternJoinPreventedCount() {
+        return 0;
+    }
+
+    @Override
+    public int getOccurrenceJoinPreventedCount() {
+        return 0;
+    }
+
+    @Override
+    public int getOccurrencesDiscardedCount() {
+        return 0;
+    }
+
+    @Override
+    public int getPatternsDiscardedCount() {
+        return 0;
     }
 }
