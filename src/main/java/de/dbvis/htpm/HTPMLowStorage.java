@@ -95,10 +95,7 @@ public class HTPMLowStorage implements Runnable {
         m = this.genL1();
 
         int totalNumPatterns = m.get(0).size();
-        this.fireHTPMEvent(new HTPMOutputEvent(this, 1, totalNumPatterns,
-                m.stream().flatMap(Collection::stream).collect(
-                        Collectors.toMap(po -> po.pattern, po -> po.occurrences.stream().map(link -> link.child)
-                                .collect(Collectors.toList())))));
+        output(m.get(0), 1);
 
         int k = 2;
 
@@ -107,10 +104,7 @@ public class HTPMLowStorage implements Runnable {
                 m = this.genLk(m, k);
 
                 totalNumPatterns = m.stream().mapToInt(List::size).sum();
-                this.fireHTPMEvent(new HTPMOutputEvent(this, k, totalNumPatterns,
-                        m.stream().flatMap(Collection::stream).collect(
-                                Collectors.toMap(po -> po.pattern, po -> po.occurrences.stream().map(link -> link.child)
-                                        .collect(Collectors.toList())))));
+                output(m.stream().flatMap(Collection::stream).collect(Collectors.toList()), k);
 
                 k++;
             }
@@ -421,5 +415,14 @@ public class HTPMLowStorage implements Runnable {
             this.child = child;
             this.parent = parent;
         }
+    }
+
+    void output(List<PatternOccurrence> patterns, int depth) {
+        final Map<HybridTemporalPattern, List<Occurrence>> outputPatterns = patterns.stream().collect(
+                Collectors.toMap(
+                        po -> po.pattern,
+                        po -> po.occurrences.stream().map(link -> link.child).collect(Collectors.toList())));
+        outputPatterns.entrySet().removeIf(entry -> !constraint.shouldOutput(entry.getKey(), entry.getValue()));
+        this.fireHTPMEvent(new HTPMOutputEvent(this, depth, outputPatterns.size(), outputPatterns));
     }
 }

@@ -1,15 +1,16 @@
 package de.dbvis.htpm.constraints;
 
-import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-public class MaxDurationConstraint extends DefaultHTPMConstraint {
+public class MaxDurationConstraint extends AcceptAllConstraint {
 
     private final double maxDuration;
 
-    public MaxDurationConstraint(HybridEventSequenceDatabase d, double minSupport, double maxDuration, int maxPatternLength) {
-        super(d, minSupport, maxPatternLength);
+    private int occurrenceJoinPreventedCount;
+    private int occurrencesDiscardedCount;
+
+    public MaxDurationConstraint(double maxDuration) {
         this.maxDuration = maxDuration;
     }
 
@@ -17,23 +18,49 @@ public class MaxDurationConstraint extends DefaultHTPMConstraint {
     public boolean occurrenceRecordsQualifyForJoin(Occurrence firstOccurrence, Occurrence secondOccurrence, int k) {
         //check second generation before join for too long intervals
         // afterwards only patterns with same prefix are joined and thus no too long patterns will be generated
-        return super.occurrenceRecordsQualifyForJoin(firstOccurrence, secondOccurrence, k)
-                && (k > 2 || !willExceedMaxDurationAfterJoin(firstOccurrence, secondOccurrence));
-    }
-
-    public boolean willExceedMaxDurationAfterJoin(Occurrence firstOccurrence, Occurrence secondOccurrence) {
-        double start = Math.min(firstOccurrence.get(0).getTimePoint(), secondOccurrence.get(0).getTimePoint());
-        double end = Math.max(firstOccurrence.get(firstOccurrence.size() - 1).getTimePoint(),
-                secondOccurrence.get(secondOccurrence.size() - 1).getTimePoint());
-        double duration = end - start;
-        return duration > maxDuration;
+        final boolean join = k > 2 || !willExceedMaxDurationAfterJoin(firstOccurrence, secondOccurrence);
+        if (!join) {
+            occurrenceJoinPreventedCount++;
+        }
+        return join;
     }
 
     @Override
     public boolean newOccurrenceFulfillsConstraints(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
         //only check first generation for too long intervals
-        return super.newOccurrenceFulfillsConstraints(pattern, occurrence, k)
-                && (k > 1 || !this.isOverMaxDuration(occurrence));
+        final boolean fulfills = k > 1 || !this.isOverMaxDuration(occurrence);
+        if (!fulfills) {
+            occurrencesDiscardedCount++;
+        }
+        return fulfills;
+    }
+
+    @Override
+    public int getPatternJoinPreventedCount() {
+        return 0;
+    }
+
+    @Override
+    public int getOccurrenceJoinPreventedCount() {
+        return occurrenceJoinPreventedCount;
+    }
+
+    @Override
+    public int getOccurrencesDiscardedCount() {
+        return occurrencesDiscardedCount;
+    }
+
+    @Override
+    public int getPatternsDiscardedCount() {
+        return 0;
+    }
+
+    private boolean willExceedMaxDurationAfterJoin(Occurrence firstOccurrence, Occurrence secondOccurrence) {
+        double start = Math.min(firstOccurrence.get(0).getTimePoint(), secondOccurrence.get(0).getTimePoint());
+        double end = Math.max(firstOccurrence.get(firstOccurrence.size() - 1).getTimePoint(),
+                secondOccurrence.get(secondOccurrence.size() - 1).getTimePoint());
+        double duration = end - start;
+        return duration > maxDuration;
     }
 
     private boolean isOverMaxDuration(Occurrence occurrence) {

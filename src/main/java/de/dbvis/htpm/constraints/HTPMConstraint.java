@@ -49,4 +49,27 @@ public interface HTPMConstraint {
      * @return whether the pattern p is within the constraints or should be pruned
      */
     boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k);
+
+    /**
+     * This is the only constraint method that does not need to be anti-monotone:
+     * It is applied only when patterns are output, the rejected patterns are still used in the mining process.
+     * @param p the pattern output candidate
+     * @param occurrences occurrences of the output candidate
+     * @return whether the pattern p and its occurrences shall be output
+     */
+    boolean shouldOutput(HybridTemporalPattern p, List<Occurrence> occurrences);
+
+    /**
+     * called whenever algorithm finds a hybrid temporal pattern,
+     * in case the constraint needs to keep track of previously found patterns
+     * @param p the found pattern
+     * @param occurrences the occurrences of pattern p
+     * @param k the length of pattern p
+     */
+    void foundPattern(HybridTemporalPattern p, List<Occurrence> occurrences, int k);
+
+    int getPatternJoinPreventedCount();
+    int getOccurrenceJoinPreventedCount();
+    int getOccurrencesDiscardedCount();
+    int getPatternsDiscardedCount();
 }

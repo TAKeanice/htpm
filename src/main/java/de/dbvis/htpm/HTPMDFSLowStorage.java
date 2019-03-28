@@ -3,10 +3,10 @@ package de.dbvis.htpm;
 import de.dbvis.htpm.constraints.HTPMConstraint;
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
+import de.dbvis.htpm.occurrence.Occurrence;
 import de.dbvis.htpm.util.HTPMOutputEvent;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,16 +32,11 @@ public class HTPMDFSLowStorage extends HTPMLowStorage {
             return;
         }
 
-        List<List<PatternOccurrence>> m;
+        List<PatternOccurrence> patterns = this.genL1().get(0);
 
-        m = this.genL1();
+        output(patterns, 1);
 
-        this.fireHTPMEvent(new HTPMOutputEvent(this, 1, m.get(0).size(),
-                m.stream().flatMap(Collection::stream).collect(
-                        Collectors.toMap(po -> po.pattern, po -> po.occurrences.stream().map(link -> link.child)
-                                .collect(Collectors.toList())))));
-
-        patternDFS(m.get(0), 2);
+        patternDFS(patterns, 2);
     }
 
     private void patternDFS(List<PatternOccurrence> m, int depth) {
@@ -83,10 +78,7 @@ public class HTPMDFSLowStorage extends HTPMLowStorage {
             m.set(i, null);
 
             //continuously output found patterns
-            fireHTPMEvent(new HTPMOutputEvent(this, depth, partitions.get(i).size(), partitions.get(i).stream()
-                    .collect(Collectors.toMap(
-                            po -> po.pattern,
-                            po -> po.occurrences.stream().map(link -> link.child).collect(Collectors.toList())))));
+            output(partitions.get(i), depth);
 
             if (constraint.shouldGeneratePatternsOfLength(depth + 1)) {
                 patternDFS(partitions.get(i), depth + 1);

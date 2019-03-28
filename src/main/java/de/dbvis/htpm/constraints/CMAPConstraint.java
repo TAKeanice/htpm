@@ -16,13 +16,9 @@ import static de.dbvis.htpm.htp.eventnodes.OrderRelation.SMALLER;
  */
 public class CMAPConstraint extends AcceptAllConstraint {
 
-    private final SupportCounter supportCounter;
     private final Set<HybridTemporalPattern> twoPatterns = new HashSet<>();
 
-    CMAPConstraint(DefaultHTPMConstraint supportCounter) {
-
-        this.supportCounter = supportCounter;
-    }
+    private int joinPreventedCount = 0;
 
     @Override
     public boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
@@ -50,32 +46,62 @@ public class CMAPConstraint extends AcceptAllConstraint {
         IndexPair index1 = determineGroupIndices(pa1, pre, relations1);
         IndexPair index2 = determineGroupIndices(pa2, pre, relations2);
 
-        //build possible 2-patterns and apply constraint
-        List<List<EventNode>> twoPatternNodes = new ArrayList<>(1);
-        List<List<OrderRelation>> twoPatternRelations = new ArrayList<>(1);
+        //boolean tested = testPotentialPatterns(pa1, pa2, index1, index2);
+        //
+        //index1 = determineGroupIndices(pa1, pre, relations1);
+        //index2 = determineGroupIndices(pa2, pre, relations2);
 
-        assert index1.startGroup < index1.endGroup || index1.endGroup < 0;
-        assert index2.startGroup < index2.endGroup || index2.endGroup < 0;
+        final boolean accept = testPotentialPatterns(pa1, pa2, index1, index2);
+        if (!accept) {
+            joinPreventedCount++;
+        }
+        return accept;
+    }
 
-        ArrayList<EventNode> nodes = new ArrayList<>(4);
-        ArrayList<OrderRelation> relations = new ArrayList<>(3);
-        twoPatternNodes.add(nodes);
-        twoPatternRelations.add(relations);
+    @Override
+    public void foundPattern(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+        if (k == 2) {
+            //save two-patterns to CMAP index
+            twoPatterns.add(p);
+        }
+    }
 
-        return testPotentialPatterns(pa1, pa2, index1, index2, nodes, relations);
+    @Override
+    public int getPatternJoinPreventedCount() {
+        return joinPreventedCount;
+    }
+
+    @Override
+    public int getOccurrenceJoinPreventedCount() {
+        return 0;
+    }
+
+    @Override
+    public int getOccurrencesDiscardedCount() {
+        return 0;
+    }
+
+    @Override
+    public int getPatternsDiscardedCount() {
+        return 0;
     }
 
     private boolean testPotentialPatterns(List<EventNode> pa1, List<EventNode> pa2,
-                                          IndexPair index1, IndexPair index2,
-                                          ArrayList<EventNode> nodes, ArrayList<OrderRelation> relations) {
+                                          IndexPair index1, IndexPair index2) {
+
+        //build possible 2-patterns and apply constraint
+
+        ArrayList<EventNode> nodes = new ArrayList<>(4);
+        ArrayList<OrderRelation> relations = new ArrayList<>(3);
 
         final EventNode firstStart = pa1.get(index1.startIndex);
         final EventNode secondStart = pa2.get(index2.startIndex);
-        final EventNode firstEnd = pa1.get(index1.endIndex);
-        final EventNode secondEnd = pa2.get(index2.endIndex);
 
         final boolean firstIsInterval = index1.endGroup >= 0;
         final boolean secondIsInterval = index2.endGroup >= 0;
+
+        final EventNode firstEnd = firstIsInterval ? pa1.get(index1.endIndex) : null;
+        final EventNode secondEnd = secondIsInterval ? pa2.get(index2.endIndex) : null;
 
         final boolean firstAndSecondSameIntervalType = firstIsInterval && secondIsInterval
                 && firstStart.getIntegerEventID() == secondStart.getIntegerEventID();
@@ -144,15 +170,17 @@ public class CMAPConstraint extends AcceptAllConstraint {
                 return testPotentialPatternsLevel3(index1, index2, firstEnd, secondEnd, firstOccurrenceMark, secondOccurrenceMark, nodes, relations);
             }
         } else if (index2.startGroup > index1.endGroup) {
-            //FIRST END SECOND
-            nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
-            relations.add(SMALLER);
-            //SECOND START THIRD
+            if (firstIsInterval) {
+                //FIRST END SECOND
+                nodes.add(new IntervalEndEventNode(firstEnd, firstOccurrenceMark));
+                relations.add(SMALLER);
+            }
+            //SECOND START SECOND / THIRD
             nodes.add(secondIsInterval ? new IntervalStartEventNode(secondStart, secondOccurrenceMark)
                     : new PointEventNode(secondStart));
             relations.add(SMALLER);
             if (secondIsInterval) {
-                //SECOND END FOURTH
+                //SECOND END THIRD / FOURTH
                 nodes.add(new IntervalEndEventNode(secondEnd, secondOccurrenceMark));
                 relations.add(SMALLER);
             }
@@ -292,32 +320,27 @@ public class CMAPConstraint extends AcceptAllConstraint {
                     endIndex = i;
                     //we are done, have found start and end node of interval that is the pattern suffix
                     break;
-                    /* no need to continue group counting any more
-                    if (0 < i && relations.get(i-1) != SMALLER && relations.get(i) == SMALLER) {
-                        //we have a new (prefix) group afterwards
-                        groupNumber += 2;
-                    }
-                    */
                 } else {
                     startGroup = determineGroupIndexOfNode(i, groupNumber, relations);
                     startIndex = i;
-                    if (0 < i && relations.get(i-1) != SMALLER && relations.get(i) == SMALLER) {
-                        //we have a new (prefix) group afterwards
-                        groupNumber += 2;
-                    }
                     if (paNode instanceof PointEventNode) {
                         //we are done, have found the point node that is the suffix of this pattern
                         break;
+                    }
+                    if (0 < i && relations.get(i-1) != SMALLER && relations.get(i) == SMALLER && groupNumber < pre.size()) {
+                        //we have a new (prefix) group afterwards
+                        groupNumber += 2;
                     }
                 }
                 i++;
             } else {
                 //we are looking at a node from the prefix
+                preIndex++;
                 if (i < relations.size() && relations.get(i) == SMALLER) {
                     //next relation is a SMALLER relation -> next prefix node is in next group
-                    groupNumber += 2;
+                    // if there is no prefix node any more, upcoming nodes are "after last prefix group"
+                    groupNumber += (preIndex < pre.size() ? 2 : 1);
                 }
-                preIndex++;
                 i++;
             }
         }
@@ -325,29 +348,20 @@ public class CMAPConstraint extends AcceptAllConstraint {
     }
 
     public int determineGroupIndexOfNode(int nodeNumber, int currentGroupIndex, List<OrderRelation> relations) {
-        int startIndex;
+        int index;
         if (0 < nodeNumber && relations.get(nodeNumber - 1) != SMALLER) {
             //we are at same position as current group
-            startIndex = currentGroupIndex;
+            index = currentGroupIndex;
         } else if (nodeNumber < relations.size() && relations.get(nodeNumber) == SMALLER) {
             //we have already changed groups, but did not land in group from prefix
             // -> next (prefix) node will be after this node -> is between last and next group
-            startIndex = currentGroupIndex - 1;
+            index = currentGroupIndex - 1;
         } else {
             // we are at same position as current group
             // or in next group, and current group index already set to next prefix group
-            startIndex = currentGroupIndex;
+            index = currentGroupIndex;
         }
-        return startIndex;
-    }
-
-    @Override
-    public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
-        //we only override this method for its side effect
-        if (k == 2 && supportCounter.isSupported(p, occurrences, k)) {
-            twoPatterns.add(p);
-        }
-        return true;
+        return index;
     }
 
     class IndexPair {

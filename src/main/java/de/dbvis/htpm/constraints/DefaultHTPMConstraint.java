@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class DefaultHTPMConstraint extends AcceptAllConstraint implements SupportCounter {
+public class DefaultHTPMConstraint extends AcceptAllConstraint {
 
     /**
      * The minimum support each pattern has to satisfy
@@ -20,54 +20,51 @@ public class DefaultHTPMConstraint extends AcceptAllConstraint implements Suppor
      */
     private final HybridEventSequenceDatabase d;
 
-    /**
-     * The maximum allowed length for patterns
-     */
-    private final int maxPatternLength;
+    private int unsupportedCount = 0;
+    private int unsupportedOccurrences = 0;
 
-    public DefaultHTPMConstraint(HybridEventSequenceDatabase d, double minSupport, int maxPatternLength) {
+    public DefaultHTPMConstraint(HybridEventSequenceDatabase d, double minSupport) {
         this.d = d;
-        this.maxPatternLength = maxPatternLength;
         if(minSupport <= 0 || minSupport > 1) {
             throw new IllegalArgumentException("Minimum support must be 0 < min_support <= 1");
         }
         this.minSupport = minSupport;
     }
 
-    public boolean shouldGeneratePatternsOfLength(int k) {
-        return k <= maxPatternLength;
-    }
-
-    public boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
-        return firstPattern.getPrefix() == secondPattern.getPrefix();
-    }
-
-    public boolean occurrenceRecordsQualifyForJoin(Occurrence firstOccurrence, Occurrence secondOccurrence, int k) {
-        //make sure it is valid to merge the two occurrence records: only if they have same prefix (hence also from same sequence)
-        return firstOccurrence.getPrefix() == secondOccurrence.getPrefix();
-    }
-
+    @Override
     public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
         //prune patterns which do not fulfill minimum support
-        return this.isSupported(p, occurrences, k);
+        return this.isSupported(occurrences);
     }
 
-    public long unsupportedCount = 0;
-    public long unsupportedOccurrences = 0;
-    public long supportedCount = 0;
-    public long supportedOccurrences = 0;
+    @Override
+    public int getPatternJoinPreventedCount() {
+        return 0;
+    }
+
+    @Override
+    public int getOccurrenceJoinPreventedCount() {
+        return 0;
+    }
+
+    @Override
+    public int getOccurrencesDiscardedCount() {
+        return unsupportedOccurrences;
+    }
+
+    @Override
+    public int getPatternsDiscardedCount() {
+        return unsupportedCount;
+    }
 
     /**
      * Checks if there are enough sequences supporting the pattern
      */
-    public boolean isSupported(HybridTemporalPattern p, final List<Occurrence> occurrences, int k) {
+    public boolean isSupported(final List<Occurrence> occurrences) {
         final boolean isSupported = this.support(occurrences) >= this.minSupport;
         if (!isSupported) {
             unsupportedCount++;
             unsupportedOccurrences += occurrences.size();
-        } else {
-            supportedCount++;
-            supportedOccurrences += occurrences.size();
         }
         return isSupported;
     }

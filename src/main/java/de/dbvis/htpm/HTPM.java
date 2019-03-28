@@ -43,7 +43,7 @@ import static de.dbvis.htpm.ORAlignment.ORAlign;
  */
 public class HTPM implements Runnable {
 
-	private final boolean parallel = true;
+	private final boolean parallel = false;
 	private final int threadPoolSize = 10;
 
 	/**
@@ -94,6 +94,7 @@ public class HTPM implements Runnable {
 			return null;
 		}
 		return this.patterns.stream().flatMap(Collection::stream).flatMap(Collection::stream)
+				.filter(po -> constraint.shouldOutput(po.pattern, po.occurrences))
 				.collect(Collectors.toMap(po -> po.pattern, po -> po.occurrences));
 	}
 	
@@ -355,6 +356,7 @@ public class HTPM implements Runnable {
 		//	i1++;
 		for (int i1 = 0; i1 < or1.size(); i1++) {
 			Occurrence s1 = or1.get(i1);
+			final Occurrence occurrencePrefix = s1.getPrefix();
 
 			//avoid join of same occurrences twice (happens if both are from the same occurrence record)
 			//int minI2 = or1 == or2 ? i1 + 1 : 0;
@@ -372,7 +374,7 @@ public class HTPM implements Runnable {
 			for (int i2 = 0; i2 <= maxI2; i2++) {
 			//for (int i2 = minI2; i2 < or2.size(); i2++) {
 				Occurrence s2 = or2.get(i2);
-				if (!constraint.occurrenceRecordsQualifyForJoin(s1, s2, k)) {
+				if (occurrencePrefix != s2.getPrefix() || !constraint.occurrenceRecordsQualifyForJoin(s1, s2, k)) {
 					continue;
 				}
 
