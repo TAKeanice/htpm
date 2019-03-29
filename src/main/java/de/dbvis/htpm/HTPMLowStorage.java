@@ -364,6 +364,11 @@ public class HTPMLowStorage implements Runnable {
         parentP1.forEach((key, value) -> ((ArrayList) value.occurrences).trimToSize());
         parentP2.forEach((key, value) -> ((ArrayList) value.occurrences).trimToSize());
 
+        parentP1.forEach((pattern, occurrences) -> constraint.foundPattern(pattern,
+                occurrences.occurrences.stream().map(link -> link.child).collect(Collectors.toList()), k));
+        parentP2.forEach((pattern, occurrences) -> constraint.foundPattern(pattern,
+                occurrences.occurrences.stream().map(link -> link.child).collect(Collectors.toList()), k));
+
         return partitionedResult;
     }
 
@@ -389,7 +394,7 @@ public class HTPMLowStorage implements Runnable {
     }
 
 
-    class PatternOccurrence {
+    static class PatternOccurrence {
         final HybridTemporalPattern prefix;
         final HybridTemporalPattern pattern;
         final List<OccurrenceTreeLink> occurrences;
@@ -407,7 +412,7 @@ public class HTPMLowStorage implements Runnable {
         }
     }
 
-    class OccurrenceTreeLink {
+    static class OccurrenceTreeLink {
         final Occurrence child;
         final Occurrence parent;
 

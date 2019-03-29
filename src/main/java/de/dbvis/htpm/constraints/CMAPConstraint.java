@@ -339,7 +339,7 @@ public class CMAPConstraint extends AcceptAllConstraint {
                 if (i < relations.size() && relations.get(i) == SMALLER) {
                     //next relation is a SMALLER relation -> next prefix node is in next group
                     // if there is no prefix node any more, upcoming nodes are "after last prefix group"
-                    groupNumber += (preIndex < pre.size() ? 2 : 1);
+                    groupNumber += 2;
                 }
                 i++;
             }
@@ -352,9 +352,11 @@ public class CMAPConstraint extends AcceptAllConstraint {
         if (0 < nodeNumber && relations.get(nodeNumber - 1) != SMALLER) {
             //we are at same position as current group
             index = currentGroupIndex;
-        } else if (nodeNumber < relations.size() && relations.get(nodeNumber) == SMALLER) {
-            //we have already changed groups, but did not land in group from prefix
-            // -> next (prefix) node will be after this node -> is between last and next group
+        } else if (nodeNumber == relations.size()
+                || nodeNumber < relations.size() && relations.get(nodeNumber) == SMALLER) {
+            //we have already changed groups, but did not land in group from prefix (or behind last prefix node)
+            // -> next (prefix) node will be after this node (or does not exist)
+            // -> this node is between last and next prefix group (or after last prefix group)
             index = currentGroupIndex - 1;
         } else {
             // we are at same position as current group
@@ -364,7 +366,7 @@ public class CMAPConstraint extends AcceptAllConstraint {
         return index;
     }
 
-    class IndexPair {
+    static class IndexPair {
         final int startGroup;
         final int endGroup;
         final int startIndex;

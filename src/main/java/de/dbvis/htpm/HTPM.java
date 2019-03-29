@@ -43,7 +43,7 @@ import static de.dbvis.htpm.ORAlignment.ORAlign;
  */
 public class HTPM implements Runnable {
 
-	private final boolean parallel = false;
+	private final boolean parallel = true;
 	private final int threadPoolSize = 10;
 
 	/**
@@ -404,14 +404,17 @@ public class HTPM implements Runnable {
 		//parentP2.entrySet().forEach(e -> e.setValue(new ArrayList<>(e.getValue())));
 
 		//shrink arraylists allocated with large amount of memory
-		parentP1.forEach((key, value) -> ((ArrayList) value).trimToSize());
-		parentP2.forEach((key, value) -> ((ArrayList) value).trimToSize());
+		parentP1.forEach((pattern, occurrences) -> ((ArrayList) occurrences).trimToSize());
+		parentP2.forEach((pattern, occurrences) -> ((ArrayList) occurrences).trimToSize());
+
+		parentP1.forEach((pattern, occurrences) -> constraint.foundPattern(pattern, occurrences, k));
+		parentP2.forEach((pattern, occurrences) -> constraint.foundPattern(pattern, occurrences, k));
 
 		return partitionedResult;
 	}
 
 
-	class PatternOccurrence {
+	static class PatternOccurrence {
 		final HybridTemporalPattern pattern;
 		final List<Occurrence> occurrences;
 
