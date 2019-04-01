@@ -38,7 +38,7 @@ public class HTPMDFSLowStorage extends HTPMDFS {
 
         List<PatternOccurrence> patterns = this.genL1().get(0);
 
-        output(Collections.singletonList(patterns), 1);
+        output(Collections.singletonList(new ArrayList<>(patterns)), 1);
 
         patternDFS(patterns, 2);
     }
@@ -59,7 +59,7 @@ public class HTPMDFSLowStorage extends HTPMDFS {
             m.set(i, null);
 
             //continuously output found patterns
-            output(Collections.singletonList(partitions.get(i)), depth);
+            output(Collections.singletonList(new ArrayList<>(partitions.get(i))), depth);
 
             if (constraint.shouldGeneratePatternsOfLength(depth + 1)) {
                 patternDFS(partitions.get(i), depth + 1);
