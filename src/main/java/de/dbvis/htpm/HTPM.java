@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This is the core class which actually contains the HTPM-Algorithm.
@@ -42,8 +43,8 @@ import java.util.stream.Collectors;
  */
 public class HTPM implements Runnable {
 
-	private final boolean parallel = true;
-	private final int threadPoolSize = 10;
+	private final int threadPoolSize;
+	private final boolean parallel;
 	private final boolean saveMemory;
 
 	/**
@@ -70,18 +71,25 @@ public class HTPM implements Runnable {
 	 * @param constraint - The constraint determining the pre- and post-joining pruning behavior.
 	 */
 	public HTPM(HybridEventSequenceDatabase d, HTPMConstraint constraint) {
-		this(d, constraint, false);
+		this(d, constraint, false, 1);
 	}
 
-	public HTPM(HybridEventSequenceDatabase d, HTPMConstraint constraint, boolean saveMemory) {
+	public HTPM(HybridEventSequenceDatabase d, HTPMConstraint constraint, boolean saveMemory, int threadPoolSize) {
+
 		if(d == null) {
-			throw new NullPointerException("HybridEventDatabase must not be null");
+			throw new IllegalArgumentException("HybridEventDatabase must not be null");
 		}
-		this.d = d;
-		this.constraint = constraint;
+		if (threadPoolSize < 1) {
+			throw new IllegalArgumentException("There must be minimum 1 thread to run on");
+		}
 
 		this.listeners = new LinkedList<>();
+		this.parallel = threadPoolSize > 1;
+
+		this.d = d;
+		this.constraint = constraint;
 		this.saveMemory = saveMemory;
+		this.threadPoolSize = threadPoolSize;
 	}
 	
 	/**
@@ -197,10 +205,10 @@ public class HTPM implements Runnable {
 	 */
 	protected void fireHTPMEvent(HTPMOutputEvent e) {
 		for(HTPMListener l : this.listeners) {
-			if (listeners instanceof HTPMOutputListener) {
+			l.generationCalculated(e);
+
+			if (l instanceof HTPMOutputListener) {
 				((HTPMOutputListener) l).outputGenerated(e);
-			} else {
-				l.generationCalculated(e);
 			}
 		}
 	}
@@ -484,12 +492,11 @@ public class HTPM implements Runnable {
 	}
 
 	void output(List<List<PatternOccurrence>> patterns, int depth) {
-		final Map<HybridTemporalPattern, List<Occurrence>> outputPatterns = patterns.stream().flatMap(Collection::stream)
-				.collect(
-						Collectors.toMap(
-								po -> po.pattern,
-								po -> po.occurrences.stream().map(link -> link.child).collect(Collectors.toList())));
-		outputPatterns.entrySet().removeIf(entry -> !constraint.shouldOutput(entry.getKey(), entry.getValue()));
-		this.fireHTPMEvent(new HTPMOutputEvent(this, depth, outputPatterns.size(), outputPatterns));
+		final Stream<HTPMOutputEvent.PatternOccurrence> outputPatterns = patterns.stream().flatMap(Collection::stream)
+				.map(po -> new HTPMOutputEvent.PatternOccurrence(
+						po.pattern,
+						po.occurrences.stream().map(link -> link.child).collect(Collectors.toList())))
+				.filter(po -> constraint.shouldOutput(po.pattern, po.occurrences));
+		this.fireHTPMEvent(new HTPMOutputEvent(this, depth, patterns.stream().mapToInt(List::size).sum(), outputPatterns));
 	}
 }

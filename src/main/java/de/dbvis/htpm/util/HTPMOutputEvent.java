@@ -4,25 +4,35 @@ import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Stream;
 
 public class HTPMOutputEvent extends HTPMEvent {
 
-    private final Map<HybridTemporalPattern, List<Occurrence>> patterns;
+    private final Stream<PatternOccurrence> patternOccurrenceStream;
 
     public HTPMOutputEvent(Object source, int generation, int number_of_patterns, long when,
-                           Map<HybridTemporalPattern, List<Occurrence>> patterns) {
+                           Stream<PatternOccurrence> patternOccurrenceStream) {
         super(source, generation, number_of_patterns, when);
-        this.patterns = patterns;
+        this.patternOccurrenceStream = patternOccurrenceStream;
     }
 
     public HTPMOutputEvent(Object source, int generation, int number_of_patterns,
-                           Map<HybridTemporalPattern, List<Occurrence>> patterns) {
+                           Stream<PatternOccurrence> patternOccurrenceStream) {
         super(source, generation, number_of_patterns);
-        this.patterns = patterns;
+        this.patternOccurrenceStream = patternOccurrenceStream;
     }
 
-    public Map<HybridTemporalPattern, List<Occurrence>> getPatterns() {
-        return patterns;
+    public Stream<PatternOccurrence> getPatternOccurrenceStream() {
+        return patternOccurrenceStream;
+    }
+
+    public static class PatternOccurrence {
+        public final HybridTemporalPattern pattern;
+        public final List<Occurrence> occurrences;
+
+        public PatternOccurrence(HybridTemporalPattern pattern, List<Occurrence> occurrences) {
+            this.pattern = pattern;
+            this.occurrences = occurrences;
+        }
     }
 }
