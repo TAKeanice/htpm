@@ -21,14 +21,12 @@ public class CMAPConstraint extends AcceptAllConstraint {
     private int joinPreventedCount = 0;
 
     @Override
-    public boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
+    public boolean patternsQualifyForJoin(HybridTemporalPattern commonPrefix, HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
         if (k <= 2) {
             return true;
         }
 
         //check new two-pattern suffixes which can be made by joining the suffix of first and second pattern
-
-        HybridTemporalPattern prefix = firstPattern.getPrefix();
 
         List<EventNode> pa1 = firstPattern.getEventNodes();
         List<EventNode> pa2 = secondPattern.getEventNodes();
@@ -37,8 +35,8 @@ public class CMAPConstraint extends AcceptAllConstraint {
         List<OrderRelation> relations1 = firstPattern.getOrderRelations();
         List<OrderRelation> relations2 = secondPattern.getOrderRelations();
 
-        if (prefix != null) {
-            pre = prefix.getEventNodes();
+        if (commonPrefix != null) {
+            pre = commonPrefix.getEventNodes();
         } else {
             pre = Collections.emptyList();
         }
@@ -375,7 +373,7 @@ public class CMAPConstraint extends AcceptAllConstraint {
 
 
     private boolean testCompletePattern(List<EventNode> nodes, List<OrderRelation> relations) {
-        return twoPatterns.contains(new DefaultHybridTemporalPattern(nodes, relations, null));
+        return twoPatterns.contains(new DefaultHybridTemporalPattern(nodes, relations));
     }
 
 

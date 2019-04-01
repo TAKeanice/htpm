@@ -22,7 +22,7 @@ public class Example3 {
 		s.add(new DefaultHybridEvent("a", 3,9));
 		s.add(new DefaultHybridEvent("a", 4,9));
 		
-		HybridTemporalPattern p = buildFromSequence(s).getPattern(true);
+		HybridTemporalPattern p = buildFromSequence(s).getPattern();
 		
 		System.out.println(p.toString());
 		System.out.println("Length: "+p.length());

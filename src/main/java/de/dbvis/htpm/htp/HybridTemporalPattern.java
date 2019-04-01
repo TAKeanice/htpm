@@ -75,14 +75,6 @@ public interface HybridTemporalPattern {
 	public List<String> getEventIds();
 
 	/**
-	 * The canonical parent, having the same events with the same order for the first length-1 events
-	 * The first length-1 events are determined by the first length-1 interval startpoints or points
-	 * ordered by time then id then type (point/intervalstart) and finally occurrence mark order
-	 * @return the canonical parent of pattern
-	 */
-	public HybridTemporalPattern getPrefix();
-
-	/**
 	 * Checks the pattern for consistency and validity.
 	 * @return true iff the pattern is valid, false otherwise
 	 */

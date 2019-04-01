@@ -12,7 +12,7 @@ public abstract class AcceptAllConstraint implements HTPMConstraint {
     }
 
     @Override
-    public boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
+    public boolean patternsQualifyForJoin(HybridTemporalPattern commonPrefix, HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
         return true;
     }
 

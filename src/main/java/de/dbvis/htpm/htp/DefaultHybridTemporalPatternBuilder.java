@@ -179,20 +179,16 @@ public class DefaultHybridTemporalPatternBuilder {
         return occurrencePrefix;
     }
 
-    public HybridTemporalPattern getPattern(boolean setPrefix) {
-        if (htp == null && setPrefix) {
-            htp = new DefaultHybridTemporalPattern(ev, ors, patternPrefix);
-        } else if (htp == null) {
-            htp = new DefaultHybridTemporalPattern(ev, ors, null);
+    public HybridTemporalPattern getPattern() {
+        if (htp == null) {
+            htp = new DefaultHybridTemporalPattern(ev, ors);
         }
         return htp;
     }
 
-    public Occurrence getOccurence(boolean setPrefix) {
-        if (this.occ == null && setPrefix) {
-            occ = new DefaultOccurrence(seq, ops, occurrencePrefix);
-        } else if (this.occ == null) {
-            occ = new DefaultOccurrence(seq, ops, null);
+    public Occurrence getOccurence() {
+        if (this.occ == null) {
+            occ = new DefaultOccurrence(seq, ops);
         }
         return this.occ;
     }

@@ -16,12 +16,14 @@ public interface HTPMConstraint {
 
     /**
      * for checking joinability of two patterns (e.g. prefix property)
+     *
+     * @param commonPrefix the prefix that both patterns have in common
      * @param firstPattern the first pattern in the upcoming join
      * @param secondPattern the second pattern in the upcoming join
      * @param k length of patterns that shall be generated
      * @return whether the two patterns should be joined
      */
-    boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k);
+    boolean patternsQualifyForJoin(HybridTemporalPattern commonPrefix, HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k);
 
     /**
      * for checking joinability of two occurrence records, e.g. if they stem from the same sequence

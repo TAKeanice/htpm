@@ -19,14 +19,14 @@ public class Example6 {
 		s.add(new DefaultHybridEvent("c", 6));
 		s.add(new DefaultHybridEvent("a", 8, 12));
 		
-		HybridTemporalPattern p1 = buildFromSequence(s).getPattern(true);
+		HybridTemporalPattern p1 = buildFromSequence(s).getPattern();
 		
 		s = new DefaultHybridEventSequence("S1");
 		s.add(new DefaultHybridEvent("b", 6, 12));
 		s.add(new DefaultHybridEvent("c", 6));
 		s.add(new DefaultHybridEvent("c", 8));
 		
-		HybridTemporalPattern p2 = buildFromSequence(s).getPattern(true);
+		HybridTemporalPattern p2 = buildFromSequence(s).getPattern();
 		
 		System.out.println(p1);
 		System.out.println(p2);

@@ -266,7 +266,7 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		
 		//transform both, the pattern and this sequence into a
 		//list of HTPItems to find occurrences
-		List<HTPItem> own = buildFromHybridEventList(this, pevents).getPattern(true).getPatternItems();
+		List<HTPItem> own = buildFromHybridEventList(this, pevents).getPattern().getPatternItems();
 		List<HTPItem> ext = p.getPatternItems();
 		
 		//return occur2impl(own, ext, findfirst);

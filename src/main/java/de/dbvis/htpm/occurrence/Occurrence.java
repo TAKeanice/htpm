@@ -42,11 +42,6 @@ public interface Occurrence {
 	 * Returns the list of occurrence points in order of occurrence
 	 */
 	public List<OccurrencePoint> ops();
-
-	/**
-	 * @return the canonical parent of this occurrence
-	 */
-	public Occurrence getPrefix();
 	
 	/**
 	 * Returns a String representation of the Occurrence, the representation

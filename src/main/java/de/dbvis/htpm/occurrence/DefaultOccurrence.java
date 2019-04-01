@@ -24,24 +24,12 @@ public class DefaultOccurrence implements Occurrence {
 	 */
 	protected final OccurrencePoint[] ops;
 
-	/**
-	 * Holds the child - canonical parent relation for this occurrence.
-	 * The canonical parent of an occurrence must be from the same sequence,
-	 * and have the same length-1 occurrences as temporal prefix
-	 */
-	protected Occurrence prefix;
-
 	public DefaultOccurrence(HybridEventSequence seq, List<OccurrencePoint> ops) {
-		this(seq, ops, null);
-	}
-
-	public DefaultOccurrence(HybridEventSequence seq, List<OccurrencePoint> ops, Occurrence prefix) {
 		if(seq == null) {
 			throw new NullPointerException("DefaultHybridEventSequence must not be null");
 		}
 		this.seq = seq;
 		this.ops = ops.toArray(new OccurrencePoint[0]);
-		this.prefix = prefix;
 	}
 	
 	@Override
@@ -104,10 +92,5 @@ public class DefaultOccurrence implements Occurrence {
 			return true;
 		}
 		return false;
-	}
-
-	@Override
-	public Occurrence getPrefix() {
-		return prefix;
 	}
 }

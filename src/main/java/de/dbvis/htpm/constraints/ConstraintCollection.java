@@ -20,8 +20,8 @@ public class ConstraintCollection implements HTPMConstraint {
     }
 
     @Override
-    public boolean patternsQualifyForJoin(HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
-        return passesAll(c -> c.patternsQualifyForJoin(firstPattern, secondPattern, k));
+    public boolean patternsQualifyForJoin(HybridTemporalPattern commonPrefix, HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
+        return passesAll(c -> c.patternsQualifyForJoin(commonPrefix, firstPattern, secondPattern, k));
     }
 
     @Override

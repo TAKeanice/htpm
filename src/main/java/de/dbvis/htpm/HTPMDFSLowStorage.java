@@ -4,14 +4,13 @@ import de.dbvis.htpm.constraints.HTPMConstraint;
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
-import de.dbvis.htpm.util.HTPMOutputEvent;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-public class HTPMDFSLowStorage extends HTPMLowStorage {
+public class HTPMDFSLowStorage extends HTPMDFS {
 
     /**
      * Creates a new HTPM-Algorithm-Object.
@@ -21,6 +20,11 @@ public class HTPMDFSLowStorage extends HTPMLowStorage {
      */
     public HTPMDFSLowStorage(HybridEventSequenceDatabase d, HTPMConstraint constraint) {
         super(d, constraint);
+    }
+
+    @Override
+    public Map<HybridTemporalPattern, List<Occurrence>> getPatterns() {
+        throw new RuntimeException("Patterns are not saved after output in low storage mode!");
     }
 
     /**
@@ -34,7 +38,7 @@ public class HTPMDFSLowStorage extends HTPMLowStorage {
 
         List<PatternOccurrence> patterns = this.genL1().get(0);
 
-        output(patterns, 1);
+        output(Collections.singletonList(patterns), 1);
 
         patternDFS(patterns, 2);
     }
@@ -48,37 +52,14 @@ public class HTPMDFSLowStorage extends HTPMLowStorage {
         }
 
         for (int i = 0; i < m.size(); i++) {
-            PatternOccurrence first = m.get(i);
-
-            for (int j = i; j < m.size(); j++) {
-                PatternOccurrence second = m.get(j);
-
-                if (!constraint.patternsQualifyForJoin(first.pattern, second.pattern, depth)) {
-                    continue;
-                }
-
-                List<Map<HybridTemporalPattern, PatternOccurrence>> joined =
-                        join(first.prefix,
-                                first.pattern, first.occurrences,
-                                second.pattern, second.occurrences,
-                                depth);
-
-                //parse into pattern occurrences
-                List<PatternOccurrence> parentFirst = new ArrayList<>(joined.get(0).values());
-                partitions.get(i).addAll(parentFirst);
-
-                if (i != j) {
-                    List<PatternOccurrence> parentSecond = new ArrayList<>(joined.get(1).values());
-                    partitions.get(j).addAll(parentSecond);
-                }
-            }
+            calculateBranch(m, depth, partitions, i);
 
             //release current pattern, we will not use it any more
             // also removes it from the partitions stored by the calling subroutine
             m.set(i, null);
 
             //continuously output found patterns
-            output(partitions.get(i), depth);
+            output(Collections.singletonList(partitions.get(i)), depth);
 
             if (constraint.shouldGeneratePatternsOfLength(depth + 1)) {
                 patternDFS(partitions.get(i), depth + 1);

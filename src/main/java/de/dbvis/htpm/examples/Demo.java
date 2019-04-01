@@ -126,7 +126,7 @@ public class Demo {
 		//Note: Also Patterns have IDs, it does not matter what we set here.
 		
 		//We can also generate a pattern out of a whole sequence.
-		System.out.println(buildFromSequence(mo).getPattern(true).toString());
+		System.out.println(buildFromSequence(mo).getPattern().toString());
 		//Output: htp1=(b+0<a=c<b-0)
 		//You should be able now to identify what that means.
 		//Okay you are probably lazy so I'll tell you.

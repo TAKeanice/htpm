@@ -21,19 +21,19 @@ public class HybridTemporalPatternTest {
 		s.add(new DefaultHybridEvent("a", 1, 2));
 		s.add(new DefaultHybridEvent("b", 3));
 		
-		this.p = buildFromSequence(s).getPattern(true); //a<b<a
+		this.p = buildFromSequence(s).getPattern(); //a<b<a
 		
 		s = new DefaultHybridEventSequence("2");
 		s.add(new DefaultHybridEvent("a", 1, 3));
 		s.add(new DefaultHybridEvent("b", 2, 4));
 		
-		this.p2 = buildFromSequence(s).getPattern(true); //a<b<a<b
+		this.p2 = buildFromSequence(s).getPattern(); //a<b<a<b
 		
 		s = new DefaultHybridEventSequence("3");
 		s.add(new DefaultHybridEvent("a", 1));
 		s.add(new DefaultHybridEvent("b", 2, 4));
 		
-		this.p3 = buildFromSequence(s).getPattern(true); //a<b<b
+		this.p3 = buildFromSequence(s).getPattern(); //a<b<b
 	}
 
 	@Test

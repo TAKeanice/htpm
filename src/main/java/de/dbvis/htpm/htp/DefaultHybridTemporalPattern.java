@@ -10,8 +10,6 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	private final EventNode[] eventnodes;
 	private final OrderRelation[] orderrelations;
 
-	private HybridTemporalPattern prefix;
-
 	//stored for performance reasons
 	private Integer length = null;
 	private String patternstr = null;
@@ -20,9 +18,7 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	private Boolean isValid = null;
 	private List<HTPItem> patternItems = null;
 
-	public DefaultHybridTemporalPattern(List<EventNode> eventnodes, List<OrderRelation> orderrelations,
-										HybridTemporalPattern prefix) {
-		this.prefix = prefix;
+	public DefaultHybridTemporalPattern(List<EventNode> eventnodes, List<OrderRelation> orderrelations) {
 		this.eventnodes = eventnodes.toArray(new EventNode[0]);
 		this.orderrelations = orderrelations.toArray(new OrderRelation[0]);
 	}
@@ -245,10 +241,5 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		}
 
 		return true;
-	}
-
-	@Override
-	public HybridTemporalPattern getPrefix() {
-		return prefix;
 	}
 }

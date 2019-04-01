@@ -3,11 +3,11 @@ package de.dbvis.htpm;
 import de.dbvis.htpm.constraints.HTPMConstraint;
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
-import de.dbvis.htpm.occurrence.Occurrence;
-import de.dbvis.htpm.util.HTPMEvent;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class HTPMDFS extends HTPM {
 
@@ -38,12 +38,10 @@ public class HTPMDFS extends HTPM {
 
         this.patterns.add(m);
 
-        this.fireHTPMEvent(new HTPMEvent(this, 1, m.get(0).size()));
+        final List<PatternOccurrence> onePatterns = m.get(0);
+        output(m, 1);
 
-        final List<List<List<PatternOccurrence>>> patternOccurrences = patternDFS(m.get(0), 2);
-        this.patterns.addAll(patternOccurrences);
-
-        System.out.println("generated a total of " + getPatterns().size() + " patterns");
+        this.patterns.addAll(patternDFS(onePatterns, 2));
     }
 
     private List<List<List<PatternOccurrence>>> patternDFS(List<PatternOccurrence> m, int depth) {
@@ -58,37 +56,13 @@ public class HTPMDFS extends HTPM {
         }
 
         for (int i = 0; i < m.size(); i++) {
-            PatternOccurrence first = m.get(i);
-            for (int j = i; j < m.size(); j++) {
-                PatternOccurrence second = m.get(j);
+            calculateBranch(m, depth, partitions, i);
 
-                if (!constraint.patternsQualifyForJoin(first.pattern, second.pattern, depth)) {
-                    continue;
-                }
-
-                List<Map<HybridTemporalPattern, List<Occurrence>>> joined =
-                        join(first.pattern.getPrefix(),
-                                first.pattern, first.occurrences,
-                                second.pattern, second.occurrences,
-                                depth);
-
-                //parse into pattern occurrences
-
-                List<PatternOccurrence> parentFirst = joined.get(0).entrySet().stream()
-                        .map(entry -> new PatternOccurrence(entry.getKey(), entry.getValue()))
-                        .collect(Collectors.toList());
-                partitions.get(i).addAll(parentFirst);
-
-                if (i != j) {
-                    List<PatternOccurrence> parentSecond = joined.get(1).entrySet().stream()
-                            .map(entry -> new PatternOccurrence(entry.getKey(), entry.getValue()))
-                            .collect(Collectors.toList());
-                    partitions.get(j).addAll(parentSecond);
-                }
-            }
+            output(Collections.singletonList(partitions.get(i)), depth);
 
             if (constraint.shouldGeneratePatternsOfLength(depth + 1)) {
                 List<List<List<PatternOccurrence>>> partitionChildren = patternDFS(partitions.get(i), depth + 1);
+
                 //add children level by level
                 for (int j = 0; j < partitionChildren.size(); j++) {
                     if (j >= results.size()) {
@@ -102,5 +76,31 @@ public class HTPMDFS extends HTPM {
         }
 
         return results;
+    }
+
+    protected void calculateBranch(List<PatternOccurrence> m, int depth,
+                                 List<List<PatternOccurrence>> partitions, int index) {
+
+        PatternOccurrence first = m.get(index);
+
+        for (int j = index; j < m.size(); j++) {
+            PatternOccurrence second = m.get(j);
+
+            if (!constraint.patternsQualifyForJoin(first.prefix, first.pattern, second.pattern, depth)) {
+                continue;
+            }
+
+            List<Map<HybridTemporalPattern, PatternOccurrence>> joined = join(first, second, depth);
+
+            //parse into pattern occurrences
+
+            List<PatternOccurrence> parentFirst = new ArrayList<>(joined.get(0).values());
+            partitions.get(index).addAll(parentFirst);
+
+            if (index != j) {
+                List<PatternOccurrence> parentSecond = new ArrayList<>(joined.get(1).values());
+                partitions.get(j).addAll(parentSecond);
+            }
+        }
     }
 }

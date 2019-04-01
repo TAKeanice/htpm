@@ -32,10 +32,10 @@ public class Example4 {
 		s5.add(new DefaultHybridEvent("a", 0,2));
 		s5.add(new DefaultHybridEvent("b", 0,3));
 		
-		HybridTemporalPattern p2 = buildFromSequence(s2).getPattern(true);
-		HybridTemporalPattern p3 = buildFromSequence(s3).getPattern(true);
-		HybridTemporalPattern p4 = buildFromSequence(s4).getPattern(true);
-		HybridTemporalPattern p5 = buildFromSequence(s5).getPattern(true);
+		HybridTemporalPattern p2 = buildFromSequence(s2).getPattern();
+		HybridTemporalPattern p3 = buildFromSequence(s3).getPattern();
+		HybridTemporalPattern p4 = buildFromSequence(s4).getPattern();
+		HybridTemporalPattern p5 = buildFromSequence(s5).getPattern();
 		
 		System.out.println(">>"+s1.occur(p2));
 		System.out.println(">>"+s1.occur(p3));
