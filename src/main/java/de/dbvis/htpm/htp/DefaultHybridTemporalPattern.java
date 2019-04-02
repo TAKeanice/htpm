@@ -18,11 +18,20 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	private Boolean isValid = null;
 	private List<HTPItem> patternItems = null;
 
+	/**
+	 * Internal method to create default pattern from already accumulated event nodes and order relations
+	 * @param eventnodes the event nodes of the pattern
+	 * @param orderrelations the order relations of the pattern
+	 */
 	public DefaultHybridTemporalPattern(List<EventNode> eventnodes, List<OrderRelation> orderrelations) {
 		this.eventnodes = eventnodes.toArray(new EventNode[0]);
 		this.orderrelations = orderrelations.toArray(new OrderRelation[0]);
 	}
 
+	/**
+	 * Method to create pattern from string. See original paper for correct specification
+	 * @param pattern the pattern string. Example: a+0=b<a-0<c
+	 */
 	public DefaultHybridTemporalPattern(String pattern) {
 		List<EventNode> eventnodes = new ArrayList<>();
 		List<OrderRelation> orderrelations = new ArrayList<>();
@@ -84,6 +93,17 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 				id.append(c);
 			} else {
 				oc.append(c);
+			}
+		}
+
+		//even for correctly specified patterns, orders within a group connected with "=" signs (e.g. a=b=c)
+		//might be different internally, because we use IDs to order nodes instead of string order (e.g. a=c=b)
+		int groupStart = 0;
+		for (int i = 0; i <= orderrelations.size(); i++) {
+			if (i == orderrelations.size() || orderrelations.get(i) == OrderRelation.SMALLER) {
+				//we finished a group. Sort group internally.
+				eventnodes.subList(groupStart, i + 1).sort(EventNode::compareTo);
+				groupStart = i + 1;
 			}
 		}
 

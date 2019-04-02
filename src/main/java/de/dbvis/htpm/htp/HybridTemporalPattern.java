@@ -83,16 +83,13 @@ public interface HybridTemporalPattern extends Comparable<HybridTemporalPattern>
 	public static int compare(HybridTemporalPattern first, HybridTemporalPattern second) {
 		List<HTPItem> firstItems = first.getPatternItems();
 		List<HTPItem> secondItems = second.getPatternItems();
-		int result = 0;
-		for (int i = 0; i < Math.min(firstItems.size(), secondItems.size()) && result == 0; i++) {
+		int result = Integer.compare(firstItems.size(), secondItems.size());
+		for (int i = 0; i < firstItems.size() && result == 0; i++) {
 			if (firstItems.get(i) instanceof EventNode) {
 				result = ((EventNode) firstItems.get(i)).compareTo((EventNode) secondItems.get(i));
 			} else {
 				result = ((OrderRelation) firstItems.get(i)).compareTo((OrderRelation) secondItems.get(i));
 			}
-		}
-		if (result == 0) {
-			result = Integer.compare(firstItems.size(), secondItems.size());
 		}
 		return result;
 	}
