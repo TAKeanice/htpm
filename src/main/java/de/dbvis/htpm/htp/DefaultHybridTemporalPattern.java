@@ -171,6 +171,11 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	}
 
 	@Override
+	public int compareTo(HybridTemporalPattern o) {
+		return HybridTemporalPattern.compare(this, o);
+	}
+
+	@Override
 	public List<HTPItem> getPatternItems() {
 		if (this.patternItems == null) {
 			this.patternItems = new ArrayList<>(this.orderrelations.length * 2 + 1);
