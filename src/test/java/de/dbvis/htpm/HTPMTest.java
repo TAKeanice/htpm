@@ -14,7 +14,6 @@ import de.dbvis.htpm.util.HTPMListener;
 import de.dbvis.htpm.util.HTPMOutputEvent;
 import de.dbvis.htpm.util.HTPMOutputListener;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
@@ -22,12 +21,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class HTPMTest {
-	private HybridEventSequenceDatabase d;
+	
+	@Test
+	public void htpmForHybridPatternsTest() {
 
-	@Before
-	public void setUp() {
-		d = new DefaultHybridEventSequenceDatabase();
-		
+		HybridEventSequenceDatabase d = new DefaultHybridEventSequenceDatabase();
+
 		HybridEventSequence s = new DefaultHybridEventSequence("1");
 		
 		s.add(new DefaultHybridEvent("c", 6));
@@ -54,17 +53,29 @@ public class HTPMTest {
 		s.add(new DefaultHybridEvent("a", 9, 12));
 		
 		d.add(s);
-	}
-	
-	@Test
-	public void algorithmTest() {
+
 		HTPM htpm = new HTPM(d, new DefaultHTPMConstraint(d, 0.5));
 		
 		htpm.addHTPMListener(event -> System.out.println("Generation: "+event.getGeneration() + " Number of patterns: " + event.getNumberOfPatterns()));
 		
 		htpm.run();
-		
-		//assertEquals("{htp1=(c)=[1(6.0), 1(8.0), 2(6.0), 2(8.0), 3(4.0)], htp1=(b+0=c<c<b-0)=[1(6.0,6.0,8.0,12.0), 2(6.0,6.0,8.0,11.0)], htp1=(c<c)=[1(6.0,8.0), 2(6.0,8.0)], htp1=(a+0=c<a-0)=[1(8.0,8.0,12.0), 2(8.0,8.0,11.0), 3(4.0,4.0,10.0)], htp1=(b+0<a+0<a-0=b-0)=[1(6.0,8.0,12.0,12.0), 2(6.0,8.0,11.0,11.0), 3(4.0,9.0,12.0,12.0)], htp1=(a+0<a+1<a-0<a-1)=[1(5.0,8.0,10.0,12.0), 3(4.0,9.0,10.0,12.0)], htp1=(b+0<c<b-0)=[1(6.0,8.0,12.0), 2(6.0,8.0,11.0)], htp1=(c<a+0<a-0)=[1(6.0,8.0,12.0), 2(6.0,8.0,11.0), 3(4.0,9.0,12.0)], htp1=(b+0<a+0=c<a-0=b-0)=[1(6.0,8.0,8.0,12.0,12.0), 2(6.0,8.0,8.0,11.0,11.0)], htp1=(b+0=c<b-0)=[1(6.0,6.0,12.0), 2(6.0,6.0,11.0), 3(4.0,4.0,12.0)], htp1=(a+0<a-0)=[1(5.0,10.0), 1(8.0,12.0), 2(8.0,11.0), 3(4.0,10.0), 3(9.0,12.0)], htp1=(b+0=c<a+0=c<a-0=b-0)=[1(6.0,6.0,8.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,8.0,11.0,11.0)], htp1=(c<a+0=c<a-0)=[1(6.0,8.0,8.0,12.0), 2(6.0,8.0,8.0,11.0)], htp1=(b+0=c<a+0<a-0=b-0)=[1(6.0,6.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,11.0,11.0), 3(4.0,4.0,9.0,12.0,12.0)], htp1=(b+0<b-0)=[1(6.0,12.0), 2(6.0,11.0), 3(4.0,12.0)]}", htpm.getPatterns().toString());
+
+		Assert.assertEquals("{(c)=[1(6.0), 1(8.0), 2(6.0), 2(8.0), 3(4.0)], " +
+						"(c<c)=[1(6.0,8.0), 2(6.0,8.0)], " +
+						"(a+0<a-0)=[1(5.0,10.0), 1(8.0,12.0), 2(8.0,11.0), 3(4.0,10.0), 3(9.0,12.0)], " +
+						"(b+0<b-0)=[1(6.0,12.0), 2(6.0,11.0), 3(4.0,12.0)], " +
+						"(c<a+0<a-0)=[1(6.0,8.0,12.0), 2(6.0,8.0,11.0), 3(4.0,9.0,12.0)], " +
+						"(c=a+0<a-0)=[1(8.0,8.0,12.0), 2(8.0,8.0,11.0), 3(4.0,4.0,10.0)], " +
+						"(c=b+0<b-0)=[1(6.0,6.0,12.0), 2(6.0,6.0,11.0), 3(4.0,4.0,12.0)], " +
+						"(b+0<c<b-0)=[1(6.0,8.0,12.0), 2(6.0,8.0,11.0)], " +
+						"(c<c=a+0<a-0)=[1(6.0,8.0,8.0,12.0), 2(6.0,8.0,8.0,11.0)], " +
+						"(c=b+0<c<b-0)=[1(6.0,6.0,8.0,12.0), 2(6.0,6.0,8.0,11.0)], " +
+						"(a+0<a+1<a-0<a-1)=[1(5.0,8.0,10.0,12.0), 3(4.0,9.0,10.0,12.0)], " +
+						"(b+0<a+0<a-0=b-0)=[1(6.0,8.0,12.0,12.0), 2(6.0,8.0,11.0,11.0), 3(4.0,9.0,12.0,12.0)], " +
+						"(c=b+0<a+0<a-0=b-0)=[1(6.0,6.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,11.0,11.0), 3(4.0,4.0,9.0,12.0,12.0)], " +
+						"(b+0<c=a+0<a-0=b-0)=[1(6.0,8.0,8.0,12.0,12.0), 2(6.0,8.0,8.0,11.0,11.0)], " +
+						"(c=b+0<c=a+0<a-0=b-0)=[1(6.0,6.0,8.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,8.0,11.0,11.0)]}",
+				htpm.getPatternsSortedByLength().toString());
 	}
 
 	@Test
@@ -176,36 +187,28 @@ public class HTPMTest {
 		expected.sort(HybridTemporalPattern::compareTo);
 
 		List<Stream<HTPMOutputEvent.PatternOccurrence>> output1 = new ArrayList<>();
-		testHTPM(0, 100, 100, 0.5, 1,
-				false, false, true, true, false, d,
-				createAccumulatingListener(output1));
+		testPlainHTPM(d, createAccumulatingListener(output1), 0.5, false, false);
 		List<HybridTemporalPattern> algorithmResults1 = new ArrayList<>(patternsFromAccumulatedStreams(output1));
 		algorithmResults1.sort(HybridTemporalPattern::compareTo);
 		Assert.assertEquals(expected, algorithmResults1);
 
 
 		List<Stream<HTPMOutputEvent.PatternOccurrence>> output2 = new ArrayList<>();
-		testHTPM(0, 100, 100, 0.5, 1,
-				false, false, false, true, true, d,
-				createAccumulatingListener(output2));
+		testPlainHTPM(d, createAccumulatingListener(output2), 0.5, false, true);
 		List<HybridTemporalPattern> algorithmResults2 = new ArrayList<>(patternsFromAccumulatedStreams(output2));
 		algorithmResults2.sort(HybridTemporalPattern::compareTo);
 		Assert.assertEquals(expected, algorithmResults2);
 
 
 		List<Stream<HTPMOutputEvent.PatternOccurrence>> output3 = new ArrayList<>();
-		testHTPM(0, 100, 100, 0.5, 1,
-				false, false, true, false, false, d,
-				createAccumulatingListener(output3));
+		testPlainHTPM(d, createAccumulatingListener(output3), 0.5, true, true);
 		List<HybridTemporalPattern> algorithmResults3 = new ArrayList<>(patternsFromAccumulatedStreams(output3));
 		algorithmResults3.sort(HybridTemporalPattern::compareTo);
 		Assert.assertEquals(expected, algorithmResults3);
 
 
 		List<Stream<HTPMOutputEvent.PatternOccurrence>> output4 = new ArrayList<>();
-		testHTPM(0, 100, 100, 0.5, 1,
-				false, false, false, false, true, d,
-				createAccumulatingListener(output4));
+		testPlainHTPM(d, createAccumulatingListener(output4), 0.5, true, false);
 		List<HybridTemporalPattern> algorithmResults4 = new ArrayList<>(patternsFromAccumulatedStreams(output4));
 		algorithmResults4.sort(HybridTemporalPattern::compareTo);
 		Assert.assertEquals(expected, algorithmResults4);
@@ -264,7 +267,7 @@ public class HTPMTest {
 
 		List<HTPMOutputEvent.PatternOccurrence> outputs1 = new ArrayList<>();
 
-		final HTPMOutputListener listener = new HTPMOutputListener() {
+		final HTPMOutputListener listener1 = new HTPMOutputListener() {
 			@Override
 			public void outputGenerated(HTPMOutputEvent event) {
 				List<HTPMOutputEvent.PatternOccurrence> events = event.getPatternOccurrenceStream().collect(Collectors.toList());
@@ -282,27 +285,26 @@ public class HTPMTest {
 			}
 		};
 
+		testPlainHTPM(d, listener1, 0.2, false, false);
+		final Set<HybridTemporalPattern> output1Patterns = outputs1.stream().map(po -> po.pattern).collect(Collectors.toSet());
+
+
 		List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams2 = new ArrayList<>();
 		final HTPMOutputListener listener2 = createAccumulatingListener(outputStreams2);
+		testPlainHTPM(d, listener2, 0.2, true, false);
+		Assert.assertEquals(output1Patterns, patternsFromAccumulatedStreams(outputStreams2));
+
 
 		List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams3 = new ArrayList<>();
 		final HTPMOutputListener listener3 = createAccumulatingListener(outputStreams3);
-
-		testHTPM(0, 1000, 1, 0.2, 0,
-				false, false, true, true, false, d,
-				listener);
-
-		testHTPM(0, 1000, 1, 0.2, 0,
-				false, false, false, false, true, d,
-				listener2);
-
-		testHTPM(0, 1000, 1, 0.2, 0,
-				false, false, false, true, true, d,
-				listener3);
-
-		final Set<HybridTemporalPattern> output1Patterns = outputs1.stream().map(po -> po.pattern).collect(Collectors.toSet());
-		Assert.assertEquals(output1Patterns, patternsFromAccumulatedStreams(outputStreams2));
+		testPlainHTPM(d, listener3, 0.2, true, true);
 		Assert.assertEquals(output1Patterns, patternsFromAccumulatedStreams(outputStreams3));
+
+
+		List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams4 = new ArrayList<>();
+		final HTPMOutputListener listener4 = createAccumulatingListener(outputStreams4);
+		testPlainHTPM(d, listener4, 0.2, false, true);
+		Assert.assertEquals(output1Patterns, patternsFromAccumulatedStreams(outputStreams4));
 	}
 
 	private Set<HybridTemporalPattern> patternsFromAccumulatedStreams(List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams) {
@@ -322,16 +324,31 @@ public class HTPMTest {
 		};
 	}
 
-	private void testHTPM(int minSizeForOutput, int maxSize, double maxDuration, double minSupport, int minOccurrences,
-						  boolean episodeMining, boolean patternSize, boolean cmap,
-						  boolean lowStorage, boolean dfs,
-						  HybridEventSequenceDatabase database, HTPMListener listener) {
+	private void testPlainHTPM(HybridEventSequenceDatabase database, HTPMListener listener,
+							   double minSupport, boolean dfs, boolean lowStorage) {
+		testHTPM(database, listener,
+				//plain (no episode mining) support threshold
+				minSupport,
+				//all fancy additional options false
+				false, 0, 0, false, 0, false, 0, false, 0,
+				//activate cmap
+				dfs, !dfs, lowStorage);
+	}
+
+	private void testHTPM(HybridEventSequenceDatabase database, HTPMListener listener,
+						  double minSupport,
+						  boolean patternSize, int minSizeForOutput, int maxSize,
+						  boolean episodeMining, int minOccurrences, boolean duration, double maxDuration,
+						  boolean gap, double prefixMaxGap,
+						  boolean dfs, boolean cmap,
+						  boolean lowStorage) {
 
 		DefaultHTPMConstraint defaultConstraint = null;
 		EpisodeMiningConstraint episodeMiningConstraint = null;
 		MaxDurationConstraint maxDurationConstraint = null;
 		PatternSizeConstraint patternSizeConstraint = null;
 		CMAPConstraint cmapConstraint = null;
+		PrefixMaxGapConstraint prefixMaxGapConstraint = null;
 
 		final List<HTPMConstraint> constraints = new ArrayList<>();
 
@@ -340,17 +357,22 @@ public class HTPMTest {
 			constraints.add(episodeMiningConstraint);
 		} else {
 			defaultConstraint = new DefaultHTPMConstraint(database, minSupport);
-			maxDurationConstraint = new MaxDurationConstraint(maxDuration);
 			constraints.add(defaultConstraint);
-			constraints.add(maxDurationConstraint);
+			if (duration) {
+				maxDurationConstraint = new MaxDurationConstraint(maxDuration);
+				constraints.add(maxDurationConstraint);
+			}
+		}
+		if (cmap && !dfs) {
+			cmapConstraint = new CMAPConstraint();
+			constraints.add(cmapConstraint);
 		}
 		if (patternSize) {
 			patternSizeConstraint = new PatternSizeConstraint(maxSize, minSizeForOutput);
 			constraints.add(patternSizeConstraint);
 		}
-		if (cmap) {
-			cmapConstraint = new CMAPConstraint();
-			constraints.add(cmapConstraint);
+		if (gap) {
+			prefixMaxGapConstraint = new PrefixMaxGapConstraint(prefixMaxGap);
 		}
 
 		final ConstraintCollection combinedConstraint = new ConstraintCollection(constraints);
@@ -382,11 +404,16 @@ public class HTPMTest {
 		} else {
 			System.out.println("discarded patterns by default constraint: " + defaultConstraint.getPatternsDiscardedCount());
 			System.out.println("discarded occurrences by default constraint: " + defaultConstraint.getOccurrencesDiscardedCount());
-			System.out.println("prevented occurrence joins by maxDuration constraint: " + maxDurationConstraint.getOccurrenceJoinPreventedCount());
-			System.out.println("discarded occurrences by maxDuration constraint: " + maxDurationConstraint.getOccurrencesDiscardedCount());
+			if (duration) {
+				System.out.println("prevented occurrence joins by maxDuration constraint: " + maxDurationConstraint.getOccurrenceJoinPreventedCount());
+				System.out.println("discarded occurrences by maxDuration constraint: " + maxDurationConstraint.getOccurrencesDiscardedCount());
+			}
 		}
-		if (cmap) {
+		if (cmap && !dfs) {
 			System.out.println("prevented joins by CMAP constraint: " + cmapConstraint.getPatternJoinPreventedCount());
+		}
+		if (gap) {
+			System.out.println("discarded occurrences by prefixMaxGap constraint: " + prefixMaxGapConstraint.getOccurrencesDiscardedCount());
 		}
 	}
 }

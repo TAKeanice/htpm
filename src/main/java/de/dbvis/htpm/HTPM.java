@@ -124,16 +124,8 @@ public class HTPM implements Runnable {
 	 * @return The patterns sorted by length with their occurrences
 	 */
 	public Map<HybridTemporalPattern, List<Occurrence>> getPatternsSortedByLength() {
-		TreeMap<HybridTemporalPattern, List<Occurrence>> sortedmap = new TreeMap<>((o1, o2) -> {
-            if (o1.length() == o2.length()) {
-                return o1.toString().compareTo(o2.toString());
-            }
-
-            return o1.length() - o2.length();
-        });
-		
+		TreeMap<HybridTemporalPattern, List<Occurrence>> sortedmap = new TreeMap<>(HybridTemporalPattern::compareTo);
 		sortedmap.putAll(getPatterns());
-		
 		return sortedmap;
 	}
 	
