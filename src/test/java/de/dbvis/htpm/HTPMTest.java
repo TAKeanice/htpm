@@ -373,6 +373,7 @@ public class HTPMTest {
 		}
 		if (gap) {
 			prefixMaxGapConstraint = new PrefixMaxGapConstraint(prefixMaxGap);
+			constraints.add(prefixMaxGapConstraint);
 		}
 
 		final ConstraintCollection combinedConstraint = new ConstraintCollection(constraints);

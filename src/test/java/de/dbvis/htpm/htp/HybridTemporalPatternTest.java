@@ -3,12 +3,15 @@ package de.dbvis.htpm.htp;
 import de.dbvis.htpm.hes.DefaultHybridEventSequence;
 import de.dbvis.htpm.hes.events.DefaultHybridEvent;
 import de.dbvis.htpm.htp.eventnodes.*;
+import de.dbvis.htpm.util.UniqueIDConverter;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
 
 import static de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder.buildFromSequence;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class HybridTemporalPatternTest {
 	
@@ -34,6 +37,15 @@ public class HybridTemporalPatternTest {
 		s.add(new DefaultHybridEvent("b", 2, 4));
 		
 		this.p3 = buildFromSequence(s).getPattern(); //a<b<b
+	}
+
+	@Before
+	public void setUp() {
+		//fix id order
+		UniqueIDConverter.reset();
+		new PointEventNode("a");
+		new PointEventNode("b");
+		new PointEventNode("c");
 	}
 
 	@Test
