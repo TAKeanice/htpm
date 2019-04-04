@@ -3,8 +3,6 @@ package de.dbvis.htpm.htp;
 import de.dbvis.htpm.hes.DefaultHybridEventSequence;
 import de.dbvis.htpm.hes.events.DefaultHybridEvent;
 import de.dbvis.htpm.htp.eventnodes.*;
-import de.dbvis.htpm.util.UniqueIDConverter;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
@@ -39,18 +37,9 @@ public class HybridTemporalPatternTest {
 		this.p3 = buildFromSequence(s).getPattern(); //a<b<b
 	}
 
-	@Before
-	public void setUp() {
-		//fix id order
-		UniqueIDConverter.reset();
-		new PointEventNode("a");
-		new PointEventNode("b");
-		new PointEventNode("c");
-	}
-
 	@Test
 	public void testPointEvents() {
-		List<HTPItem> items = this.p.getPatternItems();
+		List<HTPItem> items = this.p.getPatternItemsInIntegerIdOrder();
 		assertTrue(items.get(0) instanceof IntervalStartEventNode);
 
 		assertTrue(items.get(1) instanceof OrderRelation);

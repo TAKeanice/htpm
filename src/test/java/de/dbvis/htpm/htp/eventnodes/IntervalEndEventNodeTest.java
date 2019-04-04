@@ -40,7 +40,7 @@ public class IntervalEndEventNodeTest {
 	@Test
 	public void checkCreationById() {
 		IntervalEndEventNode p = new IntervalEndEventNode("a", 3);
-		assertEquals("a", p.getStringEventNodeId());
+		assertEquals("a", p.getStringEventId());
 		assertEquals(3, p.getOccurrenceMark(), 0);
 		//assertNull(p.getHybridEvent());
 		assertEquals("a-3", p.toString());

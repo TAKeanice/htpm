@@ -63,7 +63,7 @@ public class HTPVisualizer extends JComponent {
 		this.pattern = pattern;
 		this.events = null;
 		if (pattern != null) {
-			this.events = pattern.getPatternItems().toArray(new HTPItem[0]);
+			this.events = pattern.getPatternItemsInIntegerIdOrder().toArray(new HTPItem[0]);
 		}
 		
 		this.total_Xgps = this.getNumberOfXGridPoints();
@@ -74,7 +74,7 @@ public class HTPVisualizer extends JComponent {
 
 	protected int getNumberOfXGridPoints() {
 		int i = 1;
-		for (HTPItem item : pattern.getPatternItems()) {
+		for (HTPItem item : pattern.getPatternItemsInIntegerIdOrder()) {
 			if (item instanceof OrderRelation
 					&& ((OrderRelation) item).equals(OrderRelation.SMALLER)) {
 				i++;
@@ -108,7 +108,7 @@ public class HTPVisualizer extends JComponent {
 
 		g.setColor(Color.black);
 		
-		g.drawString(node.getStringEventNodeId(), x + radius + 5, y + (radius / 2));
+		g.drawString(node.getStringEventId(), x + radius + 5, y + (radius / 2));
 	}
 	
 	protected void paintEventNode(IntervalStartEventNode node, int grpx, int grpy) {
@@ -130,7 +130,7 @@ public class HTPVisualizer extends JComponent {
 
 		g.setColor(Color.black);
 		
-		g.drawString(node.getStringEventNodeId(), x + radius + 5, y + (radius / 2));
+		g.drawString(node.getStringEventId(), x + radius + 5, y + (radius / 2));
 	}
 	
 	protected void paintEventNodeLine(IntervalEventNode node, int fromgrpx, int togprx, int grpy) {
@@ -154,7 +154,7 @@ public class HTPVisualizer extends JComponent {
 				EventNode e = (EventNode) events[i];
 				if (events[i] instanceof IntervalEventNode) {
 
-					String e_key = e.getStringEventNodeId()
+					String e_key = e.getStringEventId()
 							+ ((IntervalEventNode) events[i])
 									.getOccurrenceMark();
 					if (events[i] instanceof IntervalStartEventNode) {
@@ -164,7 +164,7 @@ public class HTPVisualizer extends JComponent {
 						for (int j = (i + 1); j < events.length; j++) {
 							if (events[j] instanceof IntervalEndEventNode) {
 								IntervalEndEventNode e2 = (IntervalEndEventNode) events[j];
-								String e_key2 = e2.getStringEventNodeId()
+								String e_key2 = e2.getStringEventId()
 										+ e2.getOccurrenceMark();
 
 								if (e_key.equals(e_key2)) {
@@ -213,12 +213,12 @@ public class HTPVisualizer extends JComponent {
 		int curgpry = 0;
 		for (int i = 0; i < events.length; i++) {
 			if (events[i] instanceof EventNode) {
-				g.setColor(this.ec.getColor(((EventNode) events[i]).getStringEventNodeId()));
+				g.setColor(this.ec.getColor(((EventNode) events[i]).getStringEventId()));
 				if (events[i] instanceof PointEventNode) {
 					this.paintEventNode((PointEventNode) events[i], curgprx, curgpry);
 					curgpry++;
 				} else if (events[i] instanceof IntervalEventNode) {
-					String e_key = ((IntervalEventNode) events[i]).getStringEventNodeId()
+					String e_key = ((IntervalEventNode) events[i]).getStringEventId()
 							+ ((IntervalEventNode) events[i])
 									.getOccurrenceMark();
 					if (events[i] instanceof IntervalStartEventNode) {

@@ -266,8 +266,8 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		
 		//transform both, the pattern and this sequence into a
 		//list of HTPItems to find occurrences
-		List<HTPItem> own = buildFromHybridEventList(this, pevents).getPattern().getPatternItems();
-		List<HTPItem> ext = p.getPatternItems();
+		List<HTPItem> own = buildFromHybridEventList(this, pevents).getPattern().getPatternItemsInIntegerIdOrder();
+		List<HTPItem> ext = p.getPatternItemsInIntegerIdOrder();
 		
 		//return occur2impl(own, ext, findfirst);
 		return Collections.emptyList();
@@ -346,7 +346,7 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		for (HTPItem p : partial) {
 			if (p instanceof IntervalStartEventNode) {
 				IntervalStartEventNode pEvent = (IntervalStartEventNode) p;
-				if (pEvent.getStringEventNodeId().equals(itemEvent.getStringEventNodeId()) && pEvent.getOccurrenceMark() == itemEvent.getOccurrenceMark()) {
+				if (pEvent.getStringEventId().equals(itemEvent.getStringEventId()) && pEvent.getOccurrenceMark() == itemEvent.getOccurrenceMark()) {
 					return true;
 				}
 			}
@@ -382,7 +382,7 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		if (item instanceof OrderRelation) {
 			return item.equals(head);
 		} else if (item instanceof EventNode) {
-			return ((EventNode) item).getStringEventNodeId().equals(((EventNode) head).getStringEventNodeId());
+			return ((EventNode) item).getStringEventId().equals(((EventNode) head).getStringEventId());
 		} else {
 			throw new IllegalStateException("Unknown item type " + item.getClass().getName());
 		}
@@ -422,18 +422,18 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		if (item instanceof OrderRelation) {
 			return item.equals(pat);
 		} else if (item instanceof PointEventNode) {
-			return ((PointEventNode) item).getStringEventNodeId().equals(((PointEventNode) pat).getStringEventNodeId());
+			return ((PointEventNode) item).getStringEventId().equals(((PointEventNode) pat).getStringEventId());
 		} else if (item instanceof IntervalStartEventNode) {
 			IntervalStartEventNode itemNode = (IntervalStartEventNode) item;
 			IntervalStartEventNode patNode = (IntervalStartEventNode) pat;
-			if (!itemNode.getStringEventNodeId().equals(patNode.getStringEventNodeId())) return false;
-			occurenceMap.put(patNode.getStringEventNodeId() + "+" + patNode.getOccurrenceMark(), itemNode.getOccurrenceMark());
+			if (!itemNode.getStringEventId().equals(patNode.getStringEventId())) return false;
+			occurenceMap.put(patNode.getStringEventId() + "+" + patNode.getOccurrenceMark(), itemNode.getOccurrenceMark());
 		} else {
 			if (item instanceof IntervalEndEventNode) {
 				IntervalEndEventNode itemNode = (IntervalEndEventNode) item;
 				IntervalEndEventNode patNode = (IntervalEndEventNode) pat;
-				if (!itemNode.getStringEventNodeId().equals(patNode.getStringEventNodeId())) return false;
-				Integer occurenceMark = occurenceMap.get(patNode.getStringEventNodeId() + "+" + patNode.getOccurrenceMark());
+				if (!itemNode.getStringEventId().equals(patNode.getStringEventId())) return false;
+				Integer occurenceMark = occurenceMap.get(patNode.getStringEventId() + "+" + patNode.getOccurrenceMark());
 				if (occurenceMark == null)
 					throw new IllegalArgumentException("End event " + pat + " before start event.");
 				return itemNode.getOccurrenceMark() == occurenceMark;

@@ -34,7 +34,7 @@ public final class IntervalStartEventNode extends IntervalEventNode {
 	 */
 	@Override
 	public String toString() {
-		return this.getStringEventNodeId()+"+"+this.getOccurrenceMark();
+		return this.getStringEventId()+"+"+this.getOccurrenceMark();
 	}
 
 	@Override

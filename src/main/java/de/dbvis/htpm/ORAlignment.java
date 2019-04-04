@@ -108,6 +108,6 @@ public class ORAlignment {
         }
 
         //remainder is about event nodes themselves
-        return EventNode.compare(a, b);
+        return EventNode.compareByIntId(a, b);
     }
 }

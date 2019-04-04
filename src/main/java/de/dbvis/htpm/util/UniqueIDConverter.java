@@ -35,9 +35,4 @@ public final class UniqueIDConverter {
     public static String getStringId(int id) {
         return stringIDList.size() > id ? stringIDList.get(id) : null;
     }
-
-    public static void reset() {
-        integerIDMap.clear();
-        stringIDList.clear();
-    }
 }

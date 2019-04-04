@@ -33,7 +33,7 @@ public abstract class EventNode implements HTPItem, Comparable<EventNode> {
 	 * Returns the id of the EventNode
 	 * @return the id of the EventNode
 	 */
-	public String getStringEventNodeId() {
+	public String getStringEventId() {
 		return UniqueIDConverter.getStringId(this.id);
 	}
 
@@ -61,12 +61,21 @@ public abstract class EventNode implements HTPItem, Comparable<EventNode> {
 
 	@Override
 	public int compareTo(EventNode o) {
-		return compare(this, o);
+		return compareByIntId(this, o);
 	}
 
-	public static int compare(EventNode a, EventNode b) {
+	public static int compareByIntId(EventNode a, EventNode b) {
 		//compare IDs
 		int idComparison = Integer.compare(a.id, b.id);
+		return compareWithIDComparison(a, b, idComparison);
+	}
+
+	public static int compareByStringId(EventNode a, EventNode b) {
+		int idComparison = a.getStringEventId().compareTo(b.getStringEventId());
+		return compareWithIDComparison(a, b, idComparison);
+	}
+
+	private static int compareWithIDComparison(EventNode a, EventNode b, int idComparison) {
 		if (idComparison != 0) {
 			return idComparison;
 		}

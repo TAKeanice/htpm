@@ -1,10 +1,9 @@
 package de.dbvis.htpm.constraints;
 
+import de.dbvis.htpm.htp.HTPUtils;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.EventNode;
 import de.dbvis.htpm.htp.eventnodes.IntervalEndEventNode;
-import de.dbvis.htpm.htp.eventnodes.IntervalStartEventNode;
-import de.dbvis.htpm.htp.eventnodes.PointEventNode;
 import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.ArrayList;
@@ -40,31 +39,7 @@ public class PrefixMaxGapConstraint extends AcceptAllConstraint {
 
         List<IntervalEndEventNode> openEnds = new ArrayList<>(k);
 
-        boolean foundLastStart = false;
-        int secondLastStart = -1;
-
-        int i = nodes.size();
-        while (secondLastStart < 0 && i > 0) {
-            i--;
-            final EventNode currentNode = nodes.get(i);
-
-            if (currentNode instanceof IntervalEndEventNode) {
-                openEnds.add((IntervalEndEventNode) currentNode);
-            } else if (currentNode instanceof IntervalStartEventNode || currentNode instanceof PointEventNode) {
-
-                if (currentNode instanceof IntervalStartEventNode) {
-                    //some open end is now closed
-                    IntervalStartEventNode startNode = (IntervalStartEventNode) currentNode;
-                    openEnds.removeIf(node -> node.id == startNode.id && node.occurrencemark == startNode.occurrencemark);
-                }
-
-                if (!foundLastStart) {
-                    foundLastStart = true;
-                } else {
-                    secondLastStart = i;
-                }
-            }
-        }
+        int secondLastStart = HTPUtils.getLastIndexOfUnmodifiablePart(nodes, openEnds);
 
         if (!openEnds.isEmpty()) {
             //there are events overlapping the second last start

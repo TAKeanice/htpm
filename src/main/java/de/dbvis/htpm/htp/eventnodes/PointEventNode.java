@@ -32,7 +32,7 @@ public final class PointEventNode extends EventNode {
 	 */
 	@Override
 	public String toString() {
-		return this.getStringEventNodeId();
+		return this.getStringEventId();
 	}
 
 	@Override

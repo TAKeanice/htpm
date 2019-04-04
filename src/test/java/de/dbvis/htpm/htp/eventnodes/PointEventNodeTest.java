@@ -41,7 +41,7 @@ public class PointEventNodeTest {
 	@Test
 	public void checkCreationById() {
 		PointEventNode p = new PointEventNode("a");
-		assertEquals("a", p.getStringEventNodeId());
+		assertEquals("a", p.getStringEventId());
 		//assertNull(p.getHybridEvent());
 		assertEquals("a", p.toString());
 		//assertTrue(p.isPointEvent());

@@ -18,18 +18,25 @@ public interface HybridTemporalPattern extends Comparable<HybridTemporalPattern>
 	
 	/**
 	 * Returns a String representation of the pattern similar to the definition in the paper.
-	 * @return a String representation of the pattern
+	 * @return a String representation of the pattern (same as patternStr)
 	 */
 	public String toString();
 	
 	/**
-	 * Returns the pattern string.
+	 * Returns the pattern string (with items in string id order).
 	 * @return the pattern string
 	 */
 	public String patternStr();
+
+	/**
+	 * Pattern string for some nodes only, in string id order
+	 * @param indices the numbers of the nodes
+	 * @return pattern string which only includes nodes in indices
+	 */
+	public String partialPatternStr(int... indices);
 	
 	/**
-	 * Returns a list of EventNodes which are in that pattern.
+	 * Returns a list of EventNodes which are in that pattern, in integer id order.
 	 * @return a list of EventNodes
 	 */
 	public List<EventNode> getEventNodes();
@@ -41,7 +48,7 @@ public interface HybridTemporalPattern extends Comparable<HybridTemporalPattern>
 	public List<OrderRelation> getOrderRelations();
 
 	/**
-	 * The length defines the number of events.
+	 * The length is defined by the number of events.
 	 * Start and end node of the same event are counted as one.
 	 * @return the number of events in the pattern
 	 */
@@ -66,40 +73,17 @@ public interface HybridTemporalPattern extends Comparable<HybridTemporalPattern>
 	 * Returns the complete ordered array of pattern items. These may be OrderRelations or any type of EventNodes.
 	 * @return an array of ordered pattern items
 	 */
-	public List<HTPItem> getPatternItems();
+	public List<HTPItem> getPatternItemsInIntegerIdOrder();
+
+	/**
+	 * Returns the complete ordered array of pattern items. These may be OrderRelations or any type of EventNodes.
+	 * @return an array of ordered pattern items
+	 */
+	public List<HTPItem> getPatternItemsInStringIdOrder();
 	
 	/**
 	 * Returns a list of all EventIds contained in the pattern.
 	 * @return a list of all EventIds
 	 */
 	public List<String> getEventIds();
-
-	/**
-	 * Checks the pattern for consistency and validity.
-	 * @return true iff the pattern is valid, false otherwise
-	 */
-	public boolean isValid();
-
-	public static int compare(HybridTemporalPattern first, HybridTemporalPattern second) {
-		List<HTPItem> firstItems = first.getPatternItems();
-		List<HTPItem> secondItems = second.getPatternItems();
-		int result = Integer.compare(firstItems.size(), secondItems.size());
-		for (int i = 0; i < firstItems.size() && result == 0; i++) {
-			if (firstItems.get(i) instanceof EventNode) {
-				result = ((EventNode) firstItems.get(i)).compareTo((EventNode) secondItems.get(i));
-			} else {
-				result = ((OrderRelation) firstItems.get(i)).compareTo((OrderRelation) secondItems.get(i));
-			}
-		}
-		return result;
-	}
-
-	public static OrderRelation small(List<OrderRelation> ors) {
-		for(OrderRelation o : ors) {
-			if(o == OrderRelation.SMALLER) {
-				return OrderRelation.SMALLER;
-			}
-		}
-		return OrderRelation.EQUAL;
-	}
 }

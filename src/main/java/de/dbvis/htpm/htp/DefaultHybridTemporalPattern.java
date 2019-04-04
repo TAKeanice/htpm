@@ -1,9 +1,10 @@
 package de.dbvis.htpm.htp;
 
 import de.dbvis.htpm.htp.eventnodes.*;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 
@@ -16,11 +17,11 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	private Integer hashcode = null;
 	private List<String> eventids = null;
 	private Boolean isValid = null;
-	private List<HTPItem> patternItems = null;
 
 	/**
-	 * Internal method to create default pattern from already accumulated event nodes and order relations
-	 * @param eventnodes the event nodes of the pattern
+	 * Method to create default pattern from already accumulated event nodes and order relations
+	 * No further checks are performed, so the nodes and relations have to build a valid pattern.
+	 * @param eventnodes the event nodes of the pattern, in integer id order
 	 * @param orderrelations the order relations of the pattern
 	 */
 	public DefaultHybridTemporalPattern(List<EventNode> eventnodes, List<OrderRelation> orderrelations) {
@@ -96,16 +97,8 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 			}
 		}
 
-		//even for correctly specified patterns, orders within a group connected with "=" signs (e.g. a=b=c)
-		//might be different internally, because we use IDs to order nodes instead of string order (e.g. a=c=b)
-		int groupStart = 0;
-		for (int i = 0; i <= orderrelations.size(); i++) {
-			if (i == orderrelations.size() || orderrelations.get(i) == OrderRelation.SMALLER) {
-				//we finished a group. Sort group internally.
-				eventnodes.subList(groupStart, i + 1).sort(EventNode::compareTo);
-				groupStart = i + 1;
-			}
-		}
+		Comparator<EventNode> c = EventNode::compareByIntId;
+		HTPUtils.sortItemsets(eventnodes, orderrelations, c);
 
 		this.eventnodes = eventnodes.toArray(new EventNode[0]);
 		this.orderrelations = orderrelations.toArray(new OrderRelation[0]);
@@ -118,16 +111,34 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	@Override
 	public String patternStr() {
 		if (patternstr == null) {
-			StringBuilder str = new StringBuilder("(");
-			for (int i = 0; i < orderrelations.length; i++) {
-				str.append(eventnodes[i]);
-				str.append(orderrelations[i]);
-			}
-			str.append(eventnodes[eventnodes.length - 1]);
-			str.append(")");
-			this.patternstr = str.toString();
+			patternstr = "(";
+			int[] allIndices = IntStream.range(0, eventnodes.length).toArray();
+			patternstr += partialPatternStr(allIndices);
+			patternstr += ")";
 		}
 		return this.patternstr;
+	}
+
+	@Override
+	public String partialPatternStr(int... indices) {
+
+		List<EventNode> nodes = Arrays.stream(indices).mapToObj(i -> eventnodes[i]).collect(Collectors.toList());
+
+		List<OrderRelation> relations = new ArrayList<>(nodes.size() - 1);
+		for (int i = 1; i < indices.length; i++) {
+			relations.add(small(indices[i-1], indices[i]));
+		}
+
+		HTPUtils.sortItemsets(nodes, relations, EventNode::compareByStringId);
+
+		StringBuilder str = new StringBuilder();
+		for (int i = 0; i < relations.size(); i++) {
+			str.append(nodes.get(i));
+			str.append(relations.get(i));
+		}
+		str.append(nodes.get(nodes.size() - 1));
+
+		return str.toString();
 	}
 
 	@Override
@@ -168,9 +179,8 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 			return Arrays.equals(this.eventnodes, other.eventnodes)
 					&& Arrays.equals(this.orderrelations, other.orderrelations);
 		} else if(o instanceof HybridTemporalPattern) {
-			HybridTemporalPattern other = (HybridTemporalPattern) o;
 			//resort to comparison of pattern elements, since we do not know the other´s internal structure
-			return this.getPatternItems().equals(other.getPatternItems());
+			return HTPUtils.equal(this, (HybridTemporalPattern) o);
 		}
 		return false;
 	}
@@ -179,34 +189,39 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	public int hashCode() {
 		//build hashcode from all htpitems
 		if (hashcode == null) {
-			HashCodeBuilder hcb = new HashCodeBuilder(13, 31);
-			for (int i = 0; i < this.orderrelations.length; i++) {
-				hcb.append(eventnodes[i]);
-				hcb.append(orderrelations[i]);
-			}
-			hcb.append(eventnodes[eventnodes.length - 1]);
-			this.hashcode = hcb.toHashCode();
+			this.hashcode = HTPUtils.hashCode(this);
 		}
 		return this.hashcode;
 	}
 
 	@Override
 	public int compareTo(HybridTemporalPattern o) {
-		return HybridTemporalPattern.compare(this, o);
+		return HTPUtils.compare(this, o);
 	}
 
 	@Override
-	public List<HTPItem> getPatternItems() {
-		if (this.patternItems == null) {
-			this.patternItems = new ArrayList<>(this.orderrelations.length * 2 + 1);
-			for (int i = 0; i < orderrelations.length; i++) {
-				this.patternItems.add(eventnodes[i]);
-				this.patternItems.add(orderrelations[i]);
-			}
-			this.patternItems.add(eventnodes[eventnodes.length - 1]);
-			this.patternItems = Collections.unmodifiableList(this.patternItems);
+	public List<HTPItem> getPatternItemsInIntegerIdOrder() {
+		List<HTPItem> patternItems = new ArrayList<>(this.orderrelations.length * 2 + 1);
+		for (int i = 0; i < orderrelations.length; i++) {
+			patternItems.add(eventnodes[i]);
+			patternItems.add(orderrelations[i]);
 		}
+		patternItems.add(eventnodes[eventnodes.length - 1]);
 		return patternItems;
+	}
+
+	@Override
+	public List<HTPItem> getPatternItemsInStringIdOrder() {
+		List<EventNode> nodes = Arrays.asList(eventnodes);
+		List<OrderRelation> relations = Arrays.asList(orderrelations);
+		HTPUtils.sortItemsets(nodes, relations, EventNode::compareByStringId);
+		List<HTPItem> items = new ArrayList<>(relations.size() * 2 + 1);
+		for (int i = 0; i < orderrelations.length; i++) {
+			items.add(nodes.get(i));
+			items.add(relations.get(i));
+		}
+		items.add(eventnodes[eventnodes.length - 1]);
+		return items;
 	}
 
 	@Override
@@ -215,7 +230,7 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 			this.eventids = new ArrayList<>(eventnodes.length);
 			for (int i = 0; i < eventnodes.length; i++) {
 				EventNode node = this.eventnodes[i];
-				final String eventId = node.getStringEventNodeId();
+				final String eventId = node.getStringEventId();
 				if (!eventids.contains(eventId)) {
 					eventids.add(eventId);
 				}
@@ -224,10 +239,13 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		return Collections.unmodifiableList(this.eventids);
 	}
 
-	@Override
+	/**
+	 * Checks the pattern for consistency and validity.
+	 * @return true iff the pattern is valid, false otherwise
+	 */
 	public boolean isValid() {
 		if (this.isValid == null) {
-			this.isValid = this.checkPattern(this.getPatternItems());
+			this.isValid = this.checkPattern(this.getPatternItemsInIntegerIdOrder());
 		}
 		return this.isValid;
 	}
@@ -245,17 +263,17 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 				return false;
 			}
 			if(items.get(i) instanceof IntervalStartEventNode) {
-				if(!m.containsKey(((EventNode) items.get(i)).getStringEventNodeId())) {
-					m.put(((EventNode) items.get(i)).getStringEventNodeId(), 0);
+				if(!m.containsKey(((EventNode) items.get(i)).getStringEventId())) {
+					m.put(((EventNode) items.get(i)).getStringEventId(), 0);
 				}
-				m.put(((EventNode) items.get(i)).getStringEventNodeId(), m.get(((EventNode) items.get(i)).getStringEventNodeId()) + 1);
+				m.put(((EventNode) items.get(i)).getStringEventId(), m.get(((EventNode) items.get(i)).getStringEventId()) + 1);
 			}
 
 			if(items.get(i) instanceof IntervalEndEventNode) {
-				if(!m.containsKey(((EventNode) items.get(i)).getStringEventNodeId())) {
-					m.put(((EventNode) items.get(i)).getStringEventNodeId(), 0);
+				if(!m.containsKey(((EventNode) items.get(i)).getStringEventId())) {
+					m.put(((EventNode) items.get(i)).getStringEventId(), 0);
 				}
-				m.put(((EventNode) items.get(i)).getStringEventNodeId(), m.get(((EventNode) items.get(i)).getStringEventNodeId()) - 1);
+				m.put(((EventNode) items.get(i)).getStringEventId(), m.get(((EventNode) items.get(i)).getStringEventId()) - 1);
 			}
 		}
 
@@ -266,5 +284,14 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		}
 
 		return true;
+	}
+
+	private OrderRelation small(int from, int to) {
+		for (int i = from; i < to; i++) {
+			if (orderrelations[i] == OrderRelation.SMALLER) {
+				return OrderRelation.SMALLER;
+			}
+		}
+		return OrderRelation.EQUAL;
 	}
 }
