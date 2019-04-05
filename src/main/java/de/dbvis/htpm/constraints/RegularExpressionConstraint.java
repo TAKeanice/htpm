@@ -7,6 +7,7 @@ import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
@@ -56,8 +57,16 @@ public class RegularExpressionConstraint extends AcceptAllConstraint {
         while (unmodifiableBoundary > 0 && p.getOrderRelations().get(unmodifiableBoundary - 1) == OrderRelation.EQUAL) {
             unmodifiableBoundary--;
         }
+
+        if (unmodifiableBoundary <= 0) {
+            //partial pattern is an empty string, always matches all of empty string (although matcher reports otherwise)
+            return true;
+        }
+
         String testedPrefix = p.partialPatternStr(IntStream.range(0, unmodifiableBoundary).toArray());
-        return expression.matcher(testedPrefix).hitEnd();
+        final Matcher matcher = expression.matcher(testedPrefix);
+        matcher.matches();
+        return matcher.hitEnd();
     }
 
     @Override

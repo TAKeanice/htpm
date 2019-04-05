@@ -14,13 +14,13 @@ public class SubPatternConstraint extends RegularExpressionConstraint {
 
     private static String toRegex(String subPattern) {
         //language=RegExp
-        String allEqualsPlaceholder = "([^<]+)";
-        String allEventsPlaceholder = ".*";
+        String allEqualsPlaceholder = "=[^<]*";
+        String allEventsPlaceholder = ".*<.*";
 
         HybridTemporalPattern p = new DefaultHybridTemporalPattern(subPattern);
         List<HTPItem> nodes = p.getPatternItemsInStringIdOrder();
 
-        StringBuilder regex = new StringBuilder(allEventsPlaceholder);
+        StringBuilder regex = new StringBuilder(".*");
 
         for (int i = 0; i < p.getOrderRelations().size(); i++) {
             appendNode(regex, (EventNode) nodes.get(i * 2));
@@ -28,7 +28,7 @@ public class SubPatternConstraint extends RegularExpressionConstraint {
         }
         //add last node (and wildcard for everything that might come afterwards)
         appendNode(regex, (EventNode) nodes.get(nodes.size() - 1));
-        regex.append(allEventsPlaceholder);
+        regex.append(".*");
 
         return regex.toString();
     }
@@ -43,7 +43,7 @@ public class SubPatternConstraint extends RegularExpressionConstraint {
                 regex.append("\\+" + "(?<").append(cleanedId).append(((IntervalEventNode) node).getOccurrenceMark()).append(">[0-9]*)");
             } else if (node instanceof IntervalEndEventNode) {
                 //backreference to start node occurrence mark
-                regex.append("\\+\\").append(cleanedId).append(((IntervalEventNode) node).getOccurrenceMark());
+                regex.append("\\-\\k<").append(cleanedId).append(((IntervalEventNode) node).getOccurrenceMark()).append(">");
             }
         }
     }

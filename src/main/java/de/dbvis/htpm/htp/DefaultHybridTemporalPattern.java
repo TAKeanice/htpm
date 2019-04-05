@@ -122,6 +122,10 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	@Override
 	public String partialPatternStr(int... indices) {
 
+		if (indices.length == 0) {
+			return "";
+		}
+
 		List<EventNode> nodes = Arrays.stream(indices).mapToObj(i -> eventnodes[i]).collect(Collectors.toList());
 
 		List<OrderRelation> relations = new ArrayList<>(nodes.size() - 1);

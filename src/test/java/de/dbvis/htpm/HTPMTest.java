@@ -54,7 +54,8 @@ public class HTPMTest {
 		
 		d.add(s);
 
-		HTPM htpm = new HTPM(d, new DefaultHTPMConstraint(d, 0.5));
+		final DefaultHTPMConstraint defaultConstraint = new DefaultHTPMConstraint(d, 0.5);
+		HTPM htpm = new HTPM(d, defaultConstraint);
 		
 		htpm.addHTPMListener(event -> System.out.println("Generation: "+event.getGeneration() + " Number of patterns: " + event.getNumberOfPatterns()));
 		
@@ -77,6 +78,21 @@ public class HTPMTest {
 						"(c<a+0=c<a-0)=[1(6.0,8.0,8.0,12.0), 2(6.0,8.0,8.0,11.0)], " +
 						"(b+0=c<a+0=c<a-0=b-0)=[1(6.0,6.0,8.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,8.0,11.0,11.0)]" +
 						"}",
+				htpm.getPatternsSortedByLength().toString());
+
+
+		String subpattern = "b+0<a+0<a-0=b-0";
+		SubPatternConstraint sbp = new SubPatternConstraint(subpattern);
+		ConstraintCollection constraintCollection = new ConstraintCollection(Arrays.asList(defaultConstraint, sbp));
+
+		htpm = new HTPM(d, constraintCollection);
+		htpm.run();
+
+		Assert.assertEquals("{" +
+						"(b+0<a+0<a-0=b-0)=[1(6.0,8.0,12.0,12.0), 2(6.0,8.0,11.0,11.0), 3(4.0,9.0,12.0,12.0)], " +
+						"(b+0<a+0=c<a-0=b-0)=[1(6.0,8.0,8.0,12.0,12.0), 2(6.0,8.0,8.0,11.0,11.0)], " +
+						"(b+0=c<a+0<a-0=b-0)=[1(6.0,6.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,11.0,11.0), 3(4.0,4.0,9.0,12.0,12.0)], " +
+						"(b+0=c<a+0=c<a-0=b-0)=[1(6.0,6.0,8.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,8.0,11.0,11.0)]}",
 				htpm.getPatternsSortedByLength().toString());
 	}
 
