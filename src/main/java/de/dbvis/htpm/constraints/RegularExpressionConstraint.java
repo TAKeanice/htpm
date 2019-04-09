@@ -65,8 +65,8 @@ public class RegularExpressionConstraint extends AcceptAllConstraint {
 
         String testedPrefix = p.partialPatternStr(IntStream.range(0, unmodifiableBoundary).toArray());
         final Matcher matcher = expression.matcher(testedPrefix);
-        matcher.matches();
-        return matcher.hitEnd();
+        boolean matched = matcher.matches();
+        return matched || matcher.hitEnd();
     }
 
     @Override

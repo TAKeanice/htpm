@@ -109,6 +109,8 @@ public class DefaultHybridTemporalPatternBuilder {
 
         final EventNode node;
 
+        int offset = 0;
+
         if(e instanceof PointEventNode) {
             node = new PointEventNode(e);
 
@@ -132,9 +134,9 @@ public class DefaultHybridTemporalPatternBuilder {
 
             final int originalOccurrenceMark = ie.getOccurrenceMark();
 
-            int newOccurrenceMark;
+            int startNodeOccurrenceMark;
             try {
-                newOccurrenceMark = occurrencemarkOfStartinterval
+                startNodeOccurrenceMark = occurrencemarkOfStartinterval
                         .get(frompattern)
                         .get(eventNodeId)
                         .get(originalOccurrenceMark);
@@ -145,7 +147,13 @@ public class DefaultHybridTemporalPatternBuilder {
                         npe);
             }
 
-            node = new IntervalEndEventNode(e, newOccurrenceMark);
+            node = new IntervalEndEventNode(e, startNodeOccurrenceMark);
+
+            //end event node order not guaranteed if occurrence marks change
+            while (offset < ops.size() && op.getTimePoint() == ops.get(ops.size() - 1 - offset).getTimePoint()
+                    && node.compareTo(ev.get(ev.size() - 1 - offset)) < 1) {
+                offset++;
+            }
 
         } else {
             throw new UnsupportedOperationException("Unknown EventNode type");
@@ -162,8 +170,8 @@ public class DefaultHybridTemporalPatternBuilder {
             }
         }
 
-        ev.add(node);
-        ops.add(op);
+        ev.add(ev.size() - offset, node);
+        ops.add(ops.size() - offset, op);
     }
 
     public void setPrefixes(HybridTemporalPattern patternPrefix, Occurrence occurrencePrefix) {

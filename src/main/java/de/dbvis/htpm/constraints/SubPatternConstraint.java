@@ -8,16 +8,19 @@ import java.util.List;
 
 public class SubPatternConstraint extends RegularExpressionConstraint {
 
-    public SubPatternConstraint(String subPattern) {
+    public SubPatternConstraint(HybridTemporalPattern subPattern) {
         super(toRegex(subPattern), false);
     }
 
-    private static String toRegex(String subPattern) {
+    public SubPatternConstraint(String subPattern) {
+        super(toRegex(new DefaultHybridTemporalPattern(subPattern)), false);
+    }
+
+    private static String toRegex(HybridTemporalPattern p) {
         //language=RegExp
         String allEqualsPlaceholder = "=[^<]*";
         String allEventsPlaceholder = ".*<.*";
 
-        HybridTemporalPattern p = new DefaultHybridTemporalPattern(subPattern);
         List<HTPItem> nodes = p.getPatternItemsInStringIdOrder();
 
         StringBuilder regex = new StringBuilder(".*");
