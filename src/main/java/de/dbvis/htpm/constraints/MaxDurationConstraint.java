@@ -3,6 +3,8 @@ package de.dbvis.htpm.constraints;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
+import java.util.List;
+
 public class MaxDurationConstraint extends AcceptAllConstraint {
 
     private final double maxDuration;
@@ -28,11 +30,21 @@ public class MaxDurationConstraint extends AcceptAllConstraint {
     @Override
     public boolean newOccurrenceFulfillsConstraints(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
         //only check first generation for too long intervals
-        final boolean fulfills = k > 1 || !this.isOverMaxDuration(occurrence);
+        final boolean fulfills = k > 1 || this.isUnderMaxDuration(occurrence);
         if (!fulfills) {
             occurrencesDiscardedCount++;
         }
         return fulfills;
+    }
+
+    @Override
+    public boolean shouldOutputOccurrence(HybridTemporalPattern p, Occurrence occurrence) {
+        return isUnderMaxDuration(occurrence);
+    }
+
+    @Override
+    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+        return true;
     }
 
     @Override
@@ -63,13 +75,13 @@ public class MaxDurationConstraint extends AcceptAllConstraint {
         return duration > maxDuration;
     }
 
-    private boolean isOverMaxDuration(Occurrence occurrence) {
+    private boolean isUnderMaxDuration(Occurrence occurrence) {
         if(this.maxDuration <= 0) {
-            return false;
+            return true;
         }
 
         double duration = occurrence.get(occurrence.size() - 1).getTimePoint() - occurrence.get(0).getTimePoint();
 
-        return duration > maxDuration;
+        return duration <= maxDuration;
     }
 }

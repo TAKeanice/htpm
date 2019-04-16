@@ -366,7 +366,7 @@ public class HTPMTest {
 		MaxDurationConstraint maxDurationConstraint = null;
 		PatternSizeConstraint patternSizeConstraint = null;
 		CMAPConstraint cmapConstraint = null;
-		PrefixMaxGapConstraint prefixMaxGapConstraint = null;
+		MaxGapConstraint maxGapConstraint = null;
 
 		final List<HTPMConstraint> constraints = new ArrayList<>();
 
@@ -390,8 +390,8 @@ public class HTPMTest {
 			constraints.add(patternSizeConstraint);
 		}
 		if (gap) {
-			prefixMaxGapConstraint = new PrefixMaxGapConstraint(prefixMaxGap);
-			constraints.add(prefixMaxGapConstraint);
+			maxGapConstraint = new MaxGapConstraint(prefixMaxGap);
+			constraints.add(maxGapConstraint);
 		}
 
 		final ConstraintCollection combinedConstraint = new ConstraintCollection(constraints);
@@ -432,7 +432,7 @@ public class HTPMTest {
 			System.out.println("prevented joins by CMAP constraint: " + cmapConstraint.getPatternJoinPreventedCount());
 		}
 		if (gap) {
-			System.out.println("discarded occurrences by prefixMaxGap constraint: " + prefixMaxGapConstraint.getOccurrencesDiscardedCount());
+			System.out.println("discarded occurrences by prefixMaxGap constraint: " + maxGapConstraint.getOccurrencesDiscardedCount());
 		}
 	}
 }

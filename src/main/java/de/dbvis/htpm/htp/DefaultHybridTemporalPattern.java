@@ -34,6 +34,13 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	 * @param pattern the pattern string. Example: a+0=b<a-0<c
 	 */
 	public DefaultHybridTemporalPattern(String pattern) {
+
+		if (pattern.isEmpty()) {
+			eventnodes = new EventNode[0];
+			orderrelations = new OrderRelation[0];
+			return;
+		}
+
 		List<EventNode> eventnodes = new ArrayList<>();
 		List<OrderRelation> orderrelations = new ArrayList<>();
 
@@ -205,6 +212,9 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 
 	@Override
 	public List<HTPItem> getPatternItemsInIntegerIdOrder() {
+		if (eventnodes == null || eventnodes.length == 0) {
+			return Collections.emptyList();
+		}
 		List<HTPItem> patternItems = new ArrayList<>(this.orderrelations.length * 2 + 1);
 		for (int i = 0; i < orderrelations.length; i++) {
 			patternItems.add(eventnodes[i]);
@@ -216,6 +226,9 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 
 	@Override
 	public List<HTPItem> getPatternItemsInStringIdOrder() {
+		if (eventnodes == null || eventnodes.length == 0) {
+			return Collections.emptyList();
+		}
 		List<EventNode> nodes = Arrays.asList(eventnodes);
 		List<OrderRelation> relations = Arrays.asList(orderrelations);
 		HTPUtils.sortItemsets(nodes, relations, EventNode::compareByStringId);

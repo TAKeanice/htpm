@@ -53,13 +53,24 @@ public interface HTPMConstraint {
     boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k);
 
     /**
+     * this method is invoked only before outputting a pattern.
+     * Used to remove all occurrences that do not fit the constraint.
+     * Not all bad occurrences might be caught during the mining process,
+     * thus the condition should be at least as strong as the one for the mining process (allow less occurrences).
+     * @param p the pattern that the occurrence belongs to
+     * @param occurrence the occurrence to be checked
+     * @return whether the occurrence is allowed according to this constraint
+     */
+    boolean shouldOutputOccurrence(HybridTemporalPattern p, Occurrence occurrence);
+
+    /**
      * This is the only constraint method that does not need to be anti-monotone:
      * It is applied only when patterns are output, the rejected patterns are still used in the mining process.
      * @param p the pattern output candidate
      * @param occurrences occurrences of the output candidate
      * @return whether the pattern p and its occurrences shall be output
      */
-    boolean shouldOutput(HybridTemporalPattern p, List<Occurrence> occurrences);
+    boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences);
 
     /**
      * called whenever algorithm finds a hybrid temporal pattern,

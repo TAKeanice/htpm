@@ -32,10 +32,5 @@ public abstract class AcceptAllConstraint implements HTPMConstraint {
     }
 
     @Override
-    public boolean shouldOutput(HybridTemporalPattern p, List<Occurrence> occurrences) {
-        return true;
-    }
-
-    @Override
     public void foundPattern(HybridTemporalPattern p, List<Occurrence> occurrences, int k) { }
 }

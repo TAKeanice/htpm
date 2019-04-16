@@ -40,8 +40,13 @@ public class ConstraintCollection implements HTPMConstraint {
     }
 
     @Override
-    public boolean shouldOutput(HybridTemporalPattern p, List<Occurrence> occurrences) {
-        return passesAll(c -> c.shouldOutput(p, occurrences));
+    public boolean shouldOutputOccurrence(HybridTemporalPattern p, Occurrence occurrence) {
+        return passesAll(c -> c.shouldOutputOccurrence(p, occurrence));
+    }
+
+    @Override
+    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+        return passesAll(c -> c.shouldOutputPattern(p, occurrences));
     }
 
     private boolean passesAll(Predicate<HTPMConstraint> constraintPredicate) {

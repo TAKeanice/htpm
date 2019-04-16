@@ -28,7 +28,12 @@ public class PatternSizeConstraint extends AcceptAllConstraint {
     }
 
     @Override
-    public boolean shouldOutput(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean shouldOutputOccurrence(HybridTemporalPattern p, Occurrence occurrence) {
+        return true;
+    }
+
+    @Override
+    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
         return p.length() >= minOutputPatternLength;
     }
 

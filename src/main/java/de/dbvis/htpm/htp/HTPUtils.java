@@ -72,7 +72,11 @@ public final class HTPUtils {
     }
 
     public static boolean equal(HybridTemporalPattern htp1, HybridTemporalPattern htp2) {
-        return htp1.getPatternItemsInIntegerIdOrder().equals(htp2.getPatternItemsInIntegerIdOrder());
+        return htp1 == htp2
+                || (
+                htp1 != null
+                        && htp2 != null
+                        && htp1.getPatternItemsInIntegerIdOrder().equals(htp2.getPatternItemsInIntegerIdOrder()));
     }
 
     public static int hashCode(HybridTemporalPattern pattern) {

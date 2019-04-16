@@ -108,11 +108,12 @@ public class HTPM implements Runnable {
 		if(this.patterns == null) {
 			return Collections.emptyMap();
 		}
-		return this.patterns.stream().flatMap(Collection::stream).flatMap(Collection::stream)
-				.filter(po -> constraint.shouldOutput(po.pattern, po.occurrences.stream().map(link -> link.child).collect(Collectors.toList())))
-				.collect(Collectors.toMap(po -> po.pattern, po -> po.occurrences.stream().map(link -> link.child).collect(Collectors.toList())));
+		final Stream<PatternOccurrence> poStream = this.patterns.stream().flatMap(Collection::stream).flatMap(Collection::stream);
+		return filterBeforeOutput(poStream)
+				.collect(Collectors.toMap(po -> po.pattern, po -> po.occurrences.stream()
+						.map(link -> link.child).collect(Collectors.toList())));
 	}
-	
+
 	/**
 	 * Returns the resulting patterns that satisfy the previously set 
 	 * minimum support and the occurrences they have.
@@ -128,9 +129,69 @@ public class HTPM implements Runnable {
 		sortedmap.putAll(getPatterns());
 		return sortedmap;
 	}
-	
+
 	/**
-	 * The method that actually runs the algorithm.
+	 * Adds an HTPMListener, which receives update events about the pattern mining process.
+	 * @param l - the HTPMListener to be added.
+	 */
+	public void addHTPMListener(HTPMListener l) {
+		if(l == null) {
+			return;
+		}
+		this.listeners.add(l);
+	}
+
+	/**
+	 * Removes an HTPMListener.
+	 * @param l - the HTPMListener to be removed.
+	 */
+	public void removeHTPMListener(HTPMListener l) {
+		this.listeners.remove(l);
+	}
+
+	/**
+	 * Fires an update to all the current listeners.
+	 * @param e - the HTPMEvent to be fired.
+	 */
+	protected void fireHTPMEvent(HTPMOutputEvent e) {
+		for(HTPMListener l : this.listeners) {
+			l.generationCalculated(e);
+
+			if (l instanceof HTPMOutputListener) {
+				((HTPMOutputListener) l).outputGenerated(e);
+			}
+		}
+	}
+
+	void output(List<List<PatternOccurrence>> patterns, int depth) {
+		final Stream<HTPMOutputEvent.PatternOccurrence> outputPatterns =
+				filterBeforeOutput(patterns.stream().flatMap(Collection::stream))
+						.map(po -> new HTPMOutputEvent.PatternOccurrence(
+								po.pattern,
+								po.occurrences.stream().map(link -> link.child).collect(Collectors.toList())));
+		this.fireHTPMEvent(new HTPMOutputEvent(this, depth, patterns.stream().mapToInt(List::size).sum(), outputPatterns));
+	}
+
+	private Stream<PatternOccurrence> filterBeforeOutput(Stream<PatternOccurrence> patternOccurrenceStream) {
+		return patternOccurrenceStream
+				//filter occurrences
+				.map(po -> new PatternOccurrence(po.prefix, po.pattern,
+						po.occurrences.stream()
+								.filter(occ -> constraint.shouldOutputOccurrence(po.pattern, occ.child))
+								.collect(Collectors.toList())))
+				//filter patterns (new occurrence lists can lead to even more patterns filtered)
+				.filter(po -> constraint.shouldOutputPattern(po.pattern,
+						po.occurrences.stream()
+								.map(link -> link.child)
+								.collect(Collectors.toList())));
+	}
+
+	//================================================================================
+	// The actual algorithm
+	//================================================================================
+
+	/**
+	 * The method that starts the algorithm.
 	 */
 	@Override
 	public void run() {
@@ -173,41 +234,8 @@ public class HTPM implements Runnable {
 	}
 	
 	/**
-	 * Adds an HTPMListener.
-	 * @param l - the HTPMListener to be added.
-	 */
-	public void addHTPMListener(HTPMListener l) {
-		if(l == null) {
-			return;
-		}
-		this.listeners.add(l);
-	}
-	
-	/**
-	 * Removes an HTPMListener.
-	 * @param l - the HTPMListener to be removed.
-	 */
-	public void removeHTPMListener(HTPMListener l) {
-		this.listeners.remove(l);
-	}
-	
-	/**
-	 * Fires an HTPMEvent to all the current listeners.
-	 * @param e - the HTPMEvent to be fired.
-	 */
-	protected void fireHTPMEvent(HTPMOutputEvent e) {
-		for(HTPMListener l : this.listeners) {
-			l.generationCalculated(e);
-
-			if (l instanceof HTPMOutputListener) {
-				((HTPMOutputListener) l).outputGenerated(e);
-			}
-		}
-	}
-	
-	/**
-	 * Generates the first generation out of the previously given database.
-	 * @return Returns the first generation of patterns that already satisfy the min-support.
+	 * Generates the first generation (1-patterns) out of the previously given database.
+	 * @return Returns the first generation of patterns that already satisfy all constraints.
 	 */
 	protected List<List<PatternOccurrence>> genL1() {
 		Map<HybridTemporalPattern, List<OccurrenceTreeLink>> map =
@@ -257,7 +285,7 @@ public class HTPM implements Runnable {
 	 * Joins a generation of patterns according to definition 10.
 	 * @param partitionedOccurrences - The current generation of patterns, partitioned by pattern parent.
 	 * @param k the generation number (length of patterns to be generated)
-	 * @return Returns a map of all patterns that satisfy the minimum support. In addition all occurence series of each pattern are returned.
+	 * @return Returns a map of all patterns that satisfy all constraints. In addition all occurences of each pattern.
 	 */
 	protected List<List<PatternOccurrence>> genLk(final List<List<PatternOccurrence>> partitionedOccurrences, int k) throws InterruptedException {
 
@@ -444,6 +472,10 @@ public class HTPM implements Runnable {
 		return partitionedResult;
 	}
 
+	//================================================================================
+	// Internal helper classes
+	//================================================================================
+
 	static class OccurrenceTreeLink {
 		/**
 		 * Holds the canonical parent relation for this occurrence.
@@ -481,14 +513,5 @@ public class HTPM implements Runnable {
 			this.pattern = pattern;
 			this.occurrences = occurrences;
 		}
-	}
-
-	void output(List<List<PatternOccurrence>> patterns, int depth) {
-		final Stream<HTPMOutputEvent.PatternOccurrence> outputPatterns = patterns.stream().flatMap(Collection::stream)
-				.map(po -> new HTPMOutputEvent.PatternOccurrence(
-						po.pattern,
-						po.occurrences.stream().map(link -> link.child).collect(Collectors.toList())))
-				.filter(po -> constraint.shouldOutput(po.pattern, po.occurrences));
-		this.fireHTPMEvent(new HTPMOutputEvent(this, depth, patterns.stream().mapToInt(List::size).sum(), outputPatterns));
 	}
 }

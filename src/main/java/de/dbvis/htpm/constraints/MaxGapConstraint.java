@@ -4,6 +4,7 @@ import de.dbvis.htpm.htp.HTPUtils;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.EventNode;
 import de.dbvis.htpm.htp.eventnodes.IntervalEndEventNode;
+import de.dbvis.htpm.htp.eventnodes.IntervalStartEventNode;
 import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.ArrayList;
@@ -15,13 +16,13 @@ import java.util.List;
  * The constraint does not restrict gaps between the prefix and the suffix of the pattern,
  * because that could rule out patterns with gaps that could be filled in later joins with other patterns.
  */
-public class PrefixMaxGapConstraint extends AcceptAllConstraint {
+public class MaxGapConstraint extends AcceptAllConstraint {
 
     private final double maxGap;
 
     private int occurrencesDiscardedCount;
 
-    public PrefixMaxGapConstraint(double maxGap) {
+    public MaxGapConstraint(double maxGap) {
         if (maxGap < 0) {
             throw new IllegalArgumentException("maxGap must be positive!");
         }
@@ -56,6 +57,37 @@ public class PrefixMaxGapConstraint extends AcceptAllConstraint {
             return false;
         }
 
+        return true;
+    }
+
+    @Override
+    public boolean shouldOutputOccurrence(HybridTemporalPattern p, Occurrence occurrence) {
+        List<EventNode> nodes = p.getEventNodes();
+        List<Integer> openIntervals = new ArrayList<>();
+        double gapStart = Double.MAX_VALUE;
+        for (int i = 0; i < occurrence.size(); i++) {
+
+            double gapEnd = occurrence.get(i).getTimePoint();
+            if (openIntervals.isEmpty()) {
+                //too large gap detected (no open intervals span gap between last node and this one)
+                if (gapEnd - gapStart > maxGap) {
+                    return false;
+                }
+            }
+            gapStart = gapEnd;
+
+            if (nodes.get(i) instanceof IntervalStartEventNode) {
+                openIntervals.add(nodes.get(i).id);
+            } else if (nodes.get(i) instanceof IntervalEndEventNode) {
+                openIntervals.remove((Integer) nodes.get(i).id);
+            }
+        }
+        //did not find too large gap
+        return true;
+    }
+
+    @Override
+    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
         return true;
     }
 

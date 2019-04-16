@@ -40,6 +40,11 @@ public class EpisodeMiningConstraint extends MaxDurationConstraint {
         return occurrencesDiscardedCount;
     }
 
+    @Override
+    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+        return isSupported(occurrences);
+    }
+
     /**
      * checks if there are enough occurrences of that pattern
      */
