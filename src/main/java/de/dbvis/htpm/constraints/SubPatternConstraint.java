@@ -8,12 +8,15 @@ import java.util.List;
 
 public class SubPatternConstraint extends RegularExpressionConstraint {
 
+    private final HybridTemporalPattern subPattern;
+
     public SubPatternConstraint(HybridTemporalPattern subPattern) {
         super(toRegex(subPattern), false);
+        this.subPattern = subPattern;
     }
 
     public SubPatternConstraint(String subPattern) {
-        super(toRegex(new DefaultHybridTemporalPattern(subPattern)), false);
+        this(new DefaultHybridTemporalPattern(subPattern));
     }
 
     private static String toRegex(HybridTemporalPattern p) {
@@ -49,5 +52,10 @@ public class SubPatternConstraint extends RegularExpressionConstraint {
                 regex.append("\\-\\k<").append(cleanedId).append(((IntervalEventNode) node).getOccurrenceMark()).append(">");
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Subpattern " + subPattern + " constraint";
     }
 }

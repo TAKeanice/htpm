@@ -84,4 +84,9 @@ public class ConstraintCollection implements HTPMConstraint {
     public int getPatternsDiscardedCount() {
         return 0;
     }
+
+    @Override
+    public String toString() {
+        return "Collection of conjunct constraints: " + constraints.toString();
+    }
 }

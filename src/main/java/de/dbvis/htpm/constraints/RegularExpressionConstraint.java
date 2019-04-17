@@ -98,4 +98,9 @@ public class RegularExpressionConstraint extends AcceptAllConstraint {
     public int getPatternsDiscardedCount() {
         return patternsDiscardedCount;
     }
+
+    @Override
+    public String toString() {
+        return "Regex " + expression + " constraint" + (prefixSelective ? ", prefix selective" : "");
+    }
 }

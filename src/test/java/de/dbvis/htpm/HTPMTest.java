@@ -54,7 +54,7 @@ public class HTPMTest {
 		
 		d.add(s);
 
-		final DefaultHTPMConstraint defaultConstraint = new DefaultHTPMConstraint(d, 0.5);
+		final DefaultHTPMConstraint defaultConstraint = new DefaultHTPMConstraint(d.size(), 0.5);
 		HTPM htpm = new HTPM(d, defaultConstraint);
 		
 		htpm.addHTPMListener(event -> System.out.println("Generation: "+event.getGeneration() + " Number of patterns: " + event.getNumberOfPatterns()));
@@ -374,7 +374,7 @@ public class HTPMTest {
 			episodeMiningConstraint = new EpisodeMiningConstraint(minOccurrences, maxDuration);
 			constraints.add(episodeMiningConstraint);
 		} else {
-			defaultConstraint = new DefaultHTPMConstraint(database, minSupport);
+			defaultConstraint = new DefaultHTPMConstraint(database.size(), minSupport);
 			constraints.add(defaultConstraint);
 			if (duration) {
 				maxDurationConstraint = new MaxDurationConstraint(maxDuration);

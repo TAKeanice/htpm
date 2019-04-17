@@ -479,4 +479,9 @@ public class CMAPConstraint extends AcceptAllConstraint {
             this.endIndex = endIndex;
         }
     }
+
+    @Override
+    public String toString() {
+        return "CMAP Constraint (prevented" + joinPreventedCount + "joins )";
+    }
 }

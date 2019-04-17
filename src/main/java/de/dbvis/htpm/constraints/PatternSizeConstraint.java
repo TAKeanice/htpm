@@ -34,7 +34,7 @@ public class PatternSizeConstraint extends AcceptAllConstraint {
 
     @Override
     public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
-        return p.length() >= minOutputPatternLength;
+        return minOutputPatternLength <= p.length() && p.length() <= maxPatternLength;
     }
 
     @Override
@@ -55,5 +55,10 @@ public class PatternSizeConstraint extends AcceptAllConstraint {
     @Override
     public int getPatternsDiscardedCount() {
         return 0;
+    }
+
+    @Override
+    public String toString() {
+        return "Pattern size " + minOutputPatternLength + " - " + maxPatternLength + " constraint";
     }
 }

@@ -80,8 +80,17 @@ public class MaxDurationConstraint extends AcceptAllConstraint {
             return true;
         }
 
-        double duration = occurrence.get(occurrence.size() - 1).getTimePoint() - occurrence.get(0).getTimePoint();
+        final double end = occurrence.get(occurrence.size() - 1).getTimePoint();
+        final double start = occurrence.get(0).getTimePoint();
+        double duration = end - start;
 
         return duration <= maxDuration;
+    }
+
+    @Override
+    public String toString() {
+        return "Max duration " + String.format("%.3f", maxDuration) + " constraint " +
+                "(" + occurrenceJoinPreventedCount + " occ. joins prevented, " +
+                occurrencesDiscardedCount + " occurrences discarded)";
     }
 }

@@ -53,4 +53,10 @@ public class EpisodeMiningConstraint extends MaxDurationConstraint {
         // rather the absolute number of occurrences.
         return occurrences.size() > minOccurrences;
     }
+
+    @Override
+    public String toString() {
+        return "Min " + minOccurrences + " occurrences episode mining constraint " +
+                "(discarded " + patternsDiscardedCount + " patterns)";
+    }
 }

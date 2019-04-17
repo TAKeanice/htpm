@@ -1,6 +1,5 @@
 package de.dbvis.htpm.constraints;
 
-import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
@@ -16,15 +15,15 @@ public class DefaultHTPMConstraint extends AcceptAllConstraint {
     protected final double minSupport;
 
     /**
-     * Database which is used for support calculation
+     * Number of sequences in the database
      */
-    private final HybridEventSequenceDatabase d;
+    private final double numSequences;
 
     private int unsupportedCount = 0;
     private int unsupportedOccurrences = 0;
 
-    public DefaultHTPMConstraint(HybridEventSequenceDatabase d, double minSupport) {
-        this.d = d;
+    public DefaultHTPMConstraint(int numSequences, double minSupport) {
+        this.numSequences = numSequences;
         if(minSupport <= 0 || minSupport > 1) {
             throw new IllegalArgumentException("Minimum support must be 0 < min_support <= 1");
         }
@@ -92,6 +91,13 @@ public class DefaultHTPMConstraint extends AcceptAllConstraint {
             sequenceIds.add(o.getHybridEventSequence().getSequenceId());
         }
 
-        return ((double) sequenceIds.size()) / ((double) this.d.size());
+        return ((double) sequenceIds.size()) / numSequences;
+    }
+
+
+    @Override
+    public String toString() {
+        return "MinSupport " + String.format("%.3f", minSupport) + " constraint " +
+                "(discarded " + unsupportedCount + " patterns)";
     }
 }

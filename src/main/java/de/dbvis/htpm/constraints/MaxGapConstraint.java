@@ -110,4 +110,10 @@ public class MaxGapConstraint extends AcceptAllConstraint {
     public int getPatternsDiscardedCount() {
         return 0;
     }
+
+    @Override
+    public String toString() {
+        return "Max gap " + maxGap + " constraint " +
+                "(" + occurrencesDiscardedCount + " occurrences discarded)";
+    }
 }
