@@ -2,21 +2,8 @@
   stage: test
   script:
     - mvn --batch-mode test
-
-
-
-test-jdk8:
-  extends: .test-template
-  image: dbvis/maven-openjfx:3.5-jdk-8
-
-test-jdk9:
-  extends: .test-template
-  image: dbvis/maven-openjfx:3.5-jdk-9
-
-test-jdk10:
-  extends: .test-template
-  image: dbvis/maven-openjfx:3.5-jdk-10
-
+    
 test-jdk11:
   extends: .test-template
   image: dbvis/maven-openjfx:3.5-jdk-11
+  
