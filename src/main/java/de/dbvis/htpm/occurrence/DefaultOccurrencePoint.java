@@ -46,4 +46,9 @@ public class DefaultOccurrencePoint implements OccurrencePoint {
     public int compareTo(OccurrencePoint o) {
         return Double.compare(timepoint, o.getTimePoint());
     }
+
+    @Override
+    public String toString() {
+        return String.format("%.3f", timepoint);
+    }
 }

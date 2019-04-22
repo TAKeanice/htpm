@@ -5,13 +5,12 @@ import de.dbvis.htpm.hes.HybridEventSequence;
 import java.util.List;
 
 /**
- * An Occurrence is basically a sequence containing OccurrencePoints.
- * There is no guarantee by this interface that the OccurrencePoints are sorted.
- * The order is defined by the HybridEventSequence.order(...) methods as well as 
- * by the HTPM-Algorithm.
+ * An Occurrence is a sequence containing OccurrencePoints.
+ * They are ordered by their time.
  * An Occurrence is immutable.
- * Each Occurrence is also always associated to a HybridEventSequence,
- * this connection states where the Occurrence comes from.
+ * Each Occurrence is always associated to
+ * a HybridEventSequence and a HybridTemporalPattern
+ * thus the event types associated to the OccurrencePoints can be identified.
  * 
  * @author Wolfgang Jentner
  *
