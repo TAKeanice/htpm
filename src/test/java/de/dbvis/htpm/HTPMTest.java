@@ -362,7 +362,7 @@ public class HTPMTest {
 						  boolean lowStorage) {
 
 		DefaultHTPMConstraint defaultConstraint = null;
-		EpisodeMiningConstraint episodeMiningConstraint = null;
+		MinOccurrencesConstraint minOccurrencesConstraint = null;
 		MaxDurationConstraint maxDurationConstraint = null;
 		PatternSizeConstraint patternSizeConstraint = null;
 		CMAPConstraint cmapConstraint = null;
@@ -371,8 +371,8 @@ public class HTPMTest {
 		final List<HTPMConstraint> constraints = new ArrayList<>();
 
 		if (episodeMining) {
-			episodeMiningConstraint = new EpisodeMiningConstraint(minOccurrences, maxDuration);
-			constraints.add(episodeMiningConstraint);
+			minOccurrencesConstraint = new MinOccurrencesConstraint(minOccurrences);
+			constraints.add(minOccurrencesConstraint);
 		} else {
 			defaultConstraint = new DefaultHTPMConstraint(database.size(), minSupport);
 			constraints.add(defaultConstraint);
@@ -416,10 +416,10 @@ public class HTPMTest {
 		System.out.println("duration: " + (System.currentTimeMillis() - startTime));
 
 		if (episodeMining) {
-			System.out.println("discarded patterns by episodeMining constraint: " + episodeMiningConstraint.getPatternsDiscardedCount());
-			System.out.println("discarded occurrences by episodeMining constraint: " + episodeMiningConstraint.getOccurrencesDiscardedCount());
-			System.out.println("prevented occurrence joins by maxDuration constraint: " + episodeMiningConstraint.getOccurrenceJoinPreventedCount());
-			System.out.println("discarded occurrences by maxDuration constraint: " + episodeMiningConstraint.getOccurrencesDiscardedCount());
+			System.out.println("discarded patterns by episodeMining constraint: " + minOccurrencesConstraint.getPatternsDiscardedCount());
+			System.out.println("discarded occurrences by episodeMining constraint: " + minOccurrencesConstraint.getOccurrencesDiscardedCount());
+			System.out.println("prevented occurrence joins by maxDuration constraint: " + minOccurrencesConstraint.getOccurrenceJoinPreventedCount());
+			System.out.println("discarded occurrences by maxDuration constraint: " + minOccurrencesConstraint.getOccurrencesDiscardedCount());
 		} else {
 			System.out.println("discarded patterns by default constraint: " + defaultConstraint.getPatternsDiscardedCount());
 			System.out.println("discarded occurrences by default constraint: " + defaultConstraint.getOccurrencesDiscardedCount());

@@ -5,15 +5,14 @@ import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.List;
 
-public class EpisodeMiningConstraint extends MaxDurationConstraint {
+public class MinOccurrencesConstraint extends AcceptAllConstraint {
 
     private final int minOccurrences;
 
     private int patternsDiscardedCount;
     private int occurrencesDiscardedCount;
 
-    public EpisodeMiningConstraint(int minOccurrences, double maxDuration) {
-        super(maxDuration);
+    public MinOccurrencesConstraint(int minOccurrences) {
         if (minOccurrences <= 0) {
             throw new IllegalArgumentException("patterns must be required to occur at least once (0 < minOccurrences)");
         }
@@ -31,6 +30,11 @@ public class EpisodeMiningConstraint extends MaxDurationConstraint {
     }
 
     @Override
+    public boolean shouldOutputOccurrence(HybridTemporalPattern p, Occurrence occurrence) {
+        return true;
+    }
+
+    @Override
     public int getPatternsDiscardedCount() {
         return patternsDiscardedCount;
     }
@@ -43,6 +47,16 @@ public class EpisodeMiningConstraint extends MaxDurationConstraint {
     @Override
     public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
         return isSupported(occurrences);
+    }
+
+    @Override
+    public int getPatternJoinPreventedCount() {
+        return 0;
+    }
+
+    @Override
+    public int getOccurrenceJoinPreventedCount() {
+        return 0;
     }
 
     /**
