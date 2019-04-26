@@ -46,6 +46,10 @@ public class HTPMDFS extends HTPM {
 
     private List<List<List<PatternOccurrence>>> patternDFS(List<PatternOccurrence> m, int depth) {
 
+        if (!constraint.branchCanProduceResults(m)) {
+            return Collections.emptyList();
+        }
+
         List<List<List<PatternOccurrence>>> results = new ArrayList<>();
 
         List<List<PatternOccurrence>> partitions = new ArrayList<>();

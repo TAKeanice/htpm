@@ -1,5 +1,6 @@
 package de.dbvis.htpm.constraints;
 
+import de.dbvis.htpm.HTPM;
 import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.*;
@@ -9,6 +10,7 @@ import java.util.List;
 public class SubPatternConstraint extends RegularExpressionConstraint {
 
     private final HybridTemporalPattern subPattern;
+    private int branchesCutCount = 0;
 
     public SubPatternConstraint(HybridTemporalPattern subPattern) {
         super(toRegex(subPattern), false);
@@ -52,6 +54,24 @@ public class SubPatternConstraint extends RegularExpressionConstraint {
                 regex.append("\\-\\k<").append(cleanedId).append(((IntervalEventNode) node).getOccurrenceMark()).append(">");
             }
         }
+    }
+
+    @Override
+    public boolean branchCanProduceResults(List<HTPM.PatternOccurrence> patternsWithOccurrences) {
+        //test if there are all components of the subpattern in the branch
+        final boolean keepBranch = subPattern.getEventNodes().stream()
+                .allMatch(sn -> patternsWithOccurrences.stream().map(patternOccurrence -> patternOccurrence.pattern)
+                        .anyMatch(pattern -> pattern.getEventNodes().stream()
+                                .anyMatch(n -> n.getStringEventId().contains(sn.getStringEventId()))));
+        if (!keepBranch) {
+            branchesCutCount++;
+        }
+        return keepBranch;
+    }
+
+    @Override
+    public int getBranchesCutCount() {
+        return branchesCutCount;
     }
 
     @Override

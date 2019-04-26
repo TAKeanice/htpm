@@ -58,6 +58,11 @@ public class PatternSizeConstraint extends AcceptAllConstraint {
     }
 
     @Override
+    public int getBranchesCutCount() {
+        return 0;
+    }
+
+    @Override
     public String toString() {
         return "Pattern size " + minOutputPatternLength + " - " + maxPatternLength + " constraint";
     }

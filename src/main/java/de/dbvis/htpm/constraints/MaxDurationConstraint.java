@@ -67,6 +67,11 @@ public class MaxDurationConstraint extends AcceptAllConstraint {
         return 0;
     }
 
+    @Override
+    public int getBranchesCutCount() {
+        return 0;
+    }
+
     private boolean willExceedMaxDurationAfterJoin(Occurrence firstOccurrence, Occurrence secondOccurrence) {
         double start = Math.min(firstOccurrence.get(0).getTimePoint(), secondOccurrence.get(0).getTimePoint());
         double end = Math.max(firstOccurrence.get(firstOccurrence.size() - 1).getTimePoint(),

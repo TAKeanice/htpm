@@ -100,6 +100,11 @@ public class RegularExpressionConstraint extends AcceptAllConstraint {
     }
 
     @Override
+    public int getBranchesCutCount() {
+        return 0;
+    }
+
+    @Override
     public String toString() {
         return "Regex " + expression + " constraint" + (prefixSelective ? ", prefix selective" : "");
     }

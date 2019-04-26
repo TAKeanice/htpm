@@ -59,6 +59,11 @@ public class MinOccurrencesConstraint extends AcceptAllConstraint {
         return 0;
     }
 
+    @Override
+    public int getBranchesCutCount() {
+        return 0;
+    }
+
     /**
      * checks if there are enough occurrences of that pattern
      */

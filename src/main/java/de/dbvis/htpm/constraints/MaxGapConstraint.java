@@ -112,6 +112,11 @@ public class MaxGapConstraint extends AcceptAllConstraint {
     }
 
     @Override
+    public int getBranchesCutCount() {
+        return 0;
+    }
+
+    @Override
     public String toString() {
         return "Max gap " + maxGap + " constraint " +
                 "(" + occurrencesDiscardedCount + " occurrences discarded)";

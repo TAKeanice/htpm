@@ -1,5 +1,6 @@
 package de.dbvis.htpm.constraints;
 
+import de.dbvis.htpm.HTPM;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
@@ -37,6 +38,11 @@ public class ConstraintCollection implements HTPMConstraint {
     @Override
     public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
         return passesAll(c -> c.patternFulfillsConstraints(p, occurrences, k));
+    }
+
+    @Override
+    public boolean branchCanProduceResults(List<HTPM.PatternOccurrence> patternsWithOccurrences) {
+        return passesAll(c -> c.branchCanProduceResults(patternsWithOccurrences));
     }
 
     @Override
@@ -82,6 +88,11 @@ public class ConstraintCollection implements HTPMConstraint {
 
     @Override
     public int getPatternsDiscardedCount() {
+        return 0;
+    }
+
+    @Override
+    public int getBranchesCutCount() {
         return 0;
     }
 

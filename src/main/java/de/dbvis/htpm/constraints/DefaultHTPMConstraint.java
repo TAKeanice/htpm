@@ -66,6 +66,11 @@ public class DefaultHTPMConstraint extends AcceptAllConstraint {
         return unsupportedCount;
     }
 
+    @Override
+    public int getBranchesCutCount() {
+        return 0;
+    }
+
     /**
      * Checks if there are enough sequences supporting the pattern
      */

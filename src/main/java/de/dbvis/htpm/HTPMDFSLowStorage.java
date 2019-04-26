@@ -45,6 +45,10 @@ public class HTPMDFSLowStorage extends HTPMDFS {
 
     private void patternDFS(List<PatternOccurrence> m, int depth) {
 
+        if (!constraint.branchCanProduceResults(m)) {
+            return;
+        }
+
         List<List<PatternOccurrence>> partitions = new ArrayList<>();
 
         for (int i = 0; i < m.size(); i++) {

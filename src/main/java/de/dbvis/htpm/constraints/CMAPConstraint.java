@@ -89,6 +89,11 @@ public class CMAPConstraint extends AcceptAllConstraint {
         return 0;
     }
 
+    @Override
+    public int getBranchesCutCount() {
+        return 0;
+    }
+
     private boolean testPatterns(List<EventNode> pa1, List<EventNode> pa2,
                                  IndexPair index1, IndexPair index2) {
 

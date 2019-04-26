@@ -303,6 +303,11 @@ public class HTPM implements Runnable {
 		for (int partition = 0; partition < partitionedOccurrences.size(); partition++) {
 			List<PatternOccurrence> joinablePatterns = partitionedOccurrences.get(partition);
 
+			if (!constraint.branchCanProduceResults(joinablePatterns)) {
+				//go to next partition if this one cannot deliver appropriate patterns
+				continue;
+			}
+
 			List<Map<HybridTemporalPattern, PatternOccurrence>> partitionResult = new ArrayList<>(joinablePatterns.size());
 			partitionResults.add(partitionResult);
 
@@ -476,15 +481,15 @@ public class HTPM implements Runnable {
 	// Internal helper classes
 	//================================================================================
 
-	static class OccurrenceTreeLink {
+	public static class OccurrenceTreeLink {
 		/**
 		 * Holds the canonical parent relation for this occurrence.
 		 * The canonical parent must be from the same sequence,
 		 * and have the same occurrences for the prefix nodes as its child occurrence.
 		 * Prefix thereby refers to the prefix of the pattern, which the occurrence is associated to.
 		 */
-		final Occurrence parent;
-		final Occurrence child;
+		public final Occurrence parent;
+		public final Occurrence child;
 
 		OccurrenceTreeLink(Occurrence parent, Occurrence child) {
 			this.parent = parent;
@@ -492,15 +497,15 @@ public class HTPM implements Runnable {
 		}
 	}
 
-	static class PatternOccurrence {
+	public static class PatternOccurrence {
 		/**
 		 * The canonical parent, having the same events with the same order for the first length-1 events
 		 * The first length-1 events are determined by the first length-1 interval startpoints or points
 		 * ordered by time then id then type (point/intervalstart) and finally occurrence mark order
 		 */
-		final HybridTemporalPattern prefix;
-		final HybridTemporalPattern pattern;
-		final List<OccurrenceTreeLink> occurrences;
+		public final HybridTemporalPattern prefix;
+		public final HybridTemporalPattern pattern;
+		public final List<OccurrenceTreeLink> occurrences;
 
 		PatternOccurrence(HybridTemporalPattern prefix, HybridTemporalPattern pattern, int initialListSize) {
 			this.prefix = prefix;

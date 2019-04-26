@@ -1,5 +1,6 @@
 package de.dbvis.htpm.constraints;
 
+import de.dbvis.htpm.HTPM;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
@@ -53,6 +54,13 @@ public interface HTPMConstraint {
     boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k);
 
     /**
+     * whether the branch of the search tree (patterns with same prefix) should be followed
+     * @param patternsWithOccurrences the patterns in the branch and their occurrences
+     * @return whether the branch should be mined.
+     */
+    boolean branchCanProduceResults(List<HTPM.PatternOccurrence> patternsWithOccurrences);
+
+    /**
      * this method is invoked only before outputting a pattern.
      * Used to remove all occurrences that do not fit the constraint.
      * Not all bad occurrences might be caught during the mining process,
@@ -85,4 +93,5 @@ public interface HTPMConstraint {
     int getOccurrenceJoinPreventedCount();
     int getOccurrencesDiscardedCount();
     int getPatternsDiscardedCount();
+    int getBranchesCutCount();
 }

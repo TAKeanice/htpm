@@ -76,14 +76,12 @@ The constraint is responsible for counting them. The counting does not serve any
     Such patterns have less valid occurrences, which would not become more later during mining, thus that property is anti-monotone.
     When a pattern is about to be output, filters for gaps in the complete occurrence.
     
-4. EpisodeMiningConstraint
+4. MinOccurrencesConstraint
     
-    Builds on top of MaxDurationConstraint.
     In contrary to the DefaultHTPMConstraint, support is calculated differently:
     The number of occurrences of a pattern is counted instead of the ratio of supporting and all sequences.
     A pattern is discarded if the number is lower than the provided minimal number of occurrences.
-    This constraint can handle databases with only one long sequence.
-    It requires a reasonably short duration for the duration constraint, otherwise the mining will be exhaustive.
+    This constraint can handle databases with only one long sequence, but it is advisable to add a maxDuratioonConstraint.
     
 5. PatternSizeConstraint
 

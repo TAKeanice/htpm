@@ -1,5 +1,6 @@
 package de.dbvis.htpm.constraints;
 
+import de.dbvis.htpm.HTPM;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
@@ -28,6 +29,11 @@ public abstract class AcceptAllConstraint implements HTPMConstraint {
 
     @Override
     public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+        return true;
+    }
+
+    @Override
+    public boolean branchCanProduceResults(List<HTPM.PatternOccurrence> patternsWithOccurrences) {
         return true;
     }
 
