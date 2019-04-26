@@ -76,7 +76,9 @@ public class RegularExpressionConstraint extends AcceptAllConstraint {
 
     @Override
     public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
-        return expression.matcher(p.patternStr()).matches();
+        final String patternStr = p.patternStr();
+        //match against patternstring without round braces
+        return expression.matcher(patternStr.substring(1, patternStr.length() - 1)).matches();
     }
 
     @Override
