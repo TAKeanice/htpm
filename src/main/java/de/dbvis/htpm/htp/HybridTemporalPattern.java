@@ -86,4 +86,11 @@ public interface HybridTemporalPattern extends Comparable<HybridTemporalPattern>
 	 * @return a list of all EventIds
 	 */
 	public List<String> getEventIds();
+
+	/**
+	 * Calculates the order relation between nodes
+	 * @param from the index of the first node
+	 * @param to the index of the second node
+	 */
+	public OrderRelation small(int from, int to);
 }

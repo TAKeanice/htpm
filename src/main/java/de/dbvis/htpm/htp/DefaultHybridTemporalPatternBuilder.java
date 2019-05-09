@@ -18,6 +18,19 @@ import java.util.*;
  */
 public class DefaultHybridTemporalPatternBuilder {
 
+    protected final List<EventNode> ev;
+    protected final List<OrderRelation> ors;
+    protected final List<OccurrencePoint> ops;
+    protected final HybridEventSequence seq;
+
+    protected final Map<Integer, Integer> occurrencemarks;
+    protected final Map<Integer, Map<Integer, Map<Integer, Integer>>> occurrencemarkOfStartinterval;
+
+    private HybridTemporalPattern patternPrefix;
+    private Occurrence occurrencePrefix;
+    private DefaultHybridTemporalPattern htp;
+    private DefaultOccurrence occ;
+
     public static DefaultHybridTemporalPatternBuilder buildFromHybridEventList(HybridEventSequence seq,
                                                                                List<HybridEvent> events) {
         final int length = events.size();
@@ -69,24 +82,97 @@ public class DefaultHybridTemporalPatternBuilder {
         return builder;
     }
 
-    protected final List<EventNode> ev;
-    protected final List<OrderRelation> ors;
-    protected final List<OccurrencePoint> ops;
-    protected final HybridEventSequence seq;
-
-    protected final Map<Integer, Integer> occurrencemarks;
-    protected final Map<Integer, Map<Integer, Map<Integer, Integer>>> occurrencemarkOfStartinterval;
-
-    private HybridTemporalPattern patternPrefix;
-    private Occurrence occurrencePrefix;
-    private DefaultHybridTemporalPattern htp;
-    private DefaultOccurrence occ;
-
     public static DefaultHybridTemporalPatternBuilder buildFromSequence(HybridEventSequence seq) {
         final List<HybridEvent> events = seq.getEvents();
 
         return buildFromHybridEventList(seq, events);
     }
+
+    public static HybridTemporalPattern buildSubPatternByDeletingNode(HybridTemporalPattern pattern, int deletionIndex) {
+        List<EventNode> eventNodes = pattern.getEventNodes();
+        EventNode nodeToDelete = eventNodes.get(deletionIndex);
+
+        if (nodeToDelete instanceof IntervalEndEventNode) {
+            //go back to find start event node
+            for (int i = deletionIndex; i > 0; i--) {
+                final EventNode n = eventNodes.get(i);
+                if (n instanceof IntervalStartEventNode
+                        && ((IntervalStartEventNode) n).getOccurrenceMark() == ((IntervalEndEventNode) nodeToDelete).getOccurrenceMark()) {
+                    nodeToDelete = n;
+                    deletionIndex = i;
+                    break;
+                }
+            }
+        }
+
+        int eventNodeType = nodeToDelete.getIntegerEventID();
+        int occMark = -1;
+        if (nodeToDelete instanceof IntervalStartEventNode) {
+            occMark = ((IntervalStartEventNode) nodeToDelete).getOccurrenceMark();
+        }
+
+        final ArrayList<EventNode> subPatternNodes = new ArrayList<>(eventNodes.subList(0, deletionIndex));
+        final ArrayList<OrderRelation> subPatternRelations = deletionIndex == 0
+                ? new ArrayList<>()
+                : new ArrayList<>(pattern.getOrderRelations().subList(0, deletionIndex-1));
+
+        boolean skippedNode = true;
+        boolean removeFirstRelation = false;
+
+        for (int j = deletionIndex+1; j < eventNodes.size(); j++) {
+            final EventNode nodeToAdd = eventNodes.get(j);
+            final OrderRelation relationToAdd;
+            if (skippedNode) {
+                if (j-2 >= 0) {
+                    relationToAdd = pattern.small(j - 2, j);
+                } else {
+                    //add dummy relation which we later remove
+                    relationToAdd = OrderRelation.SMALLER;
+                    removeFirstRelation = true;
+                }
+                skippedNode = false;
+            } else {
+                relationToAdd = pattern.small(j-1, j);
+            }
+
+            if (nodeToAdd instanceof IntervalEventNode && nodeToAdd.getIntegerEventID() == eventNodeType) {
+                //is either end event node or other node whose occurrence mark maybe needs to be shifted
+                if (((IntervalEventNode) nodeToAdd).getOccurrenceMark() == occMark) {
+                    //do not add node, it is the end node of removed node.
+                    //We have to get the order relations right! Set flag to do it in next loop.
+                    skippedNode = true;
+                } else if (((IntervalEventNode) nodeToAdd).getOccurrenceMark() > occMark) {
+                    //shift occurrence mark by 1
+                    //because this node is an interval of same type with later occurrence than deleted one
+                    final int newOccurrenceMark = ((IntervalEventNode) nodeToAdd).getOccurrenceMark() - 1;
+                    subPatternNodes.add(nodeToAdd instanceof IntervalStartEventNode
+                            ? new IntervalStartEventNode(nodeToAdd, newOccurrenceMark)
+                            : new IntervalEndEventNode(nodeToAdd, newOccurrenceMark));
+                    subPatternRelations.add(relationToAdd);
+                } else {
+                    //is Intervaleventnode without occurrence mark shift needed, can be added as-is
+                    subPatternNodes.add(nodeToAdd);
+                    subPatternRelations.add(relationToAdd);
+                }
+            } else {
+                //this node is not deleted, is PointEventNode
+                subPatternNodes.add(nodeToAdd);
+                subPatternRelations.add(relationToAdd);
+            }
+        }
+
+        if (removeFirstRelation) {
+            //we put a dummy relation at the beginning, now remove it
+            subPatternRelations.remove(0);
+        }
+
+        return new DefaultHybridTemporalPattern(subPatternNodes, subPatternRelations);
+    }
+
+    //================================================================================
+    // Pattern builder to build pattern and occurrence
+    // by adding together events from multiple patterns
+    //================================================================================
 
     public DefaultHybridTemporalPatternBuilder(HybridEventSequence seq, int length) {
         this.ev = new ArrayList<>(length * 2);

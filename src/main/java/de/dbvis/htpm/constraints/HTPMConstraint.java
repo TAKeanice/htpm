@@ -1,6 +1,6 @@
 package de.dbvis.htpm.constraints;
 
-import de.dbvis.htpm.HTPM;
+import de.dbvis.htpm.PatternOccurrence;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
@@ -58,7 +58,7 @@ public interface HTPMConstraint {
      * @param patternsWithOccurrences the patterns in the branch and their occurrences
      * @return whether the branch should be mined.
      */
-    boolean branchCanProduceResults(List<HTPM.PatternOccurrence> patternsWithOccurrences);
+    boolean branchCanProduceResults(List<PatternOccurrence> patternsWithOccurrences);
 
     /**
      * this method is invoked only before outputting a pattern.

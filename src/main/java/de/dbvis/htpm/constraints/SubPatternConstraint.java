@@ -1,6 +1,6 @@
 package de.dbvis.htpm.constraints;
 
-import de.dbvis.htpm.HTPM;
+import de.dbvis.htpm.PatternOccurrence;
 import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.*;
@@ -45,7 +45,7 @@ public class SubPatternConstraint extends RegularExpressionConstraint {
         final String stringEventId = node.getStringEventId();
         regex.append(stringEventId);
         if (node instanceof IntervalEventNode) {
-            final String cleanedId = stringEventId.replaceAll("[^A-Za-z0-9]", "X");
+            final String cleanedId = "omark" + stringEventId.replaceAll("[^A-Za-z0-9]", "X");
             if (node instanceof IntervalStartEventNode) {
                 //capture occurrencemark in regex with named reference
                 regex.append("\\+" + "(?<").append(cleanedId).append(((IntervalEventNode) node).getOccurrenceMark()).append(">[0-9]*)");
@@ -57,7 +57,7 @@ public class SubPatternConstraint extends RegularExpressionConstraint {
     }
 
     @Override
-    public boolean branchCanProduceResults(List<HTPM.PatternOccurrence> patternsWithOccurrences) {
+    public boolean branchCanProduceResults(List<PatternOccurrence> patternsWithOccurrences) {
         //test if there are all components of the subpattern in the branch
         final boolean keepBranch = subPattern.getEventNodes().stream()
                 .allMatch(sn -> patternsWithOccurrences.stream().map(patternOccurrence -> patternOccurrence.pattern)

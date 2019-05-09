@@ -6,12 +6,14 @@ import de.dbvis.htpm.hes.HybridEventSequence;
 import de.dbvis.htpm.hes.events.HybridEvent;
 import de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
+import de.dbvis.htpm.htp.eventnodes.EventNode;
 import de.dbvis.htpm.htp.eventnodes.IntervalEndEventNode;
 import de.dbvis.htpm.htp.eventnodes.IntervalStartEventNode;
 import de.dbvis.htpm.htp.eventnodes.PointEventNode;
 import de.dbvis.htpm.occurrence.DefaultOccurrence;
 import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
+import de.dbvis.htpm.occurrence.OccurrencePoint;
 import de.dbvis.htpm.util.HTPMListener;
 import de.dbvis.htpm.util.HTPMOutputEvent;
 import de.dbvis.htpm.util.HTPMOutputListener;
@@ -91,7 +93,108 @@ public class HTPM implements Runnable {
 		this.saveMemory = saveMemory;
 		this.threadPoolSize = threadPoolSize;
 	}
-	
+
+	/**
+	 * This method aligns two pattern according to "Example 7 (Joining two occurrence records)."
+	 *
+	 * @param prefix - The shared prefix of the patterns.
+	 * @param p1     - The first pattern.
+	 * @param or1    - The occurence points of the first pattern.
+	 * @param p2     - The second pattern.
+	 * @param or2    - The occurence points of the second pattern.
+	 * @param k      - The size of the upcoming pattern
+	 * @return Returns a map containing one pattern with one SeriesOccurence.
+	 */
+	public static DefaultHybridTemporalPatternBuilder ORAlign(final HybridTemporalPattern prefix,
+															  final HybridTemporalPattern p1, final Occurrence or1,
+															  final HybridTemporalPattern p2, final Occurrence or2, int k) {
+		int i1 = 0;
+		int i2 = 0;
+		int ip = 0;
+
+		List<EventNode> pa1 = p1.getEventNodes();
+		List<EventNode> pa2 = p2.getEventNodes();
+
+		List<EventNode> pre;
+
+		if (prefix != null) {
+			pre = prefix.getEventNodes();
+		} else {
+			pre = Collections.emptyList();
+		}
+
+		DefaultHybridTemporalPatternBuilder b = new DefaultHybridTemporalPatternBuilder(or1.getHybridEventSequence(), k);
+
+		boolean foundPrefix = false;
+
+		while (i1 < pa1.size() && i2 < pa2.size()) {
+			final OccurrencePoint op1 = or1.get(i1);
+			final OccurrencePoint op2 = or2.get(i2);
+			double occurrence1 = op1.getTimePoint();
+			double occurrence2 = op2.getTimePoint();
+			final EventNode n1 = pa1.get(i1);
+			final EventNode n2 = pa2.get(i2);
+			final EventNode nP = pre.size() > ip ? pre.get(ip) : null;
+
+			if (n1.equals(nP) && n2.equals(nP)) {
+				//both nodes are part of the "prefix", so it does not matter what we append
+				b.append(0, n1, op1);
+				i1++;
+				i2++;
+				ip++;
+			} else if (compare(n1, occurrence1, n2, occurrence2) < 0) {
+				if (!foundPrefix) {
+					b.setPrefixes(p1, or1);
+					foundPrefix = true;
+				}
+				b.append(0, n1, op1);
+				i1++;
+			} else {
+				if (!foundPrefix) {
+					b.setPrefixes(p2, or2);
+					foundPrefix = true;
+				}
+				b.append(1, n2, op2);
+				i2++;
+			}
+		}
+
+		if (i1 < pa1.size()) {
+			do {
+				b.append(0, pa1.get(i1), or1.get(i1));
+				i1++;
+			} while (i1 < pa1.size());
+		} else if (i2 < pa2.size()) {
+			do {
+				b.append(1, pa2.get(i2), or2.get(i2));
+				i2++;
+			} while (i2 < pa2.size());
+		}
+		return b;
+	}
+
+	/**
+	 * This method compares two event nodes. The comparison is made according to the
+	 * definition 6 (Arrangement of event nodes in htp). in the paper.
+	 *
+	 * @param a  - The first EventNode
+	 * @param oa - The occurence point of the first EventNode.
+	 * @param b  - The second EventNode
+	 * @param ob - The occurence point of the second EventNode.
+	 * @return <0 If a is before b, >0 if b is before a, 0 if equal.
+	 */
+	private static int compare(EventNode a, double oa, EventNode b, double ob) {
+
+		//1 time
+		int timeComparison = Double.compare(oa, ob);
+		if (timeComparison != 0) {
+			return timeComparison;
+		}
+
+		//remainder is about event nodes themselves
+		return EventNode.compareByIntId(a, b);
+	}
+
 	/**
 	 * Returns the resulting patterns that satisfy the previously set 
 	 * minimum support and the occurrences they have.
@@ -238,7 +341,7 @@ public class HTPM implements Runnable {
 	 * @return Returns the first generation of patterns that already satisfy all constraints.
 	 */
 	protected List<List<PatternOccurrence>> genL1() {
-		Map<HybridTemporalPattern, List<OccurrenceTreeLink>> map =
+		Map<HybridTemporalPattern, List<PatternOccurrence.OccurrenceTreeLink>> map =
 				new HashMap<>();
 
 		for(HybridEventSequence seq : d.getSequences()) {
@@ -264,7 +367,7 @@ public class HTPM implements Runnable {
 				//set empty occurrence as prefix
 				if (constraint.newOccurrenceFulfillsConstraints(p, occ, 1)) {
 					map.computeIfAbsent(p, pattern -> new ArrayList<>())
-							.add(new OccurrenceTreeLink(emptyOccurrencePrefix, occ));
+							.add(new PatternOccurrence.OccurrenceTreeLink(emptyOccurrencePrefix, occ));
 				}
 			}
 		}
@@ -392,8 +495,8 @@ public class HTPM implements Runnable {
 		HybridTemporalPattern p1 = patternOccurrence1.pattern;
 		HybridTemporalPattern p2 = patternOccurrence2.pattern;
 
-		List<OccurrenceTreeLink> or1 = patternOccurrence1.occurrences;
-		List<OccurrenceTreeLink> or2 = patternOccurrence2.occurrences;
+		List<PatternOccurrence.OccurrenceTreeLink> or1 = patternOccurrence1.occurrences;
+		List<PatternOccurrence.OccurrenceTreeLink> or2 = patternOccurrence2.occurrences;
 
 		//heuristic: the occurrence records are joined, from each pair in the same sequence we can have a new one.
 		// assumption here is that the number of occurrences is evenly distributed over sequences (which reduces the result)
@@ -410,7 +513,7 @@ public class HTPM implements Runnable {
 		//for (Occurrence s1 : or1) {
 		//	i1++;
 		for (int i1 = 0; i1 < or1.size(); i1++) {
-			final OccurrenceTreeLink link1 = or1.get(i1);
+			final PatternOccurrence.OccurrenceTreeLink link1 = or1.get(i1);
 			Occurrence occurrencePrefix1 = link1.parent;
 			Occurrence s1 = link1.child;
 
@@ -429,7 +532,7 @@ public class HTPM implements Runnable {
 			//	}
 			for (int i2 = 0; i2 <= maxI2; i2++) {
 				//for (int i2 = minI2; i2 < or2.size(); i2++) {
-				final OccurrenceTreeLink link2 = or2.get(i2);
+				final PatternOccurrence.OccurrenceTreeLink link2 = or2.get(i2);
 				final Occurrence occurrencePrefix2 = link2.parent;
 				Occurrence s2 = link2.child;
 
@@ -437,7 +540,7 @@ public class HTPM implements Runnable {
 					continue;
 				}
 
-				DefaultHybridTemporalPatternBuilder b = ORAlignment.ORAlign(prefix, p1, s1, p2, s2, k);
+				DefaultHybridTemporalPatternBuilder b = ORAlign(prefix, p1, s1, p2, s2, k);
 				HybridTemporalPattern newPattern = b.getPattern();
 				HybridTemporalPattern newPatternPrefix = b.getPatternPrefix();
 				Occurrence newOccurrence = b.getOccurence();
@@ -450,7 +553,7 @@ public class HTPM implements Runnable {
 							//newPattern, p -> new PatternOccurrence(newPatternPrefix, newPattern, new ArrayList<>()))
 							//newPattern, p -> new PatternOccurrence(newPatternPrefix, newPattern, new LinkedList<>()))
 							newPattern, p -> new PatternOccurrence(newPatternPrefix, newPattern, newOccurrenceCountHeuristic))
-							.occurrences.add(new OccurrenceTreeLink(b.getOccurrencePrefix(), newOccurrence));
+							.occurrences.add(new PatternOccurrence.OccurrenceTreeLink(b.getOccurrencePrefix(), newOccurrence));
 				}
 			}
 		}
@@ -475,48 +578,5 @@ public class HTPM implements Runnable {
 				occurrences.occurrences.stream().map(link -> link.child).collect(Collectors.toList()), k));
 
 		return partitionedResult;
-	}
-
-	//================================================================================
-	// Internal helper classes
-	//================================================================================
-
-	public static class OccurrenceTreeLink {
-		/**
-		 * Holds the canonical parent relation for this occurrence.
-		 * The canonical parent must be from the same sequence,
-		 * and have the same occurrences for the prefix nodes as its child occurrence.
-		 * Prefix thereby refers to the prefix of the pattern, which the occurrence is associated to.
-		 */
-		public final Occurrence parent;
-		public final Occurrence child;
-
-		OccurrenceTreeLink(Occurrence parent, Occurrence child) {
-			this.parent = parent;
-			this.child = child;
-		}
-	}
-
-	public static class PatternOccurrence {
-		/**
-		 * The canonical parent, having the same events with the same order for the first length-1 events
-		 * The first length-1 events are determined by the first length-1 interval startpoints or points
-		 * ordered by time then id then type (point/intervalstart) and finally occurrence mark order
-		 */
-		public final HybridTemporalPattern prefix;
-		public final HybridTemporalPattern pattern;
-		public final List<OccurrenceTreeLink> occurrences;
-
-		PatternOccurrence(HybridTemporalPattern prefix, HybridTemporalPattern pattern, int initialListSize) {
-			this.prefix = prefix;
-			this.pattern = pattern;
-			this.occurrences = new ArrayList<>(initialListSize);
-		}
-
-		PatternOccurrence(HybridTemporalPattern prefix, HybridTemporalPattern pattern, List<OccurrenceTreeLink> occurrences) {
-			this.prefix = prefix;
-			this.pattern = pattern;
-			this.occurrences = occurrences;
-		}
 	}
 }

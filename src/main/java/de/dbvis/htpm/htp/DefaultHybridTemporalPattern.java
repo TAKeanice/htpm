@@ -303,7 +303,8 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		return true;
 	}
 
-	private OrderRelation small(int from, int to) {
+	@Override
+	public OrderRelation small(int from, int to) {
 		for (int i = from; i < to; i++) {
 			if (orderrelations[i] == OrderRelation.SMALLER) {
 				return OrderRelation.SMALLER;
