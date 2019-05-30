@@ -136,7 +136,7 @@ public class HTPM implements Runnable {
 			final EventNode n2 = pa2.get(i2);
 			final EventNode nP = pre.size() > ip ? pre.get(ip) : null;
 
-			if (n1.equals(nP) && n2.equals(nP)) {
+			if (n1.equals(nP) && n2.equals(nP) && op1.equals(op2)) {
 				//both nodes are part of the "prefix", so it does not matter what we append
 				b.append(0, n1, op1);
 				i1++;
