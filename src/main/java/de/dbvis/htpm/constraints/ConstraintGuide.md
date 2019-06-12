@@ -36,9 +36,9 @@ They must not allow the output of any patterns that were pruned by this constrai
 The constraint methods are called in the following order:
 1. generate patterns of length k?
 2. join patterns?
-3. join occurrence records?
+3. join occurrences?
 4. occurrence fulfills constraints?
-5. pattern fulfill constraints?
+5. pattern fulfills constraints?
 6. generated pattern!
 7. should output occurrence?
 8. should output pattern?
