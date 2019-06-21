@@ -124,9 +124,6 @@ public class DefaultHybridEvent implements HybridEvent {
 
 	@Override
 	public Double getEndPoint() {
-		if(this.endpoint == null) {
-			return null;
-		}
 		return this.endpoint;
 	}
 

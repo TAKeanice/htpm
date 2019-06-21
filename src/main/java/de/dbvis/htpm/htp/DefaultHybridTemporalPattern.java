@@ -43,7 +43,17 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 
 		List<EventNode> eventnodes = new ArrayList<>();
 		List<OrderRelation> orderrelations = new ArrayList<>();
+		try {
+			parsePatternString(pattern, eventnodes, orderrelations);
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Pattern string " + pattern + " could not be parsed", e);
+		}
 
+		this.eventnodes = eventnodes.toArray(new EventNode[0]);
+		this.orderrelations = orderrelations.toArray(new OrderRelation[0]);
+	}
+
+	private void parsePatternString(String pattern, List<EventNode> eventnodes, List<OrderRelation> orderrelations) {
 		//this is a hack, adding the = in the end of the pattern makes the pattern
 		//iteself invalid, but the loop will continue once more and also adds
 		//the last EventNode
@@ -106,9 +116,6 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 
 		Comparator<EventNode> c = EventNode::compareByIntId;
 		HTPUtils.sortItemsets(eventnodes, orderrelations, c);
-
-		this.eventnodes = eventnodes.toArray(new EventNode[0]);
-		this.orderrelations = orderrelations.toArray(new OrderRelation[0]);
 	}
 
 	public String toString() {
