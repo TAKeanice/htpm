@@ -42,7 +42,7 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 	 * this is used as a heuristic by the occur(...) methods
 	 * to speed them up
 	 */
-	protected Set<String> eventids;
+	private Set<String> eventids;
 
 	protected enum EventType {
 		start,
@@ -53,11 +53,11 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 	/**
 	 * This hashmap points from the timepoint, to the eventid, to all HybridEvents that occur there
 	 */
-	protected Map<Double, Map<EventType, List<HybridEvent>>> occurrenceIndex = new HashMap<>();
+	private Map<Double, Map<EventType, List<HybridEvent>>> occurrenceIndex = new HashMap<>();
 
-	protected Map<MyItem, Integer> myIndex = new HashMap<>();
+	private Map<MyItem, Integer> myIndex = new HashMap<>();
 
-	protected Set<HybridEvent> containedEvents = new HashSet<>();
+	private Set<HybridEvent> containedEvents = new HashSet<>();
 	//a list since an event can occur multiple times at the same time
 	
 	/**

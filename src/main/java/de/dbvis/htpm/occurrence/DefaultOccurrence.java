@@ -17,16 +17,16 @@ public class DefaultOccurrence implements Occurrence {
 	/**
 	 * The associated HybridEventSequence
 	 */
-	protected final HybridEventSequence seq;
+	private final HybridEventSequence seq;
 	
 	/**
 	 * A list holding the OccurrencePoints
 	 */
-	protected final OccurrencePoint[] ops;
+	private final OccurrencePoint[] ops;
 
 	public DefaultOccurrence(HybridEventSequence seq, List<OccurrencePoint> ops) {
 		if(seq == null) {
-			throw new NullPointerException("DefaultHybridEventSequence must not be null");
+			throw new NullPointerException("HybridEventSequence must not be null");
 		}
 		this.seq = seq;
 		this.ops = ops.toArray(new OccurrencePoint[0]);
