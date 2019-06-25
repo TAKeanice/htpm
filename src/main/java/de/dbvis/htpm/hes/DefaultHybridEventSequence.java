@@ -7,7 +7,6 @@ import de.dbvis.htpm.occurrence.DefaultOccurrence;
 import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
 import de.dbvis.htpm.occurrence.OccurrencePoint;
-import de.dbvis.htpm.util.UniqueIDConverter;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -34,7 +33,7 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 	/**
 	 * The id of the HybridEventSequence
 	 */
-	protected Integer id;
+	protected String sequenceId;
 	
 	//stored for performance reasons
 	/**
@@ -62,15 +61,22 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 	
 	/**
 	 * Creates a new, empty HybridEventSequence with a given id.
-	 * @param sid the id of the HybridEventSequence; must not be null
+	 * @param sequenceId the id of the HybridEventSequence; must not be null
 	 */
-	public DefaultHybridEventSequence(String sid) {
-		if(sid == null) {
+	public DefaultHybridEventSequence(String sequenceId) {
+		if(sequenceId == null) {
 			throw new NullPointerException("The HybridEventSequence id must not be null");
 		}
-		this.id = UniqueIDConverter.getIntegerId(sid);
+		this.sequenceId = sequenceId;
 		this.events = new ArrayList<>();
 		this.eventids = new HashSet<>();
+	}
+
+	public DefaultHybridEventSequence(String sequenceId, List<HybridEvent> events) {
+		this(sequenceId);
+		for (HybridEvent event : events) {
+			this.add(event);
+		}
 	}
 	
 	@Override
@@ -87,7 +93,7 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 	
 	@Override
 	public String getSequenceId() {
-		return UniqueIDConverter.getStringId(this.id);
+		return this.sequenceId;
 	}
 	
 	@Override

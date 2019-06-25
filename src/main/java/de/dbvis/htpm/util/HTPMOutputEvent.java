@@ -34,5 +34,20 @@ public class HTPMOutputEvent extends HTPMEvent {
             this.pattern = pattern;
             this.occurrences = occurrences;
         }
+
+
+        @Override
+        public String toString() {
+            return pattern.toString() + ": " + occurrences.toString();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof PatternOccurrence)) {
+                return false;
+            }
+            final PatternOccurrence other = (PatternOccurrence) obj;
+            return this.pattern.equals(other.pattern) && this.occurrences.equals(other.occurrences);
+        }
     }
 }

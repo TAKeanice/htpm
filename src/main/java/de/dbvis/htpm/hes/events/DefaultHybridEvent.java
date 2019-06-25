@@ -36,7 +36,7 @@ public class DefaultHybridEvent implements HybridEvent {
 			throw new NullPointerException("ID must not be null");
 		}
 		if(id.matches("[\\+\\-<=]")) {
-			throw new IllegalArgumentException("The Id may not contain <, =, +, -::ID="+id);
+			throw new IllegalArgumentException("The Id may not contain (, ), <, =, +, - (wrong id: " + id + ")");
 		}
 		this.id = id;
 	}
@@ -58,8 +58,12 @@ public class DefaultHybridEvent implements HybridEvent {
 	 * @param endpoint The time point when the HybridEvent ends
 	 */
 	public DefaultHybridEvent(String id, double startpoint, double endpoint) {
+		this(id, startpoint, (Double) endpoint);
+	}
+
+	public DefaultHybridEvent(String id, double startpoint, Double endpoint) {
 		this(id);
-		if(endpoint <= startpoint) {
+		if(endpoint != null && endpoint <= startpoint) {
 			throw new IllegalArgumentException("endpoint cannot occur before or at the same time as the startpoint");
 		}
 		this.startpoint = startpoint;

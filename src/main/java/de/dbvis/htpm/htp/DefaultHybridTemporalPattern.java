@@ -31,9 +31,10 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 
 	/**
 	 * Method to create pattern from string. See original paper for correct specification
-	 * @param pattern the pattern string. Example: a+0=b<a-0<c
+	 * @param pattern the pattern string. Example: a+0=b<a-0<c (round brackets around the pattern are allowed)
 	 */
 	public DefaultHybridTemporalPattern(String pattern) {
+		pattern = pattern.replaceAll("[(|)]", "");
 
 		if (pattern.isEmpty()) {
 			eventnodes = new EventNode[0];

@@ -17,6 +17,14 @@ public class DefaultOccurrencePoint implements OccurrencePoint {
         this.hybridEvent = hybridEvent;
     }
 
+    public DefaultOccurrencePoint(HybridEvent hybridEvent, double timepoint) {
+        if (timepoint != hybridEvent.getStartPoint() && timepoint != hybridEvent.getEndPoint()) {
+            throw new IllegalArgumentException("The time of the occurrence point must refer to either start or end of its hybrid event");
+        }
+        this.timepoint = timepoint;
+        this.hybridEvent = hybridEvent;
+    }
+
     @Override
     public double getTimePoint() {
         return timepoint;
