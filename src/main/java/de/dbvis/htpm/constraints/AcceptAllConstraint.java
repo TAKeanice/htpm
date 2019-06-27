@@ -18,7 +18,7 @@ public abstract class AcceptAllConstraint implements HTPMConstraint {
     }
 
     @Override
-    public boolean occurrenceRecordsQualifyForJoin(Occurrence firstOccurrence, Occurrence secondOccurrence, int k) {
+    public boolean occurrenceRecordsQualifyForJoin(HybridTemporalPattern firstPattern, Occurrence firstOccurrence, HybridTemporalPattern secondPattern, Occurrence secondOccurrence, int k) {
         return true;
     }
 

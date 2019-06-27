@@ -509,7 +509,7 @@ public class HTPM implements Runnable {
 				final Occurrence occurrencePrefix2 = link2.parent;
 				Occurrence s2 = link2.child;
 
-				if (occurrencePrefix1 != occurrencePrefix2 || !constraint.occurrenceRecordsQualifyForJoin(s1, s2, k)) {
+				if (occurrencePrefix1 != occurrencePrefix2 || !constraint.occurrenceRecordsQualifyForJoin(p1, s1, p2, s2, k)) {
 					continue;
 				}
 

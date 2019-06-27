@@ -1,13 +1,12 @@
 package de.dbvis.htpm.io.serializer.xml;
 
-import java.io.OutputStream;
-import java.util.List;
-
+import de.dbvis.htpm.hes.events.HybridEvent;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import de.dbvis.htpm.hes.events.HybridEvent;
+import java.io.OutputStream;
+import java.util.List;
 
 public class XMLHybridEventSerializer extends XMLAbstractSerializer<HybridEvent> {
 	public XMLHybridEventSerializer(ContentHandler handler) {
@@ -23,16 +22,16 @@ public class XMLHybridEventSerializer extends XMLAbstractSerializer<HybridEvent>
 		try {
 			AttributesImpl atts = new AttributesImpl();
 			atts.addAttribute("", "", "id", "ID", event.getEventId());
-			
-			if(!event.isPointEvent()) {
+
+			if (event.isPointEvent()) {
+				atts.addAttribute("", "", "type", "CDATA", "point");
+				atts.addAttribute("", "", "tp", "CDATA", event.getTimePoint()+"");
+			} else {
 				atts.addAttribute("", "", "type", "CDATA", "interval");
 				atts.addAttribute("", "", "start", "CDATA", event.getStartPoint()+"");
 				atts.addAttribute("", "", "end", "CDATA", event.getEndPoint()+"");
-			} else if(event.isPointEvent()) {
-				atts.addAttribute("", "", "type", "CDATA", "point");
-				atts.addAttribute("", "", "tp", "CDATA", event.getTimePoint()+"");
 			}
-			
+
 			this.addAdditionalAttributes(event, atts);
 			
 			m_outHandler.startElement("", "", "event", atts);

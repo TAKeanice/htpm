@@ -161,6 +161,16 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 	}
 
 	@Override
+	public int size() {
+		return eventnodes.length;
+	}
+
+	@Override
+	public EventNode getEventNode(int i) {
+		return eventnodes[i];
+	}
+
+	@Override
 	public List<EventNode> getEventNodes() {
 		return Arrays.asList(eventnodes);
 	}

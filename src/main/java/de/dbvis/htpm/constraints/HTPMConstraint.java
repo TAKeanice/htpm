@@ -28,12 +28,15 @@ public interface HTPMConstraint {
 
     /**
      * for checking joinability of two occurrence records, e.g. if they stem from the same sequence
+     *
+     * @param firstPattern
      * @param firstOccurrence the first occurrence in the upcoming join
+     * @param secondPattern
      * @param secondOccurrence the second occurrence in the upcoming join
      * @param k the length of patterns and according occurrence records that are supposed to come up by joining
      * @return whether the two occurrence records should be joined
      */
-    boolean occurrenceRecordsQualifyForJoin(Occurrence firstOccurrence, Occurrence secondOccurrence, int k);
+    boolean occurrenceRecordsQualifyForJoin(HybridTemporalPattern firstPattern, Occurrence firstOccurrence, HybridTemporalPattern secondPattern, Occurrence secondOccurrence, int k);
 
     /**
      * whether the joined occurrence lies within the desired parameters

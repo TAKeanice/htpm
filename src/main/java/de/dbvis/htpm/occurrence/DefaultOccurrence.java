@@ -76,26 +76,8 @@ public class DefaultOccurrence implements Occurrence {
 	@Override
 	public boolean equals(Object o) {
 		if(o instanceof Occurrence) {
-			Occurrence o1 = (Occurrence) o;
-			
-			//check HES.ID
-			if(!this.getHybridEventSequence().getSequenceId().equals(o1.getHybridEventSequence().getSequenceId())) {
-				return false;
-			}
-			
-			//check same size
-			if(this.size() != o1.size()) {
-				return false;
-			}
-			
-			//check timepoints of OccurrencePoints in specific order
-			for(int i = 0; i < o1.size(); i++) {
-				if(this.get(i).getTimePoint() != o1.get(i).getTimePoint()) {
-					return false;
-				}
-			}
-			
-			return true;
+			return seq.equals(((Occurrence) o).getHybridEventSequence())
+					&& ops().equals(((Occurrence) o).ops());
 		}
 		return false;
 	}

@@ -26,8 +26,8 @@ public class ConstraintCollection implements HTPMConstraint {
     }
 
     @Override
-    public boolean occurrenceRecordsQualifyForJoin(Occurrence firstOccurrence, Occurrence secondOccurrence, int k) {
-        return passesAll(c -> c.occurrenceRecordsQualifyForJoin(firstOccurrence, secondOccurrence, k));
+    public boolean occurrenceRecordsQualifyForJoin(HybridTemporalPattern firstPattern, Occurrence firstOccurrence, HybridTemporalPattern secondPattern, Occurrence secondOccurrence, int k) {
+        return passesAll(c -> c.occurrenceRecordsQualifyForJoin(firstPattern, firstOccurrence, secondPattern, secondOccurrence, k));
     }
 
     @Override

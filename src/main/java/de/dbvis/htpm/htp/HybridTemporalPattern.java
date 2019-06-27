@@ -34,7 +34,19 @@ public interface HybridTemporalPattern extends Comparable<HybridTemporalPattern>
 	 * @return pattern string which only includes nodes in indices
 	 */
 	public String partialPatternStr(int... indices);
-	
+
+	/**
+	 * get number of event nodes
+	 * @return same number as getEventNodes.size()
+	 */
+	public int size();
+
+	/**
+	 * @param i the number of the eventnode, 0<=i<getEventNodes().size()
+	 * @return the event node at position i
+	 */
+	public EventNode getEventNode(int i);
+
 	/**
 	 * Returns a list of EventNodes which are in that pattern, in integer id order.
 	 * @return a list of EventNodes

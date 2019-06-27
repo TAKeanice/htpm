@@ -2,6 +2,9 @@ package de.dbvis.htpm.occurrence;
 
 import de.dbvis.htpm.hes.HybridEventSequence;
 import de.dbvis.htpm.hes.events.HybridEvent;
+import de.dbvis.htpm.htp.eventnodes.EventNode;
+import de.dbvis.htpm.htp.eventnodes.IntervalStartEventNode;
+import de.dbvis.htpm.htp.eventnodes.PointEventNode;
 
 import java.util.List;
 
@@ -61,4 +64,9 @@ public interface Occurrence {
 	 * @return true if it satisfies the conditions stated above, false otherwise
 	 */
 	public boolean equals(Object o);
+
+	static double getTimepointOfOccurrencePoint(EventNode node, HybridEvent event) {
+		return node instanceof PointEventNode ? event.getTimePoint()
+				: (node instanceof IntervalStartEventNode ? event.getStartPoint() : event.getEndPoint());
+	}
 }
