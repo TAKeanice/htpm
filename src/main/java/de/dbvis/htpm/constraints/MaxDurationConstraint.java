@@ -82,8 +82,8 @@ public class MaxDurationConstraint extends AcceptAllConstraint {
         EventNode sn1 = firstPattern.getEventNode(0);
         EventNode sn2 = secondPattern.getEventNode(0);
 
-        EventNode en1 = firstPattern.getEventNode(firstPattern.size());
-        EventNode en2 = secondPattern.getEventNode(secondPattern.size());
+        EventNode en1 = firstPattern.getEventNode(firstPattern.size() - 1);
+        EventNode en2 = secondPattern.getEventNode(secondPattern.size() - 1);
 
         final HybridEvent se1 = firstOccurrence.get(0);
         double s1 = Occurrence.getTimepointOfOccurrencePoint(sn1, se1);

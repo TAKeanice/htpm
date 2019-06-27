@@ -33,7 +33,12 @@ public class DefaultHTPMConstraint extends AcceptAllConstraint {
     @Override
     public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
         //prune patterns which do not fulfill minimum support
-        return isSupported(occurrences);
+        boolean isSupported = isSupported(occurrences);
+        if (!isSupported) {
+            unsupportedCount++;
+            unsupportedOccurrences += occurrences.size();
+        }
+        return isSupported;
     }
 
     @Override
@@ -76,10 +81,6 @@ public class DefaultHTPMConstraint extends AcceptAllConstraint {
      */
     public boolean isSupported(final List<Occurrence> occurrences) {
         final boolean isSupported = this.support(occurrences) >= this.minSupport;
-        if (!isSupported) {
-            unsupportedCount++;
-            unsupportedOccurrences += occurrences.size();
-        }
         return isSupported;
     }
 
