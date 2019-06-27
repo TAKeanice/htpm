@@ -11,7 +11,6 @@ import de.dbvis.htpm.hes.events.HybridEvent;
 import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
-import de.dbvis.htpm.occurrence.OccurrencePoint;
 
 import java.util.List;
 import java.util.Map;
@@ -184,11 +183,11 @@ public class Demo {
 			//All occurrences
 			for(Occurrence o : frequent_patterns.get(p)) {
 				//All time points in each occurrence (called OccurrencePoints).
-				for(OccurrencePoint op : o.ops()) {
+				for(HybridEvent op : o.ops()) {
 					//When you only use a unique id for your own event,
 					//you can also this as a reference.
-					if(op.getHybridEvent() instanceof MyHybridEvent) {
-						System.out.println("I occurred with pattern "+p+" in sequence "+o.getHybridEventSequence().getSequenceId()+" at time point "+op.getTimePoint()+" and carry this information for you: "+((MyHybridEvent) op.getHybridEvent()).getInfo());
+					if(op instanceof MyHybridEvent) {
+						System.out.println("I occurred with pattern "+p+" in sequence "+o.getHybridEventSequence().getSequenceId()+" at time point "+op.getTimePoint()+" and carry this information for you: "+((MyHybridEvent) op).getInfo());
 					}
 				}
 			}

@@ -34,9 +34,7 @@ public class DefaultOccurrenceTest {
 		this.seq.add(e2);
 
 		this.df = new DefaultOccurrence(this.seq,
-				Arrays.asList(new DefaultOccurrencePoint(e2, true),
-						new DefaultOccurrencePoint(e1),
-						new DefaultOccurrencePoint(e2, false)));
+				Arrays.asList(e2, e1, e2));
 	}
 	
 	@Test
@@ -81,10 +79,7 @@ public class DefaultOccurrenceTest {
 		seq2.add(e1);
 		seq2.add(e2);
 		
-		DefaultOccurrence df2 = new DefaultOccurrence(this.seq,
-				Arrays.asList(new DefaultOccurrencePoint(e2, true),
-						new DefaultOccurrencePoint(e1),
-						new DefaultOccurrencePoint(e2, false)));
+		DefaultOccurrence df2 = new DefaultOccurrence(this.seq, Arrays.asList(e2, e1, e2));
 
 		assertNotSame(this.df, df2);
 		assertEquals(this.df, df2);

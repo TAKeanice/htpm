@@ -2,7 +2,6 @@ package de.dbvis.htpm.hes;
 
 import de.dbvis.htpm.hes.events.DefaultHybridEvent;
 import de.dbvis.htpm.occurrence.DefaultOccurrence;
-import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
 import org.junit.Before;
 import org.junit.Rule;
@@ -74,17 +73,17 @@ public final class HybridEventSequenceTest {
 		List<Occurrence> exp = new ArrayList<>();
 		
 		DefaultOccurrence oc = new DefaultOccurrence(this.seq,
-				Collections.singletonList(new DefaultOccurrencePoint(this.seq.getEvents().get(0))));
+				Collections.singletonList(this.seq.getEvents().get(0)));
 		exp.add(oc);
 		
 		oc = new DefaultOccurrence(this.seq,
-				Collections.singletonList(new DefaultOccurrencePoint(this.seq.getEvents().get(2))));
+				Collections.singletonList(this.seq.getEvents().get(2)));
 		exp.add(oc);
 		
 		assertEquals(exp, act);
 		
 		//the occurrencepoint actually holds the hybrid event
-		assertEquals(new DefaultHybridEvent("a", 1), act.get(0).get(0).getHybridEvent());
+		assertEquals(new DefaultHybridEvent("a", 1), act.get(0).get(0));
 	}
 	
 	@Test
@@ -97,19 +96,17 @@ public final class HybridEventSequenceTest {
 		List<Occurrence>exp = new ArrayList<>();
 		
 		DefaultOccurrence oc = new DefaultOccurrence(this.seq,
-				Arrays.asList(new DefaultOccurrencePoint(this.seq.getEvents().get(1), true),
-						new DefaultOccurrencePoint(this.seq.getEvents().get(1), false)));
+				Arrays.asList(this.seq.getEvents().get(1), this.seq.getEvents().get(1)));
 		exp.add(oc);
 		
 		oc = new DefaultOccurrence(this.seq,
-				Arrays.asList(new DefaultOccurrencePoint(this.seq.getEvents().get(3), true),
-						new DefaultOccurrencePoint(this.seq.getEvents().get(3), false)));
+				Arrays.asList(this.seq.getEvents().get(3), this.seq.getEvents().get(3)));
 		exp.add(oc);
 		
 		assertEquals(exp, act);
 		
 		//the occurrencepoint actually holds the hybrid event
-		assertEquals(new DefaultHybridEvent("b", 1, 4), act.get(0).get(0).getHybridEvent());
+		assertEquals(new DefaultHybridEvent("b", 1, 4), act.get(0).get(0));
 	}
 	
 	@Test

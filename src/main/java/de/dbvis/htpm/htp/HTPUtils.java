@@ -1,5 +1,6 @@
 package de.dbvis.htpm.htp;
 
+import de.dbvis.htpm.hes.events.HybridEvent;
 import de.dbvis.htpm.htp.eventnodes.*;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -83,5 +84,45 @@ public final class HTPUtils {
         return new HashCodeBuilder(13, 31)
                 .append(pattern.getPatternItemsInIntegerIdOrder())
                 .hashCode();
+    }
+
+    /**
+     * This method compares two occurrence points. The comparison is made according to the
+     * definition 6 (Arrangement of event nodes in htp). in the paper.
+     *
+     * @param n1  - The first EventNode
+     * @param o1 - The occurence point of the first EventNode.
+     * @param n2  - The second EventNode
+     * @param o2 - The occurence point of the second EventNode.
+     * @param useIntId - Whether the comparison should be done by integer id (faster) or string id.
+     *                 Resulting order may be different.
+     * @return <0 If a is lexically before b, >0 if b is lexically before a, 0 if lexically equal.
+     */
+    public static int compareOccurrencePoints(HybridEvent o1, EventNode n1, HybridEvent o2, EventNode n2, boolean useIntId) {
+        int timeComparison = compareOccurrencePointTimes(o1, n1, o2, n2);
+        if (timeComparison != 0) {
+            return timeComparison;
+        }
+
+        return useIntId ? EventNode.compareByIntId(n1, n2) : EventNode.compareByStringId(n1, n2);
+    }
+
+    /**
+     * This method compares the times of occurrence of two event nodes.
+     *
+     * @param n1  - The first EventNode
+     * @param o1 - The occurence point of the first EventNode.
+     * @param n2  - The second EventNode
+     * @param o2 - The occurence point of the second EventNode.
+     *
+     * @return <0 If a is temporally before b, >0 if b is temporally before a, 0 if equal times.
+     */
+    public static int compareOccurrencePointTimes(HybridEvent o1, EventNode n1, HybridEvent o2, EventNode n2) {
+        double time1 = n1 instanceof PointEventNode ? o1.getStartPoint()
+                : (n1 instanceof IntervalStartEventNode ? o1.getStartPoint() : o1.getEndPoint());
+        double time2 = n2 instanceof PointEventNode ? o2.getStartPoint()
+                : (n2 instanceof IntervalStartEventNode ? o2.getStartPoint() : o2.getEndPoint());
+
+        return Double.compare(time1, time2);
     }
 }

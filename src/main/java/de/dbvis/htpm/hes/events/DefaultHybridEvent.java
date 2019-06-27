@@ -140,24 +140,4 @@ public class DefaultHybridEvent implements HybridEvent {
 	public boolean isPointEvent() {
 		return this.endpoint == null;
 	}
-
-	@Override
-	public int compareTo(HybridEvent o) {
-		//time point
-		if(this.getTimePoint() > o.getTimePoint()) {
-			return 1;
-		} else if(this.getTimePoint() < o.getTimePoint()) {
-			return -1;
-		} else {
-			//type
-			if(this.isPointEvent() && !o.isPointEvent()) {
-				return -1;
-			} else if(!this.isPointEvent() && o.isPointEvent()) {
-				return 1;
-			} else {
-				//id
-				return this.getEventId().compareTo(o.getEventId());
-			}
-		}
-	}
 }

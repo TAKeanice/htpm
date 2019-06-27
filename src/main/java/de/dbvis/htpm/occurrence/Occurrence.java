@@ -1,6 +1,7 @@
 package de.dbvis.htpm.occurrence;
 
 import de.dbvis.htpm.hes.HybridEventSequence;
+import de.dbvis.htpm.hes.events.HybridEvent;
 
 import java.util.List;
 
@@ -22,25 +23,26 @@ public interface Occurrence {
 	 * @return A HybridEventSequence, never null
 	 */
 	public HybridEventSequence getHybridEventSequence();
-	
+
 	/**
 	 * Returns an OccurrencePoint at a specific position.
 	 * @param i the position in the list (0 <= i < Occurrence.size())
 	 * @return
 	 */
-	public OccurrencePoint get(int i);
-	
+	public HybridEvent get(int i);
+
 	/**
-	 * Returns the size of the Occurrence which is equal to the number 
+	 * Returns the size of the Occurrence which is equal to the number
 	 * of OccurrencePoints the Occurrence holds.
 	 * @return the size of the Occurrence / number of OccurrencePoints
 	 */
 	public int size();
 
+
 	/**
 	 * Returns the list of occurrence points in order of occurrence
 	 */
-	public List<OccurrencePoint> ops();
+	public List<HybridEvent> ops();
 	
 	/**
 	 * Returns a String representation of the Occurrence, the representation

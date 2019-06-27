@@ -5,15 +5,14 @@ import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.hes.HybridEventSequence;
 import de.dbvis.htpm.hes.events.HybridEvent;
 import de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder;
+import de.dbvis.htpm.htp.HTPUtils;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.EventNode;
 import de.dbvis.htpm.htp.eventnodes.IntervalEndEventNode;
 import de.dbvis.htpm.htp.eventnodes.IntervalStartEventNode;
 import de.dbvis.htpm.htp.eventnodes.PointEventNode;
 import de.dbvis.htpm.occurrence.DefaultOccurrence;
-import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
-import de.dbvis.htpm.occurrence.OccurrencePoint;
 import de.dbvis.htpm.util.HTPMListener;
 import de.dbvis.htpm.util.HTPMOutputEvent;
 import de.dbvis.htpm.util.HTPMOutputListener;
@@ -128,10 +127,8 @@ public class HTPM implements Runnable {
 		boolean foundPrefix = false;
 
 		while (i1 < pa1.size() && i2 < pa2.size()) {
-			final OccurrencePoint op1 = or1.get(i1);
-			final OccurrencePoint op2 = or2.get(i2);
-			double occurrence1 = op1.getTimePoint();
-			double occurrence2 = op2.getTimePoint();
+			final HybridEvent op1 = or1.get(i1);
+			final HybridEvent op2 = or2.get(i2);
 			final EventNode n1 = pa1.get(i1);
 			final EventNode n2 = pa2.get(i2);
 			final EventNode nP = pre.size() > ip ? pre.get(ip) : null;
@@ -142,7 +139,7 @@ public class HTPM implements Runnable {
 				i1++;
 				i2++;
 				ip++;
-			} else if (compare(n1, occurrence1, n2, occurrence2) < 0) {
+			} else if (HTPUtils.compareOccurrencePoints(op1, n1, op2, n2, true) < 0) {
 				if (!foundPrefix) {
 					b.setPrefixes(p1, or1);
 					foundPrefix = true;
@@ -171,28 +168,6 @@ public class HTPM implements Runnable {
 			} while (i2 < pa2.size());
 		}
 		return b;
-	}
-
-	/**
-	 * This method compares two event nodes. The comparison is made according to the
-	 * definition 6 (Arrangement of event nodes in htp). in the paper.
-	 *
-	 * @param a  - The first EventNode
-	 * @param oa - The occurence point of the first EventNode.
-	 * @param b  - The second EventNode
-	 * @param ob - The occurence point of the second EventNode.
-	 * @return <0 If a is before b, >0 if b is before a, 0 if equal.
-	 */
-	private static int compare(EventNode a, double oa, EventNode b, double ob) {
-
-		//1 time
-		int timeComparison = Double.compare(oa, ob);
-		if (timeComparison != 0) {
-			return timeComparison;
-		}
-
-		//remainder is about event nodes themselves
-		return EventNode.compareByIntId(a, b);
 	}
 
 	/**
@@ -353,12 +328,10 @@ public class HTPM implements Runnable {
 				DefaultHybridTemporalPatternBuilder builder = new DefaultHybridTemporalPatternBuilder(seq, 1);
 
 				if (e.isPointEvent()) {
-					builder.append(0, new PointEventNode(e.getEventId()), new DefaultOccurrencePoint(e));
+					builder.append(0, new PointEventNode(e.getEventId()), e);
 				} else {
-					builder.append(0, new IntervalStartEventNode(e.getEventId(), 0),
-							new DefaultOccurrencePoint(e, true));
-					builder.append(0, new IntervalEndEventNode(e.getEventId(), 0),
-							new DefaultOccurrencePoint(e, false));
+					builder.append(0, new IntervalStartEventNode(e.getEventId(), 0), e);
+					builder.append(0, new IntervalEndEventNode(e.getEventId(), 0), e);
 				}
 
 				Occurrence occ = builder.getOccurence();

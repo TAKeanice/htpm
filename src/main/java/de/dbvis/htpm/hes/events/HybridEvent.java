@@ -9,7 +9,7 @@ package de.dbvis.htpm.hes.events;
  * 
  * @author Wolfgang Jentner
  */
-public interface HybridEvent extends Comparable<HybridEvent> {
+public interface HybridEvent {
 	/**
 	 * Returns the event id. The String may not contain +,-,<,=
 	 * @return A string containing the EventId.
@@ -59,16 +59,4 @@ public interface HybridEvent extends Comparable<HybridEvent> {
 	 * @return a String defined 
 	 */
 	String toString();
-	
-	/**
-	 * Compares this HybridEvent with another HybridEvent by the start 
-	 * points or time points respectively. If those are equal then the
-	 * HybridEvents are compared by their type, a point based event occurs before an interval based event. 
-	 * If this is also equal they are compared by their id in a lexicographic order.
-	 * @param o the HybridEvent to compare to
-	 * @return < 0 if this HybridEvent occurs before HybridEvent <code>o</code> (by the constraints defined above)
-	 * <br/>= 0 if the HybridEvents are "equal", note that the end point may differ (by the constraints defined above)
-	 * <br/>> 0 if this HybridEvent occurs after <code>o</code> (by the constraints defined above)
-	 */
-	int compareTo(HybridEvent o);
 }

@@ -4,9 +4,7 @@ import de.dbvis.htpm.hes.events.HybridEvent;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.*;
 import de.dbvis.htpm.occurrence.DefaultOccurrence;
-import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
-import de.dbvis.htpm.occurrence.OccurrencePoint;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -159,15 +157,13 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		//only node in that occurrence
 		events.stream().filter(e -> e.getEventId().equals(id)).forEach(e -> {
 
-			List<OccurrencePoint> ops;
+			List<HybridEvent> ops;
 			if (e.isPointEvent()) {
-				ops = Collections.singletonList(new DefaultOccurrencePoint(e));
+				ops = Collections.singletonList(e);
 			} else {
 				//occurrence marks can be only 0 since it will be the
 				//only node in that occurrence
-				ops = Arrays.asList(
-						new DefaultOccurrencePoint(e, true),
-						new DefaultOccurrencePoint(e, false));
+				ops = Arrays.asList(e, e);
 			}
 
 			DefaultOccurrence oc = new DefaultOccurrence(this, ops);
@@ -201,7 +197,7 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		//since the HybridEvent equals with
 		final Map<MyItem, Integer> seenItems = new HashMap<>();
 
-		for(OccurrencePoint op : o.ops()) {
+		for(HybridEvent op : o.ops()) {
 			if(!occurs(op, seenItems)) {
 				return false;
 			}
@@ -210,18 +206,13 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 		return true;
 	}
 
-	protected boolean occurs(OccurrencePoint op, final Map<MyItem, Integer> seenEvents) {
-		if(op.getHybridEvent() == null) {
-			throw new IllegalArgumentException("OccurrencePoint must contain HybridEvent");
-		}
+	protected boolean occurs(HybridEvent op, final Map<MyItem, Integer> seenEvents) {
 
-		final HybridEvent toSearchFor = op.getHybridEvent();
-
-		if(!this.containedEvents.contains(toSearchFor)) {
+		if(!this.containedEvents.contains(op)) {
 			return false;
 		}
 
-		MyItem searchItem = new MyItem(toSearchFor, op.getTimePoint());
+		MyItem searchItem = new MyItem(op, op.getTimePoint());
 
 		if(!this.myIndex.containsKey(searchItem)) {
 			return false;

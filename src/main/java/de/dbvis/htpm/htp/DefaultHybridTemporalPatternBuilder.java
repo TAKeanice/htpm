@@ -4,9 +4,7 @@ import de.dbvis.htpm.hes.HybridEventSequence;
 import de.dbvis.htpm.hes.events.HybridEvent;
 import de.dbvis.htpm.htp.eventnodes.*;
 import de.dbvis.htpm.occurrence.DefaultOccurrence;
-import de.dbvis.htpm.occurrence.DefaultOccurrencePoint;
 import de.dbvis.htpm.occurrence.Occurrence;
-import de.dbvis.htpm.occurrence.OccurrencePoint;
 
 import java.util.*;
 
@@ -20,7 +18,7 @@ public class DefaultHybridTemporalPatternBuilder {
 
     protected final List<EventNode> ev;
     protected final List<OrderRelation> ors;
-    protected final List<OccurrencePoint> ops;
+    protected final List<HybridEvent> ops;
     protected final HybridEventSequence seq;
 
     protected final Map<Integer, Integer> occurrencemarks;
@@ -40,15 +38,11 @@ public class DefaultHybridTemporalPatternBuilder {
 
         class NodeOccurrencePointPair implements Comparable<NodeOccurrencePointPair> {
             EventNode eventNode;
-            OccurrencePoint op;
+            HybridEvent op;
 
             @Override
             public int compareTo(NodeOccurrencePointPair o) {
-                int opComp = op.compareTo(o.op);
-                if (opComp != 0) {
-                    return opComp;
-                }
-                return eventNode.compareTo(o.eventNode);
+                return HTPUtils.compareOccurrencePoints(this.op, this.eventNode, o.op, o.eventNode, true);
             }
         }
 
@@ -58,16 +52,16 @@ public class DefaultHybridTemporalPatternBuilder {
             if (ev.isPointEvent()) {
                 NodeOccurrencePointPair pair = new NodeOccurrencePointPair();
                 pair.eventNode = new PointEventNode(ev.getEventId());
-                pair.op =new DefaultOccurrencePoint(ev);
+                pair.op = ev;
                 pairs.add(pair);
             } else {
                 NodeOccurrencePointPair pair1 = new NodeOccurrencePointPair();
                 pair1.eventNode = new IntervalStartEventNode(ev.getEventId(), occurrenceMark);
-                pair1.op =new DefaultOccurrencePoint(ev, true);
+                pair1.op = ev;
                 pairs.add(pair1);
                 NodeOccurrencePointPair pair2 = new NodeOccurrencePointPair();
                 pair2.eventNode = new IntervalEndEventNode(ev.getEventId(), occurrenceMark);
-                pair2.op =new DefaultOccurrencePoint(ev, false);
+                pair2.op = ev;
                 pairs.add(pair2);
                 occurrenceMark++;
             }
@@ -189,7 +183,7 @@ public class DefaultHybridTemporalPatternBuilder {
      * @param e - The EventNode to add.
      * @param op - The occurence point of the event node.
      */
-    public void append(int frompattern, EventNode e, OccurrencePoint op) {
+    public void append(int frompattern, EventNode e, HybridEvent op) {
 
         final int eventNodeId = e.getIntegerEventID();
 
@@ -236,7 +230,9 @@ public class DefaultHybridTemporalPatternBuilder {
             node = new IntervalEndEventNode(e, startNodeOccurrenceMark);
 
             //end event node order not guaranteed if occurrence marks change
-            while (offset < ops.size() && op.getTimePoint() == ops.get(ops.size() - 1 - offset).getTimePoint()
+            while (offset < ops.size()
+                    && ev.get(ev.size() - 1 - offset) instanceof IntervalEndEventNode
+                    && Objects.equals(op.getEndPoint(), ops.get(ops.size() - 1 - offset).getEndPoint())
                     && node.compareTo(ev.get(ev.size() - 1 - offset)) < 1) {
                 offset++;
             }
@@ -246,7 +242,7 @@ public class DefaultHybridTemporalPatternBuilder {
         }
 
         if (ev.size() > 0) {
-            final int order = ops.get(ops.size() - 1).compareTo(op);
+            final int order = HTPUtils.compareOccurrencePointTimes(ops.get(ops.size() - 1), ev.get(ev.size() - 1), op, e);
             if (order < 0) {
                 ors.add(OrderRelation.SMALLER);
             } else if (order == 0) {

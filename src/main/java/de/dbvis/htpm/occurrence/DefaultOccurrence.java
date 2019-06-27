@@ -1,6 +1,8 @@
 package de.dbvis.htpm.occurrence;
 
 import de.dbvis.htpm.hes.HybridEventSequence;
+import de.dbvis.htpm.hes.events.HybridEvent;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,14 +24,14 @@ public class DefaultOccurrence implements Occurrence {
 	/**
 	 * A list holding the OccurrencePoints
 	 */
-	private final OccurrencePoint[] ops;
+	private final HybridEvent[] ops;
 
-	public DefaultOccurrence(HybridEventSequence seq, List<OccurrencePoint> ops) {
+	public DefaultOccurrence(HybridEventSequence seq, List<HybridEvent> ops) {
 		if(seq == null) {
 			throw new NullPointerException("HybridEventSequence must not be null");
 		}
 		this.seq = seq;
-		this.ops = ops.toArray(new OccurrencePoint[0]);
+		this.ops = ops.toArray(new HybridEvent[0]);
 	}
 	
 	@Override
@@ -38,12 +40,12 @@ public class DefaultOccurrence implements Occurrence {
 	}
 	
 	@Override
-	public List<OccurrencePoint> ops() {
+	public List<HybridEvent> ops() {
 		return Arrays.asList(this.ops);
 	}
 
 	@Override
-	public OccurrencePoint get(int i) {
+	public HybridEvent get(int i) {
 		return this.ops[i];
 	}
 
@@ -58,7 +60,11 @@ public class DefaultOccurrence implements Occurrence {
 		sb.append(this.getHybridEventSequence().getSequenceId());
 		sb.append("(");
 		for(int i = 0; i < ops.length; i++) {
-			sb.append(ops[i].getTimePoint());
+			final HybridEvent op = ops[i];
+			int firstIndex = ArrayUtils.indexOf(ops, op);
+			int lastIndex = ArrayUtils.lastIndexOf(ops, op);
+			sb.append(firstIndex == lastIndex ? op.getTimePoint()
+					: (firstIndex == i ? op.getStartPoint() : op.getEndPoint()));
 			if (i < ops.length - 1) {
 				sb.append(",");
 			}
