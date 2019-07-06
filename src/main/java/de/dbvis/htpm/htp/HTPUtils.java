@@ -4,6 +4,7 @@ import de.dbvis.htpm.hes.events.HybridEvent;
 import de.dbvis.htpm.htp.eventnodes.*;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -14,12 +15,28 @@ public final class HTPUtils {
 
     private HTPUtils() {}
 
+    public static int getLastIndexOfLastStableGroup(HybridTemporalPattern pattern) {
+
+        List<EventNode> nodes = pattern.getEventNodes();
+        List<OrderRelation> relations = pattern.getOrderRelations();
+
+        int i = getLastStart(nodes, new ArrayList<>());
+        while (i > 0) {
+            i--;
+            final OrderRelation currentRelation = relations.get(i);
+
+            if (currentRelation == OrderRelation.SMALLER) {
+                break;
+            }
+        }
+        return i;
+    }
+
     public static int getLastIndexOfUnmodifiablePart(List<EventNode> nodes, List<IntervalEndEventNode> openEnds) {
-        boolean foundLastStart = false;
         int secondLastStart = -1;
 
-        int i = nodes.size();
-        while (secondLastStart < 0 && i > 0) {
+        int i = getLastStart(nodes, openEnds);
+        while (i > 0) {
             i--;
             final EventNode currentNode = nodes.get(i);
 
@@ -33,14 +50,36 @@ public final class HTPUtils {
                     openEnds.removeIf(node -> node.id == startNode.id && node.occurrencemark == startNode.occurrencemark);
                 }
 
-                if (!foundLastStart) {
-                    foundLastStart = true;
-                } else {
-                    secondLastStart = i;
-                }
+                secondLastStart = i;
+                break;
             }
         }
         return secondLastStart;
+    }
+
+    public static int getLastStart(List<EventNode> nodes, List<IntervalEndEventNode> openEnds) {
+        int lastStart = -1;
+
+        int i = nodes.size();
+        while (i > 0) {
+            i--;
+            final EventNode currentNode = nodes.get(i);
+
+            if (currentNode instanceof IntervalEndEventNode) {
+                openEnds.add((IntervalEndEventNode) currentNode);
+            } else if (currentNode instanceof IntervalStartEventNode || currentNode instanceof PointEventNode) {
+
+                if (currentNode instanceof IntervalStartEventNode) {
+                    //some open end is now closed
+                    IntervalStartEventNode startNode = (IntervalStartEventNode) currentNode;
+                    openEnds.removeIf(node -> node.id == startNode.id && node.occurrencemark == startNode.occurrencemark);
+                }
+
+                lastStart = i;
+                break;
+            }
+        }
+        return lastStart;
     }
 
 

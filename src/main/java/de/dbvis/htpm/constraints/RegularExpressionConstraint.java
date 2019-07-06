@@ -2,10 +2,8 @@ package de.dbvis.htpm.constraints;
 
 import de.dbvis.htpm.htp.HTPUtils;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
-import de.dbvis.htpm.htp.eventnodes.OrderRelation;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,11 +50,8 @@ public class RegularExpressionConstraint extends AcceptAllConstraint {
     }
 
     private boolean prefixMatched(HybridTemporalPattern p) {
-        int unmodifiableBoundary = HTPUtils.getLastIndexOfUnmodifiablePart(p.getEventNodes(), new ArrayList<>());
-        //since this boundary can refer to any itemset order, we need to track back a little more (to last group)
-        while (unmodifiableBoundary > 0 && p.getOrderRelations().get(unmodifiableBoundary - 1) == OrderRelation.EQUAL) {
-            unmodifiableBoundary--;
-        }
+        //since the last start can be the "last" only in itemset order, we need to track back a little more (to last group)
+        int unmodifiableBoundary = HTPUtils.getLastIndexOfLastStableGroup(p);
 
         if (unmodifiableBoundary <= 0) {
             //partial pattern is an empty string, always matches all of empty string (although matcher reports otherwise)
