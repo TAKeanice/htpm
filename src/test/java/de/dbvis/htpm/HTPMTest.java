@@ -54,7 +54,7 @@ public class HTPMTest {
 		
 		d.add(s);
 
-		final DefaultHTPMConstraint defaultConstraint = new DefaultHTPMConstraint(d.size(), 0.5);
+		final AgrawalSupportConstraint defaultConstraint = new AgrawalSupportConstraint(d.size(), 0.5);
 		HTPM htpm = new HTPM(d, defaultConstraint);
 		
 		htpm.addHTPMListener(event -> System.out.println("Generation: "+event.getGeneration() + " Number of patterns: " + event.getNumberOfPatterns()));
@@ -361,8 +361,8 @@ public class HTPMTest {
 						  boolean dfs, boolean cmap,
 						  boolean lowStorage) {
 
-		DefaultHTPMConstraint defaultConstraint = null;
-		MinOccurrencesConstraint minOccurrencesConstraint = null;
+		AgrawalSupportConstraint defaultConstraint = null;
+		MinDistinctElementOccurrencesConstraint minOccurrencesConstraint = null;
 		MaxDurationConstraint maxDurationConstraint = null;
 		PatternSizeConstraint patternSizeConstraint = null;
 		CMAPConstraint cmapConstraint = null;
@@ -371,10 +371,10 @@ public class HTPMTest {
 		final List<HTPMConstraint> constraints = new ArrayList<>();
 
 		if (episodeMining) {
-			minOccurrencesConstraint = new MinOccurrencesConstraint(minOccurrences);
+			minOccurrencesConstraint = new MinDistinctElementOccurrencesConstraint(minOccurrences);
 			constraints.add(minOccurrencesConstraint);
 		} else {
-			defaultConstraint = new DefaultHTPMConstraint(database.size(), minSupport);
+			defaultConstraint = new AgrawalSupportConstraint(database.size(), minSupport);
 			constraints.add(defaultConstraint);
 			if (duration) {
 				maxDurationConstraint = new MaxDurationConstraint(maxDuration);

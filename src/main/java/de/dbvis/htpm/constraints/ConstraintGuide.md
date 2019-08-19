@@ -54,7 +54,7 @@ The constraint is responsible for counting them. The counting does not serve any
 
 ### Regular constraints
 
-1. DefaultHTPMConstraint
+1. AgrawalSupportConstraint
 
     The constraint suggested by the original paper.
     Either this one or the EpisodeMiningConstraint should be used as an effective way of removing infrequent patterns.
@@ -76,19 +76,43 @@ The constraint is responsible for counting them. The counting does not serve any
     Such patterns have less valid occurrences, which would not become more later during mining, thus that property is anti-monotone.
     When a pattern is about to be output, filters for gaps in the complete occurrence.
     
-4. MinOccurrencesConstraint
+4. MinCombinatorialOccurrencesConstraint
     
-    In contrary to the DefaultHTPMConstraint, support is calculated differently:
+    In contrary to the AgrawalSupportConstraint, support is calculated differently:
     The number of occurrences of a pattern is counted instead of the ratio of supporting and all sequences.
-    A pattern is discarded if the number is lower than the provided minimal number of occurrences.
-    This constraint can handle databases with only one long sequence, but it is advisable to add a maxDuratioonConstraint.
+    A pattern is not supported if the number is lower than the provided minimal number of occurrences.
+    This constraint does not prune during the mining process, because by combination (joining) of patterns the number
+    of occurrences can be multiplied. To be usable in pruning however, the number would have to be anti-monotonous.
     
-5. PatternSizeConstraint
+5. MinDistinctElementOccurrencesConstraint
+
+    This occurrence counting constraint _is_ usable for pruning the search space.
+    It counts the number of distinct elements assigned to one certain slot in all occurrences, takes the minimum thereof
+    and compares it to the minimum occurrences demanded. The number of distinct elements is at least the maximum number
+    of totally distinct occurrences (occurrences that share none of their elements with any other occurrence).
+    Because a join cannot increase the _minimum_ number of distinct elements for a slot, that number is anti-monotonic.
+    The constraint enables, potentially in combination with a MaxDurationConstraint, episode-mining,
+    which is mining of patterns in a single long sequence.
+
+6. MinDistinctTimeOccurrencesConstraint
+
+    Just like the MinDistinctElementOccurrencesConstraint, calculates an anti-monotonic number of occurrences and is
+    therefore usable for apriori pruning and episode mining. Here, however, we demand that occurrences are 
+    non-overlapping, in terms of the interval from the start of their first element and the end thir last element.
+    This yields a number that is lower or equal to the one from the MinDistinctOccurrencesConstraint.
+    Which occurrence counting constraint to use depends on the semantics of patterns in the specific application.
+    If the same pattern occurring twice during the same time makes no difference, the MinDistinctOccurrencesConstraint
+    is the right choice. If an element of an occurrence appearing in another occurrence makes no sense, the
+    MinDistinctElementOccurrencesConstraint should be used. Only if there are other constraints
+    to sufficiently prune the search space and if _all_ combinations of elements in occurrences should count,
+    the MinCombinatorialOccurrencesConstraint may be used.
+    
+7. PatternSizeConstraint
 
     Prevents the output of short patterns and prevents mining of patterns over a length limit.
-    The length constraints refer to the number of elements of the pattern, NOT the duration.
+    The length constraints refer to the number of elements of the pattern, _not_ the duration.
     
-6. CMAP Constraint
+8. CMAP Constraint
 
     Can be used to improve HTPM performance.
     The CMAP datastructure saves all patterns of length 2. 
@@ -98,12 +122,12 @@ The constraint is responsible for counting them. The counting does not serve any
     To work properly, the CMAP constraint must only be applied to search strategies 
     that mine ALL 2-patterns before mining other patterns
     
-7. Subpattern Constraint
+9. Subpattern Constraint
 
     Filters patterns by the subpatterns that they have.
     Only applied to output.
     
-8. Regex Constraint
+10. Regex Constraint
 
     Filters patterns by Java Regex. This allows many wild filters.
     The boolean parameter whether the constraint is "prefix selective" can have a performance impact:

@@ -12,7 +12,7 @@ import static de.dbvis.htpm.htp.eventnodes.OrderRelation.SMALLER;
 
 /**
  * Only applicable on BFS or when ALL two-patterns are built BEFORE switching to DFS
- * Has to be paired with a DefaultHTPMConstraint or some derived constraint
+ * Has to be paired with a AgrawalSupportConstraint or some derived constraint
  */
 public class CMAPConstraint extends AcceptAllConstraint {
 

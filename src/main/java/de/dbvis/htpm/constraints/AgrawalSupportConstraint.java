@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class DefaultHTPMConstraint extends AcceptAllConstraint {
+public class AgrawalSupportConstraint extends AcceptAllConstraint {
 
     /**
      * The minimum support each pattern has to satisfy
@@ -22,7 +22,7 @@ public class DefaultHTPMConstraint extends AcceptAllConstraint {
     private int unsupportedCount = 0;
     private int unsupportedOccurrences = 0;
 
-    public DefaultHTPMConstraint(int numSequences, double minSupport) {
+    public AgrawalSupportConstraint(int numSequences, double minSupport) {
         this.numSequences = numSequences;
         if(minSupport <= 0 || minSupport > 1) {
             throw new IllegalArgumentException("Minimum support must be 0 < min_support <= 1");
@@ -80,8 +80,7 @@ public class DefaultHTPMConstraint extends AcceptAllConstraint {
      * Checks if there are enough sequences supporting the pattern
      */
     public boolean isSupported(final List<Occurrence> occurrences) {
-        final boolean isSupported = this.support(occurrences) >= this.minSupport;
-        return isSupported;
+        return this.support(occurrences) >= this.minSupport;
     }
 
     /**
