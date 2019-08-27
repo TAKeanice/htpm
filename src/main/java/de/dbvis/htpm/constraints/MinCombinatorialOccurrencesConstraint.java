@@ -5,7 +5,7 @@ import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.List;
 
-public class MinCombinatorialOccurrencesConstraint extends AcceptAllConstraint {
+public class MinCombinatorialOccurrencesConstraint extends AcceptAllConstraint implements SupportBasedConstraint {
 
     private final int minOccurrences;
 
@@ -23,7 +23,7 @@ public class MinCombinatorialOccurrencesConstraint extends AcceptAllConstraint {
 
     @Override
     public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
-        return isSupported(occurrences);
+        return isSupported(p, occurrences);
     }
 
     @Override
@@ -54,8 +54,23 @@ public class MinCombinatorialOccurrencesConstraint extends AcceptAllConstraint {
     /**
      * checks if there are enough occurrences of that pattern
      */
-    public boolean isSupported(List<?> occurrences) {
-        return occurrences.size() > minOccurrences;
+    private boolean isSupported(HybridTemporalPattern p, List<Occurrence> occurrences) {
+        return getSupport(p, occurrences) > minOccurrences;
+    }
+
+    @Override
+    public double getSupport(HybridTemporalPattern p, List<Occurrence> occurrences) {
+        return calculateOccurrences(p, occurrences);
+    }
+
+    /**
+     * Calculates the number of occurrences by considering all occurrences (combinatorial counting without exclusions)
+     * @param p the pattern
+     * @param occurrences occurrences of the pattern
+     * @return the number of occurrences
+     */
+    public static double calculateOccurrences(HybridTemporalPattern p, List<Occurrence> occurrences) {
+        return occurrences.size();
     }
 
     @Override

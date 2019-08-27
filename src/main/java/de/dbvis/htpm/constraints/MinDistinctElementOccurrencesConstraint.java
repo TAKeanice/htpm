@@ -6,7 +6,7 @@ import de.dbvis.htpm.occurrence.Occurrence;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint {
+public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint implements SupportBasedConstraint {
     private final int minOccurrences;
 
     private int patternsDiscardedCount = 0;
@@ -21,7 +21,7 @@ public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint
 
     @Override
     public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
-        final boolean supported = isSupported(occurrences);
+        final boolean supported = isSupported(p, occurrences);
         if (!supported) {
             patternsDiscardedCount++;
             occurrencesDiscardedCount += occurrences.size();
@@ -36,7 +36,7 @@ public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint
 
     @Override
     public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
-        return isSupported(occurrences);
+        return isSupported(p, occurrences);
     }
 
     @Override
@@ -67,20 +67,34 @@ public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint
     /**
      * checks if there are enough occurrences of that pattern
      */
-    public boolean isSupported(List<Occurrence> occurrences) {
+    private boolean isSupported(HybridTemporalPattern p, List<Occurrence> occurrences) {
         if (occurrences.size() < minOccurrences) {
             //we do not need to examine occurrences further if there are too few anyway
             return false;
         }
 
+        return getSupport(p, occurrences) >= minOccurrences;
+    }
+
+    @Override
+    public double getSupport(HybridTemporalPattern p, List<Occurrence> occurrences) {
+        return calculateOccurrences(p, occurrences);
+    }
+
+    /**
+     * Counts support by the minimum number of distinct elements in one slot of the pattern
+     * @param p the pattern
+     * @param occurrences the occurrences of the pattern
+     * @return the number of occurrences of a pattern
+     */
+    public static double calculateOccurrences(HybridTemporalPattern p, List<Occurrence> occurrences) {
         //There can only be as many distinct occurrences as the minimum of distinct events in one slot in the pattern
         //It may still overestimate the number of occurrences, but it does fulfill the apriori-property.
         //Because by the mechanism of joining patterns,
         // it is not possible to increase the minimum number of distinct events in one slot in the pattern!
-        int minNumber = IntStream.range(0, occurrences.get(0).size()).map(i ->
-                (int) occurrences.stream().map(occ -> occ.get(i)).distinct().count() //count distinct elements for slot i
-        ).min().orElseThrow(); //take minimum of distinct elements (stream is not empty, so it never fails)
-        return minNumber >= minOccurrences;
+        return IntStream.range(0, p.size()).map(i ->
+                (int) occurrences.stream().map(occ -> occ.get(i)).distinct().count()) //count distinct elements for slot i
+                .min().orElse(0); //0 if we put in an empty occurrence list
     }
 
     @Override

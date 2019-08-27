@@ -3,11 +3,9 @@ package de.dbvis.htpm.constraints;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-public class AgrawalSupportConstraint extends AcceptAllConstraint {
+public class AgrawalSupportConstraint extends AcceptAllConstraint implements SupportBasedConstraint {
 
     /**
      * The minimum support each pattern has to satisfy
@@ -79,24 +77,26 @@ public class AgrawalSupportConstraint extends AcceptAllConstraint {
     /**
      * Checks if there are enough sequences supporting the pattern
      */
-    public boolean isSupported(final List<Occurrence> occurrences) {
-        return this.support(occurrences) >= this.minSupport;
+    private boolean isSupported(final List<Occurrence> occurrences) {
+        return this.getSupport(null, occurrences) >= this.minSupport;
+    }
+
+    @Override
+    public double getSupport(HybridTemporalPattern p, List<Occurrence> occurrences) {
+        return calculateSupport(p, occurrences, numSequences);
     }
 
     /**
-     * Returns the support of a List of Occurrences
-     * @param occurrences the occurrences
+     * Returns the support (after the original definition by Agrawal) of a list of occurrences of some pattern
+     * @param p the pattern
+     * @param occurrences occurrences of the pattern
+     * @param numSequences the total number of sequences in the database
      * @return the support
      */
-    protected double support(final List<Occurrence> occurrences) {
-        Set<String> sequenceIds = new HashSet<>();
-
-        //support is implicitly counted by joining all joinable occurrence records once
-        for(final Occurrence o : occurrences) {
-            sequenceIds.add(o.getHybridEventSequence().getSequenceId());
-        }
-
-        return ((double) sequenceIds.size()) / numSequences;
+    public static double calculateSupport(HybridTemporalPattern p, List<Occurrence> occurrences, double numSequences) {
+        //support is based on the number of sequences in which the pattern occurs
+        long numSequencesWithOccurrence = occurrences.stream().map(Occurrence::getHybridEventSequence).distinct().count();
+        return numSequencesWithOccurrence / numSequences;
     }
 
 
