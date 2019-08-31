@@ -5,6 +5,7 @@ import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class ConstraintCollection implements HTPMConstraint {
@@ -36,7 +37,7 @@ public class ConstraintCollection implements HTPMConstraint {
     }
 
     @Override
-    public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+    public boolean patternFulfillsConstraints(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
         return passesAll(c -> c.patternFulfillsConstraints(p, occurrences, k));
     }
 
@@ -51,7 +52,7 @@ public class ConstraintCollection implements HTPMConstraint {
     }
 
     @Override
-    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return passesAll(c -> c.shouldOutputPattern(p, occurrences));
     }
 
@@ -65,7 +66,7 @@ public class ConstraintCollection implements HTPMConstraint {
     }
 
     @Override
-    public void foundPattern(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+    public void foundPattern(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
         for (HTPMConstraint c : constraints) {
             c.foundPattern(p, occurrences, k);
         }

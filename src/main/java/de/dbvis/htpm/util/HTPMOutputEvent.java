@@ -2,8 +2,10 @@ package de.dbvis.htpm.util;
 
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class HTPMOutputEvent extends HTPMEvent {
@@ -28,9 +30,9 @@ public class HTPMOutputEvent extends HTPMEvent {
 
     public static class PatternOccurrence {
         public final HybridTemporalPattern pattern;
-        public final List<Occurrence> occurrences;
+        public final Set<Occurrence> occurrences;
 
-        public PatternOccurrence(HybridTemporalPattern pattern, List<Occurrence> occurrences) {
+        public PatternOccurrence(HybridTemporalPattern pattern, Set<Occurrence> occurrences) {
             this.pattern = pattern;
             this.occurrences = occurrences;
         }
@@ -42,12 +44,17 @@ public class HTPMOutputEvent extends HTPMEvent {
         }
 
         @Override
+        public int hashCode() {
+            return new HashCodeBuilder().append(pattern.hashCode()).append(occurrences.hashCode()).hashCode();
+        }
+
+        @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof PatternOccurrence)) {
                 return false;
             }
             final PatternOccurrence other = (PatternOccurrence) obj;
-            return this.pattern.equals(other.pattern) && this.occurrences.equals(other.occurrences);
+            return new EqualsBuilder().append(pattern, other.pattern).append(occurrences, other.occurrences).isEquals();
         }
     }
 }

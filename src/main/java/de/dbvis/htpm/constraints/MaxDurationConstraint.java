@@ -5,7 +5,7 @@ import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.EventNode;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-import java.util.List;
+import java.util.Set;
 
 public class MaxDurationConstraint extends AcceptAllConstraint {
 
@@ -48,7 +48,7 @@ public class MaxDurationConstraint extends AcceptAllConstraint {
     }
 
     @Override
-    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return true;
     }
 

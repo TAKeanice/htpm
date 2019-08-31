@@ -6,15 +6,20 @@ import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.*;
 
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class SubPatternConstraint extends RegularExpressionConstraint {
 
     private final HybridTemporalPattern subPattern;
+    private final List<Pattern> nodeRegexes;
     private int branchesCutCount = 0;
 
     public SubPatternConstraint(HybridTemporalPattern subPattern) {
         super(toRegex(subPattern), false);
         this.subPattern = subPattern;
+        nodeRegexes = subPattern.getEventNodes().stream()
+                .map(n -> Pattern.compile(n.getStringEventId())).collect(Collectors.toList());
     }
 
     public SubPatternConstraint(String subPattern) {
@@ -23,20 +28,30 @@ public class SubPatternConstraint extends RegularExpressionConstraint {
 
     private static String toRegex(HybridTemporalPattern p) {
         //language=RegExp
-        String allEqualsPlaceholder = "=[^<]*";
-        String allEventsPlaceholder = ".*<.*";
+        String stayInGroupPlaceholder = "=([^<]*=)?";
+
+        //group change: may start with order relation = and has a "<" somewhere, afterwards may have any number of letters followed by an order relation
+        //language=RegExp
+        String changeGroupPlaceholder = "(=.*)?<(.*[<=])?";
 
         List<HTPItem> nodes = p.getPatternItemsInStringIdOrder();
 
-        StringBuilder regex = new StringBuilder(".*");
+        //pattern either starts with first subpattern element or with any number of letters followed by an order relation
+        //language=RegExp
+        StringBuilder regex = new StringBuilder("^(.*[<=])?");
 
         for (int i = 0; i < p.getOrderRelations().size(); i++) {
             appendNode(regex, (EventNode) nodes.get(i * 2));
-            regex.append(p.getOrderRelations().get(i) == OrderRelation.EQUAL ? allEqualsPlaceholder : allEventsPlaceholder);
+            regex.append(p.getOrderRelations().get(i) == OrderRelation.EQUAL
+                    ? stayInGroupPlaceholder
+                    : changeGroupPlaceholder);
         }
         //add last node (and wildcard for everything that might come afterwards)
         appendNode(regex, (EventNode) nodes.get(nodes.size() - 1));
-        regex.append(".*");
+
+        //ends with last subpattern element or an order relation followed by any number of letters
+        //language=RegExp
+        regex.append("([<=].*)?$");
 
         return regex.toString();
     }
@@ -59,10 +74,10 @@ public class SubPatternConstraint extends RegularExpressionConstraint {
     @Override
     public boolean branchCanProduceResults(List<PatternOccurrence> patternsWithOccurrences) {
         //test if there are all components of the subpattern in the branch
-        final boolean keepBranch = subPattern.getEventNodes().stream()
-                .allMatch(sn -> patternsWithOccurrences.stream().map(patternOccurrence -> patternOccurrence.pattern)
+        final boolean keepBranch = nodeRegexes.stream()
+                .allMatch(nodeRegex -> patternsWithOccurrences.stream().map(patternOccurrence -> patternOccurrence.pattern)
                         .anyMatch(pattern -> pattern.getEventNodes().stream()
-                                .anyMatch(n -> n.getStringEventId().contains(sn.getStringEventId()))));
+                                .anyMatch(n -> nodeRegex.matcher(n.getStringEventId()).matches())));
         if (!keepBranch) {
             branchesCutCount++;
         }

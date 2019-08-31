@@ -442,6 +442,11 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 	}
 
 	@Override
+	public int hashCode() {
+		return sequenceId.hashCode();
+	}
+
+	@Override
 	public boolean equals(Object obj) {
 		return obj instanceof HybridEventSequence && ((HybridEventSequence) obj).getSequenceId().equals(sequenceId);
 	}

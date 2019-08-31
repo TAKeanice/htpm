@@ -9,6 +9,7 @@ import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * this is an adaptation of the maxGap constraint.
@@ -89,7 +90,7 @@ public class MaxGapConstraint extends AcceptAllConstraint {
     }
 
     @Override
-    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return true;
     }
 

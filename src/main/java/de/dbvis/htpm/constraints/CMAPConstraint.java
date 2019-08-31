@@ -57,12 +57,12 @@ public class CMAPConstraint extends AcceptAllConstraint {
     }
 
     @Override
-    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return true;
     }
 
     @Override
-    public void foundPattern(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+    public void foundPattern(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
         if (k == 2) {
             //save two-patterns to CMAP index
             twoPatterns.add(p);

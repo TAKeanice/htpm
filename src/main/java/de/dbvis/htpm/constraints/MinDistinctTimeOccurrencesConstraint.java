@@ -6,6 +6,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class MinDistinctTimeOccurrencesConstraint extends AcceptAllConstraint implements SupportBasedConstraint {
@@ -23,7 +24,7 @@ public class MinDistinctTimeOccurrencesConstraint extends AcceptAllConstraint im
 
 
     @Override
-    public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+    public boolean patternFulfillsConstraints(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
         final boolean supported = isSupported(p, occurrences);
         if (!supported) {
             patternsDiscardedCount++;
@@ -38,7 +39,7 @@ public class MinDistinctTimeOccurrencesConstraint extends AcceptAllConstraint im
     }
 
     @Override
-    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return isSupported(p, occurrences);
     }
 
@@ -67,13 +68,13 @@ public class MinDistinctTimeOccurrencesConstraint extends AcceptAllConstraint im
         return 0;
     }
 
-    private boolean isSupported(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    private boolean isSupported(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         int numDistinct = (int) getSupport(p, occurrences);
         return numDistinct >= minMinimalOccurrences;
     }
 
     @Override
-    public double getSupport(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public double getSupport(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return calculateOccurrences(p, occurrences);
     }
 
@@ -83,7 +84,7 @@ public class MinDistinctTimeOccurrencesConstraint extends AcceptAllConstraint im
      * @param occurrences occurrences of the pattern
      * @return the maximum number of temporally non-overlapping occurrences
      */
-    public static double calculateOccurrences(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public static double calculateOccurrences(HybridTemporalPattern p, Set<Occurrence> occurrences) {
 
         Collection<List<Occurrence>> occurrencesInSequences = occurrences.stream()
                 .collect(Collectors.groupingBy(Occurrence::getHybridEventSequence)).values();

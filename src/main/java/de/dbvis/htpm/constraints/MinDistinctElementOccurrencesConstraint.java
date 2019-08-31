@@ -4,6 +4,7 @@ import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint implements SupportBasedConstraint {
@@ -20,7 +21,7 @@ public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint
     }
 
     @Override
-    public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+    public boolean patternFulfillsConstraints(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
         final boolean supported = isSupported(p, occurrences);
         if (!supported) {
             patternsDiscardedCount++;
@@ -35,7 +36,7 @@ public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint
     }
 
     @Override
-    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return isSupported(p, occurrences);
     }
 
@@ -67,7 +68,7 @@ public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint
     /**
      * checks if there are enough occurrences of that pattern
      */
-    private boolean isSupported(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    private boolean isSupported(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         if (occurrences.size() < minOccurrences) {
             //we do not need to examine occurrences further if there are too few anyway
             return false;
@@ -77,7 +78,7 @@ public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint
     }
 
     @Override
-    public double getSupport(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public double getSupport(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return calculateOccurrences(p, occurrences);
     }
 
@@ -87,7 +88,7 @@ public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint
      * @param occurrences the occurrences of the pattern
      * @return the number of occurrences of a pattern
      */
-    public static double calculateOccurrences(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public static double calculateOccurrences(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         //There can only be as many distinct occurrences as the minimum of distinct events in one slot in the pattern
         //It may still overestimate the number of occurrences, but it does fulfill the apriori-property.
         //Because by the mechanism of joining patterns,

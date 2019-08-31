@@ -5,6 +5,7 @@ import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.List;
+import java.util.Set;
 
 public interface HTPMConstraint {
 
@@ -54,7 +55,7 @@ public interface HTPMConstraint {
      * @param k the desired length of the patterns that have been created
      * @return whether the pattern p is within the constraints or should be pruned
      */
-    boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k);
+    boolean patternFulfillsConstraints(HybridTemporalPattern p, Set<Occurrence> occurrences, int k);
 
     /**
      * whether the branch of the search tree (patterns with same prefix) should be followed
@@ -81,7 +82,7 @@ public interface HTPMConstraint {
      * @param occurrences occurrences of the output candidate
      * @return whether the pattern p and its occurrences shall be output
      */
-    boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences);
+    boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences);
 
     /**
      * called whenever algorithm finds a hybrid temporal pattern,
@@ -90,7 +91,7 @@ public interface HTPMConstraint {
      * @param occurrences the occurrences of pattern p
      * @param k the length of pattern p
      */
-    void foundPattern(HybridTemporalPattern p, List<Occurrence> occurrences, int k);
+    void foundPattern(HybridTemporalPattern p, Set<Occurrence> occurrences, int k);
 
     int getPatternJoinPreventedCount();
     int getOccurrenceJoinPreventedCount();

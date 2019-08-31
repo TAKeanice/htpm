@@ -4,6 +4,7 @@ import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.List;
+import java.util.Set;
 
 public class AgrawalSupportConstraint extends AcceptAllConstraint implements SupportBasedConstraint {
 
@@ -29,7 +30,7 @@ public class AgrawalSupportConstraint extends AcceptAllConstraint implements Sup
     }
 
     @Override
-    public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+    public boolean patternFulfillsConstraints(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
         //prune patterns which do not fulfill minimum support
         boolean isSupported = isSupported(occurrences);
         if (!isSupported) {
@@ -45,7 +46,7 @@ public class AgrawalSupportConstraint extends AcceptAllConstraint implements Sup
     }
 
     @Override
-    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return isSupported(occurrences);
     }
 
@@ -77,12 +78,12 @@ public class AgrawalSupportConstraint extends AcceptAllConstraint implements Sup
     /**
      * Checks if there are enough sequences supporting the pattern
      */
-    private boolean isSupported(final List<Occurrence> occurrences) {
+    private boolean isSupported(final Set<Occurrence> occurrences) {
         return this.getSupport(null, occurrences) >= this.minSupport;
     }
 
     @Override
-    public double getSupport(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public double getSupport(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return calculateSupport(p, occurrences, numSequences);
     }
 
@@ -93,7 +94,7 @@ public class AgrawalSupportConstraint extends AcceptAllConstraint implements Sup
      * @param numSequences the total number of sequences in the database
      * @return the support
      */
-    public static double calculateSupport(HybridTemporalPattern p, List<Occurrence> occurrences, double numSequences) {
+    public static double calculateSupport(HybridTemporalPattern p, Set<Occurrence> occurrences, double numSequences) {
         //support is based on the number of sequences in which the pattern occurs
         long numSequencesWithOccurrence = occurrences.stream().map(Occurrence::getHybridEventSequence).distinct().count();
         return numSequencesWithOccurrence / numSequences;

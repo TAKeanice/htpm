@@ -3,7 +3,7 @@ package de.dbvis.htpm.constraints;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-import java.util.List;
+import java.util.Set;
 
 public class PatternSizeConstraint extends AcceptAllConstraint {
 
@@ -33,7 +33,7 @@ public class PatternSizeConstraint extends AcceptAllConstraint {
     }
 
     @Override
-    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return minOutputPatternLength <= p.length() && p.length() <= maxPatternLength;
     }
 

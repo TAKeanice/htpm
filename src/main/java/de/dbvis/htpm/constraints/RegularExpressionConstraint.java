@@ -4,7 +4,7 @@ import de.dbvis.htpm.htp.HTPUtils;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -40,7 +40,7 @@ public class RegularExpressionConstraint extends AcceptAllConstraint {
     }
 
     @Override
-    public boolean patternFulfillsConstraints(HybridTemporalPattern p, List<Occurrence> occurrences, int k) {
+    public boolean patternFulfillsConstraints(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
         //if regular expression is not considered selective on prefix, we skip matching.
         final boolean passes = (!prefixSelective) || prefixMatched(p);
         if (!passes) {
@@ -70,7 +70,7 @@ public class RegularExpressionConstraint extends AcceptAllConstraint {
     }
 
     @Override
-    public boolean shouldOutputPattern(HybridTemporalPattern p, List<Occurrence> occurrences) {
+    public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         final String patternStr = p.patternStr();
         //match against patternstring without round braces
         return expression.matcher(patternStr.substring(1, patternStr.length() - 1)).matches();

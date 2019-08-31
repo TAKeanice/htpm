@@ -246,7 +246,7 @@ public class HTPM implements Runnable {
 				filterBeforeOutput(patterns.stream().flatMap(Collection::stream))
 						.map(po -> new HTPMOutputEvent.PatternOccurrence(
 								po.pattern,
-								po.occurrences.stream().map(link -> link.child).collect(Collectors.toList())));
+								po.occurrences.stream().map(link -> link.child).collect(Collectors.toSet())));
 		this.fireHTPMEvent(new HTPMOutputEvent(this, depth, patterns.stream().mapToInt(List::size).sum(), outputPatterns));
 	}
 
@@ -261,7 +261,7 @@ public class HTPM implements Runnable {
 				.filter(po -> constraint.shouldOutputPattern(po.pattern,
 						po.occurrences.stream()
 								.map(link -> link.child)
-								.collect(Collectors.toList())));
+								.collect(Collectors.toSet())));
 	}
 
 	//================================================================================
@@ -347,7 +347,7 @@ public class HTPM implements Runnable {
 
 		//prune unsupported patterns
 		map.entrySet().removeIf(entry -> !constraint.patternFulfillsConstraints(entry.getKey(),
-				entry.getValue().stream().map(link -> link.child).collect(Collectors.toList()), 1));
+				entry.getValue().stream().map(link -> link.child).collect(Collectors.toSet()), 1));
 
 		//parse maps into patternOccurrence objects
 		final List<PatternOccurrence> patternOccurrences = map.entrySet().stream().map(entry ->
@@ -533,9 +533,9 @@ public class HTPM implements Runnable {
 
 		//prune new patterns
 		parentP1.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(),
-				e.getValue().occurrences.stream().map(link -> link.child).collect(Collectors.toList()), k));
+				e.getValue().occurrences.stream().map(link -> link.child).collect(Collectors.toSet()), k));
 		parentP2.entrySet().removeIf(e -> !constraint.patternFulfillsConstraints(e.getKey(),
-				e.getValue().occurrences.stream().map(link -> link.child).collect(Collectors.toList()), k));
+				e.getValue().occurrences.stream().map(link -> link.child).collect(Collectors.toSet()), k));
 
 		//convert linkedlists into arraylists for better performance later
 		//parentP1.entrySet().forEach(e -> e.setValue(new ArrayList<>(e.getValue())));
@@ -546,9 +546,9 @@ public class HTPM implements Runnable {
 		parentP2.forEach((key, value) -> ((ArrayList) value.occurrences).trimToSize());
 
 		parentP1.forEach((pattern, occurrences) -> constraint.foundPattern(pattern,
-				occurrences.occurrences.stream().map(link -> link.child).collect(Collectors.toList()), k));
+				occurrences.occurrences.stream().map(link -> link.child).collect(Collectors.toSet()), k));
 		parentP2.forEach((pattern, occurrences) -> constraint.foundPattern(pattern,
-				occurrences.occurrences.stream().map(link -> link.child).collect(Collectors.toList()), k));
+				occurrences.occurrences.stream().map(link -> link.child).collect(Collectors.toSet()), k));
 
 		return partitionedResult;
 	}

@@ -3,6 +3,8 @@ package de.dbvis.htpm.occurrence;
 import de.dbvis.htpm.hes.HybridEventSequence;
 import de.dbvis.htpm.hes.events.HybridEvent;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -74,10 +76,17 @@ public class DefaultOccurrence implements Occurrence {
 	}
 
 	@Override
+	public int hashCode() {
+		return new HashCodeBuilder().append(getHybridEventSequence()).append(ops()).hashCode();
+	}
+
+	@Override
 	public boolean equals(Object o) {
 		if(o instanceof Occurrence) {
-			return seq.equals(((Occurrence) o).getHybridEventSequence())
-					&& ops().equals(((Occurrence) o).ops());
+			final Occurrence other = (Occurrence) o;
+			return new EqualsBuilder()
+					.append(getHybridEventSequence(), other.getHybridEventSequence())
+					.append(ops(), other.ops()).isEquals();
 		}
 		return false;
 	}
