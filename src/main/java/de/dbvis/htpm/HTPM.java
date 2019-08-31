@@ -179,7 +179,7 @@ public class HTPM implements Runnable {
 	 * 
 	 * @return The patterns with their occurrences
 	 */
-	public Map<HybridTemporalPattern, List<Occurrence>> getPatterns() {
+	public Map<HybridTemporalPattern, Set<Occurrence>> getPatterns() {
 		if (saveMemory) {
 			throw new RuntimeException("Patterns are not saved after output in low storage mode!");
 		}
@@ -189,7 +189,7 @@ public class HTPM implements Runnable {
 		final Stream<PatternOccurrence> poStream = this.patterns.stream().flatMap(Collection::stream).flatMap(Collection::stream);
 		return filterBeforeOutput(poStream)
 				.collect(Collectors.toMap(po -> po.pattern, po -> po.occurrences.stream()
-						.map(link -> link.child).collect(Collectors.toList())));
+						.map(link -> link.child).collect(Collectors.toSet())));
 	}
 
 	/**
@@ -202,8 +202,8 @@ public class HTPM implements Runnable {
 	 * 
 	 * @return The patterns sorted by length with their occurrences
 	 */
-	public Map<HybridTemporalPattern, List<Occurrence>> getPatternsSortedByLength() {
-		TreeMap<HybridTemporalPattern, List<Occurrence>> sortedmap = new TreeMap<>(HybridTemporalPattern::compareTo);
+	public Map<HybridTemporalPattern, Set<Occurrence>> getPatternsSortedByLength() {
+		TreeMap<HybridTemporalPattern, Set<Occurrence>> sortedmap = new TreeMap<>(HybridTemporalPattern::compareTo);
 		sortedmap.putAll(getPatterns());
 		return sortedmap;
 	}

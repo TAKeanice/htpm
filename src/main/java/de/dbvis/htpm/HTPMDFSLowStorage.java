@@ -5,10 +5,7 @@ import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class HTPMDFSLowStorage extends HTPMDFS {
 
@@ -23,7 +20,7 @@ public class HTPMDFSLowStorage extends HTPMDFS {
     }
 
     @Override
-    public Map<HybridTemporalPattern, List<Occurrence>> getPatterns() {
+    public Map<HybridTemporalPattern, Set<Occurrence>> getPatterns() {
         throw new RuntimeException("Patterns are not saved after output in low storage mode!");
     }
 

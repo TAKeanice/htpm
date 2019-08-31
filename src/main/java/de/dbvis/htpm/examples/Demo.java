@@ -12,8 +12,8 @@ import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static de.dbvis.htpm.htp.DefaultHybridTemporalPatternBuilder.buildFromSequence;
 
@@ -165,7 +165,7 @@ public class Demo {
 		//As its values, it has all the occurrences.
 		//Length is maybe little bit unintuitive since it means
 		//the number of events that the pattern has.
-		Map<HybridTemporalPattern, List<Occurrence>> frequent_patterns = htpm.getPatternsSortedByLength();
+		Map<HybridTemporalPattern, Set<Occurrence>> frequent_patterns = htpm.getPatternsSortedByLength();
 		System.out.println(frequent_patterns.toString());
 		//Output: (each key is in a seperate line)
 		//htp1=(a)=[Monday(3.0), Wednesday(1.0), Tuesday(5.0)]
