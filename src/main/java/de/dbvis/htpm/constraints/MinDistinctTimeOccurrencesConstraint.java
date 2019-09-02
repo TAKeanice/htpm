@@ -93,8 +93,8 @@ public class MinDistinctTimeOccurrencesConstraint extends AcceptAllConstraint im
         List<List<Pair<Double, Double>>> occurrenceIntervalLists = occurrencesInSequences.stream()
                 .map(occurrenceSet -> occurrenceSet.stream()
                         .map(occ -> Pair.of(
-                                Occurrence.getTimepointOfOccurrencePoint(p.getEventNode(p.size() - 1), occ.get(occ.size() - 1)),
-                                Occurrence.getTimepointOfOccurrencePoint(p.getEventNode(0), occ.get(0))
+                                Occurrence.getTimepoint(p, occ,p.size() - 1),
+                                Occurrence.getTimepoint(p, occ, 0)
                         )).sorted().collect(Collectors.toList())
                 ).collect(Collectors.toList());
 

@@ -51,8 +51,8 @@ public class MaxGapConstraint extends AcceptAllConstraint {
 
         //there can be a gap between the start or point node just added to the prefix and the node before.
         //all gaps before that are ruled out from being too large, because this constraint was already applied.
-        double gapStart = Occurrence.getTimepointOfOccurrencePoint(pattern.getEventNode(secondLastStart - 1), occurrence.get(secondLastStart - 1));
-        double gapEnd = Occurrence.getTimepointOfOccurrencePoint(pattern.getEventNode(secondLastStart), occurrence.get(secondLastStart));
+        double gapStart = Occurrence.getTimepoint(pattern, occurrence, secondLastStart - 1);
+        double gapEnd = Occurrence.getTimepoint(pattern, occurrence, secondLastStart);
         double gap = gapEnd - gapStart;
 
         if (gap > maxGap) {
@@ -70,7 +70,7 @@ public class MaxGapConstraint extends AcceptAllConstraint {
         double gapStart = Double.MAX_VALUE;
         for (int i = 0; i < occurrence.size(); i++) {
 
-            double gapEnd = Occurrence.getTimepointOfOccurrencePoint(p.getEventNode(i), occurrence.get(i));
+            double gapEnd = Occurrence.getTimepoint(p, occurrence, i);
             if (openIntervals.isEmpty()) {
                 //too large gap detected (no open intervals span gap between last node and this one)
                 if (gapEnd - gapStart > maxGap) {
