@@ -57,11 +57,14 @@ public class HTPMTest {
 		final AgrawalSupportConstraint defaultConstraint = new AgrawalSupportConstraint(d.size(), 0.5);
 		HTPM htpm = new HTPM(d, defaultConstraint);
 		
-		htpm.addHTPMListener(event -> System.out.println("Generation: "+event.getGeneration() + " Number of patterns: " + event.getNumberOfPatterns()));
+		htpm.addHTPMListener(event -> System.out.println("Generation: " + event.getGeneration() + " Number of patterns: " + event.getNumberOfPatterns()));
 		
 		htpm.run();
 
-		Assert.assertEquals("{" +
+		final List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> patterns =
+				getPatternsSortedWithFixedOccurrenceOrder(htpm);
+
+		Assert.assertEquals("[" +
 						"(a+0<a-0)=[1(5.0,10.0), 1(8.0,12.0), 2(8.0,11.0), 3(4.0,10.0), 3(9.0,12.0)], " +
 						"(b+0<b-0)=[1(6.0,12.0), 2(6.0,11.0), 3(4.0,12.0)], " +
 						"(c)=[1(6.0), 1(8.0), 2(6.0), 2(8.0), 3(4.0)], " +
@@ -77,9 +80,10 @@ public class HTPMTest {
 						"(b+0=c<c<b-0)=[1(6.0,6.0,8.0,12.0), 2(6.0,6.0,8.0,11.0)], " +
 						"(c<a+0=c<a-0)=[1(6.0,8.0,8.0,12.0), 2(6.0,8.0,8.0,11.0)], " +
 						"(b+0=c<a+0=c<a-0=b-0)=[1(6.0,6.0,8.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,8.0,11.0,11.0)]" +
-						"}",
-				htpm.getPatternsSortedByLength().toString());
+						"]",
+				patterns.toString());
 
+		//second run with subpattern constraint
 
 		String subpattern = "b+0<a+0<a-0=b-0";
 		SubPatternConstraint sbp = new SubPatternConstraint(subpattern);
@@ -88,12 +92,24 @@ public class HTPMTest {
 		htpm = new HTPM(d, constraintCollection);
 		htpm.run();
 
-		Assert.assertEquals("{" +
+		final List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> patterns2 = getPatternsSortedWithFixedOccurrenceOrder(htpm);
+		Assert.assertEquals("[" +
 						"(b+0<a+0<a-0=b-0)=[1(6.0,8.0,12.0,12.0), 2(6.0,8.0,11.0,11.0), 3(4.0,9.0,12.0,12.0)], " +
 						"(b+0<a+0=c<a-0=b-0)=[1(6.0,8.0,8.0,12.0,12.0), 2(6.0,8.0,8.0,11.0,11.0)], " +
 						"(b+0=c<a+0<a-0=b-0)=[1(6.0,6.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,11.0,11.0), 3(4.0,4.0,9.0,12.0,12.0)], " +
-						"(b+0=c<a+0=c<a-0=b-0)=[1(6.0,6.0,8.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,8.0,11.0,11.0)]}",
-				htpm.getPatternsSortedByLength().toString());
+						"(b+0=c<a+0=c<a-0=b-0)=[1(6.0,6.0,8.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,8.0,11.0,11.0)]]",
+				patterns2.toString());
+	}
+
+	private List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> getPatternsSortedWithFixedOccurrenceOrder(HTPM htpm) {
+		return htpm.getPatternsSortedByLength().entrySet()
+				.stream().map((Map.Entry<HybridTemporalPattern, Set<Occurrence>> entry) ->
+						Map.entry(entry.getKey(),
+								entry.getValue().stream()
+										.sorted(Comparator
+												.comparing((Occurrence occ) -> Integer.parseInt(occ.getHybridEventSequence().getSequenceId()))
+												.thenComparing((Occurrence occ) -> occ.get(0).getTimePoint())).collect(Collectors.toList())))
+				.collect(Collectors.toList());
 	}
 
 	@Test
