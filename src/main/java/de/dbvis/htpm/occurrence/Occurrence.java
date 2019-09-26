@@ -31,7 +31,7 @@ public interface Occurrence {
 	/**
 	 * Returns an OccurrencePoint at a specific position.
 	 * @param i the position in the list (0 <= i < Occurrence.size())
-	 * @return
+	 * @return the OccurrencePoint at a position i.
 	 */
 	public HybridEvent get(int i);
 

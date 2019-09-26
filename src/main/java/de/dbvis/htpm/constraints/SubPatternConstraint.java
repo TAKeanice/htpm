@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+//Caution: subpattern constraint may find additional incorrect subpattern relations when quoted eventids are used.
 public class SubPatternConstraint extends RegularExpressionConstraint {
 
     private final HybridTemporalPattern subPattern;
@@ -30,7 +31,8 @@ public class SubPatternConstraint extends RegularExpressionConstraint {
         //language=RegExp
         String stayInGroupPlaceholder = "=([^<]*=)?";
 
-        //group change: may start with order relation = and has a "<" somewhere, afterwards may have any number of letters followed by an order relation
+        //group change: may start with order relation = and has a "<" somewhere,
+        // afterwards may have any number of letters followed by an order relation
         //language=RegExp
         String changeGroupPlaceholder = "(=.*)?<(.*[<=])?";
 

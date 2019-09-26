@@ -2,6 +2,7 @@ package de.dbvis.htpm.htp;
 
 import de.dbvis.htpm.htp.eventnodes.*;
 
+import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -31,10 +32,15 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 
 	/**
 	 * Method to create pattern from string. See original paper for correct specification
+	 * Additionally to the original specification, elements of a pattern can be quoted in double quotes,
+	 * and between a pair of double quotes all special symbols (+,-,<,=) are allowed.
 	 * @param pattern the pattern string. Example: a+0=b<a-0<c (round brackets around the pattern are allowed)
 	 */
 	public DefaultHybridTemporalPattern(String pattern) {
-		pattern = pattern.replaceAll("[(|)]", "");
+
+		if (pattern.matches("\\(.*\\)")) {
+			pattern = pattern.substring(1, pattern.length() - 1);
+		}
 
 		if (pattern.isEmpty()) {
 			eventnodes = new EventNode[0];
@@ -54,7 +60,7 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		this.orderrelations = orderrelations.toArray(new OrderRelation[0]);
 	}
 
-	private void parsePatternString(String pattern, List<EventNode> eventnodes, List<OrderRelation> orderrelations) {
+	private void parsePatternString(String pattern, List<EventNode> eventnodes, List<OrderRelation> orderrelations) throws ParseException {
 		//this is a hack, adding the = in the end of the pattern makes the pattern
 		//iteself invalid, but the loop will continue once more and also adds
 		//the last EventNode
@@ -64,8 +70,21 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 		StringBuilder oc = new StringBuilder(100);
 		OrderRelation lastRel = null;
 		boolean parsingOccurencemark = false;
+		boolean insideQuotes = false;
 		boolean isStartEvent = false;
 		for(char c : p) {
+
+			if (c == '"') {
+				insideQuotes = !insideQuotes;
+				id.append(c);
+				continue;
+			}
+
+			if (insideQuotes) {
+				id.append(c);
+				continue;
+			}
+
 			if(!parsingOccurencemark && (c == '<' || c == '=')) {
 				//is point event
 				if (lastRel != null) {
@@ -113,6 +132,10 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 			} else {
 				oc.append(c);
 			}
+		}
+
+		if (insideQuotes) {
+			throw new ParseException("Quotes are not balanced!", pattern.length());
 		}
 
 		Comparator<EventNode> c = EventNode::compareByIntId;
