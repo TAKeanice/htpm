@@ -2,6 +2,8 @@ package de.dbvis.htpm.htp.eventnodes;
 
 import de.dbvis.htpm.util.UniqueIDConverter;
 
+import java.util.Comparator;
+
 /**
  * This abstracts class implements a HTPItem as well as an OccurrencePoint, it is also
  * comparable.
@@ -48,6 +50,15 @@ public abstract class EventNode implements HTPItem, Comparable<EventNode> {
 	 */
 	public abstract String toString();
 
+	/*-------------------------------------------------+
+	| Comparing event nodes                            |
+	+-------------------------------------------------*/
+
+	/**
+	 * EventNodes may be stored in datastructures that use hashing to compare objects
+	 * The hash function of an eventnode must yield equal hashes for eventnodes that equal,
+	 * not only when they are identical.
+	 */
 	@Override
 	public abstract int hashCode();
 
@@ -57,47 +68,14 @@ public abstract class EventNode implements HTPItem, Comparable<EventNode> {
 	 * @param o the EventNode to check against
 	 * @return true if the EventNodes are equal, false otherwise
 	 */
+	@Override
 	public abstract boolean equals(Object o);
 
-	@Override
-	public int compareTo(EventNode o) {
-		return compareByIntId(this, o);
-	}
+	private static Comparator<EventNode> integerIdComparator = Comparator.comparingInt(EventNode::getIntegerEventID);
 
-	public static int compareByIntId(EventNode a, EventNode b) {
-		//compare IDs
-		int idComparison = Integer.compare(a.id, b.id);
-		return compareWithIDComparison(a, b, idComparison);
-	}
+	private static Comparator<EventNode> stringIdComparator = Comparator.comparing(EventNode::getStringEventId);
 
-	public static int compareByStringId(EventNode a, EventNode b) {
-		int idComparison = a.getStringEventId().compareTo(b.getStringEventId());
-		return compareWithIDComparison(a, b, idComparison);
-	}
-
-	private static int compareWithIDComparison(EventNode a, EventNode b, int idComparison) {
-		if (idComparison != 0) {
-			return idComparison;
-		}
-
-		//compare node types
-		int typeComparison = typeComparison(a, b);
-
-		if (typeComparison != 0) {
-			return typeComparison;
-		}
-
-		//compare occurrence marks
-		int occurrenceMarkComparison = occurrenceMarkComparison(a, b);
-
-		if (occurrenceMarkComparison != 0) {
-			return occurrenceMarkComparison;
-		}
-
-		return 0;
-	}
-
-	public static int typeComparison(EventNode a, EventNode b) {
+	private static Comparator<EventNode> typeComparator = (a, b) -> {
 		int typeComparison = 0;
 		if (a instanceof IntervalEndEventNode) {
 			if (b instanceof IntervalStartEventNode || b instanceof PointEventNode) {
@@ -115,13 +93,32 @@ public abstract class EventNode implements HTPItem, Comparable<EventNode> {
 			}
 		}
 		return typeComparison;
-	}
+	};
 
-	public static int occurrenceMarkComparison(EventNode a, EventNode b) {
+	private static Comparator<EventNode> occurrenceMarkComparator = (a, b) -> {
 		int occurrenceMarkComparison = 0;
 		if (a instanceof IntervalEventNode && b instanceof IntervalEventNode) {
 			occurrenceMarkComparison = Integer.compare(((IntervalEventNode)a).occurrencemark, ((IntervalEventNode)b).occurrencemark);
 		}
 		return occurrenceMarkComparison;
+	};
+
+	private static Comparator<EventNode> eventNodeWithIntIdComparator =
+			integerIdComparator.thenComparing(typeComparator).thenComparing(occurrenceMarkComparator);
+
+	private static Comparator<EventNode> getEventNodeWithStringIdComparator =
+			stringIdComparator.thenComparing(typeComparator).thenComparing(occurrenceMarkComparator);
+
+	@Override
+	public int compareTo(EventNode o) {
+		return compareByIntId(this, o);
+	}
+
+	public static int compareByIntId(EventNode a, EventNode b) {
+		return eventNodeWithIntIdComparator.compare(a, b);
+	}
+
+	public static int compareByStringId(EventNode a, EventNode b) {
+		return getEventNodeWithStringIdComparator.compare(a, b);
 	}
 }
