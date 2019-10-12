@@ -84,15 +84,6 @@ public interface HTPMConstraint {
      */
     boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences);
 
-    /**
-     * called whenever algorithm finds a hybrid temporal pattern,
-     * in case the constraint needs to keep track of previously found patterns
-     * @param p the found pattern
-     * @param occurrences the occurrences of pattern p
-     * @param k the length of pattern p
-     */
-    void foundPattern(HybridTemporalPattern p, Set<Occurrence> occurrences, int k);
-
     int getPatternJoinPreventedCount();
     int getOccurrenceJoinPreventedCount();
     int getOccurrencesDiscardedCount();

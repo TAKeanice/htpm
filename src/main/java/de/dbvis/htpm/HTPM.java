@@ -545,11 +545,6 @@ public class HTPM implements Runnable {
 		parentP1.forEach((key, value) -> ((ArrayList) value.occurrences).trimToSize());
 		parentP2.forEach((key, value) -> ((ArrayList) value.occurrences).trimToSize());
 
-		parentP1.forEach((pattern, occurrences) -> constraint.foundPattern(pattern,
-				occurrences.occurrences.stream().map(link -> link.child).collect(Collectors.toSet()), k));
-		parentP2.forEach((pattern, occurrences) -> constraint.foundPattern(pattern,
-				occurrences.occurrences.stream().map(link -> link.child).collect(Collectors.toSet()), k));
-
 		return partitionedResult;
 	}
 }

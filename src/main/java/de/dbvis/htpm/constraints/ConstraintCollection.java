@@ -66,13 +66,6 @@ public class ConstraintCollection implements HTPMConstraint {
     }
 
     @Override
-    public void foundPattern(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
-        for (HTPMConstraint c : constraints) {
-            c.foundPattern(p, occurrences, k);
-        }
-    }
-
-    @Override
     public int getPatternJoinPreventedCount() {
         return 0;
     }

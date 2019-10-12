@@ -39,11 +39,9 @@ The constraint methods are called in the following order:
 3. join occurrences?
 4. occurrence fulfills constraints?
 5. pattern fulfills constraints?
-6. generated pattern!
-7. should output occurrence?
-8. should output pattern?
+6. should output occurrence?
+7. should output pattern?
 
-Method number 6 can be used by the constraint to save patterns that it needs later for evaluation.
 Not all reported patterns are results of the HTPM algorithm: some of them could be pruned by output filters later on.
 
 There are some optional bookkeeping methods, which return the number of refused patterns, refused occurrences 
@@ -115,12 +113,13 @@ The constraint is responsible for counting them. The counting does not serve any
 8. CMAP Constraint
 
     Can be used to improve HTPM performance.
-    The CMAP datastructure saves all patterns of length 2. 
-    When a pattern join is requested, all potential outcomes of the suffix join are examined:
+    The CMAP datastructure saves all patterns of length 2, that are eligible as subpatterns of a longer pattern. 
+    When a pattern join is about to be started, all potential outcomes of the suffix join are examined:
     If the join of the pattern suffixes cannot build a frequent 2-pattern, the join is be prevented.
     This constraint can help if there are many joinable occurrences of two patterns.
-    To work properly, the CMAP constraint must only be applied to search strategies 
-    that mine ALL 2-patterns before mining other patterns
+    To work properly, the CMAP constraint has to be given all constraints that restrict subpatterns.
+    Constraints that prune pattern by prefix or output patterns, 
+    that could still be subpatterns of valid patterns, must not be used in its initialization!
     
 9. Subpattern Constraint
 

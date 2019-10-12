@@ -87,7 +87,8 @@ public class HTPMTest {
 
 		String subpattern = "b+0<a+0<a-0=b-0";
 		SubPatternConstraint sbp = new SubPatternConstraint(subpattern);
-		ConstraintCollection constraintCollection = new ConstraintCollection(Arrays.asList(defaultConstraint, sbp));
+		CMAPConstraint cmap = new CMAPConstraint(d, defaultConstraint);
+		ConstraintCollection constraintCollection = new ConstraintCollection(Arrays.asList(defaultConstraint, sbp, cmap));
 
 		htpm = new HTPM(d, constraintCollection);
 		htpm.run();
@@ -217,35 +218,25 @@ public class HTPMTest {
 				new DefaultHybridTemporalPattern("f<c<b")
 		));
 
+
+		double minsupport = 0.5;
+
 		final ArrayList<HybridTemporalPattern> expected = new ArrayList<>(correctResults);
 		expected.sort(HybridTemporalPattern::compareTo);
 
-		List<Stream<HTPMOutputEvent.PatternOccurrence>> output1 = new ArrayList<>();
-		testPlainHTPM(d, createAccumulatingListener(output1), 0.5, false, false);
-		List<HybridTemporalPattern> algorithmResults1 = new ArrayList<>(patternsFromAccumulatedStreams(output1));
-		algorithmResults1.sort(HybridTemporalPattern::compareTo);
-		Assert.assertEquals(expected, algorithmResults1);
+		boolean[] options = new boolean[]{false, true};
 
-
-		List<Stream<HTPMOutputEvent.PatternOccurrence>> output2 = new ArrayList<>();
-		testPlainHTPM(d, createAccumulatingListener(output2), 0.5, false, true);
-		List<HybridTemporalPattern> algorithmResults2 = new ArrayList<>(patternsFromAccumulatedStreams(output2));
-		algorithmResults2.sort(HybridTemporalPattern::compareTo);
-		Assert.assertEquals(expected, algorithmResults2);
-
-
-		List<Stream<HTPMOutputEvent.PatternOccurrence>> output3 = new ArrayList<>();
-		testPlainHTPM(d, createAccumulatingListener(output3), 0.5, true, true);
-		List<HybridTemporalPattern> algorithmResults3 = new ArrayList<>(patternsFromAccumulatedStreams(output3));
-		algorithmResults3.sort(HybridTemporalPattern::compareTo);
-		Assert.assertEquals(expected, algorithmResults3);
-
-
-		List<Stream<HTPMOutputEvent.PatternOccurrence>> output4 = new ArrayList<>();
-		testPlainHTPM(d, createAccumulatingListener(output4), 0.5, true, false);
-		List<HybridTemporalPattern> algorithmResults4 = new ArrayList<>(patternsFromAccumulatedStreams(output4));
-		algorithmResults4.sort(HybridTemporalPattern::compareTo);
-		Assert.assertEquals(expected, algorithmResults4);
+		for (boolean dfs : options) {
+			for (boolean lowStorage : options) {
+				for (boolean cmap : options) {
+					List<Stream<HTPMOutputEvent.PatternOccurrence>> output1 = new ArrayList<>();
+					testPlainHTPM(d, createAccumulatingListener(output1), minsupport, dfs, lowStorage, cmap);
+					List<HybridTemporalPattern> algorithmResults1 = new ArrayList<>(patternsFromAccumulatedStreams(output1));
+					algorithmResults1.sort(HybridTemporalPattern::compareTo);
+					Assert.assertEquals(expected, algorithmResults1);
+				}
+			}
+		}
 	}
 
 	@Test
@@ -319,26 +310,21 @@ public class HTPMTest {
 			}
 		};
 
-		testPlainHTPM(d, listener1, 0.2, false, false);
+		testPlainHTPM(d, listener1, 0.2, false, false, false);
 		final Set<HybridTemporalPattern> output1Patterns = outputs1.stream().map(po -> po.pattern).collect(Collectors.toSet());
 
+		boolean[] options = new boolean[]{false, true};
 
-		List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams2 = new ArrayList<>();
-		final HTPMOutputListener listener2 = createAccumulatingListener(outputStreams2);
-		testPlainHTPM(d, listener2, 0.2, true, false);
-		Assert.assertEquals(output1Patterns, patternsFromAccumulatedStreams(outputStreams2));
-
-
-		List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams3 = new ArrayList<>();
-		final HTPMOutputListener listener3 = createAccumulatingListener(outputStreams3);
-		testPlainHTPM(d, listener3, 0.2, true, true);
-		Assert.assertEquals(output1Patterns, patternsFromAccumulatedStreams(outputStreams3));
-
-
-		List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams4 = new ArrayList<>();
-		final HTPMOutputListener listener4 = createAccumulatingListener(outputStreams4);
-		testPlainHTPM(d, listener4, 0.2, false, true);
-		Assert.assertEquals(output1Patterns, patternsFromAccumulatedStreams(outputStreams4));
+		for (boolean dfs : options) {
+			for (boolean lowStorage : options) {
+				for (boolean cmap : options) {
+					List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams = new ArrayList<>();
+					final HTPMOutputListener listener4 = createAccumulatingListener(outputStreams);
+					testPlainHTPM(d, listener4, 0.2, dfs, lowStorage, cmap);
+					Assert.assertEquals(output1Patterns, patternsFromAccumulatedStreams(outputStreams));
+				}
+			}
+		}
 	}
 
 	private Set<HybridTemporalPattern> patternsFromAccumulatedStreams(List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams) {
@@ -359,14 +345,14 @@ public class HTPMTest {
 	}
 
 	private void testPlainHTPM(HybridEventSequenceDatabase database, HTPMListener listener,
-							   double minSupport, boolean dfs, boolean lowStorage) {
+							   double minSupport, boolean dfs, boolean lowStorage, boolean cmap) {
 		testHTPM(database, listener,
 				//plain (no episode mining) support threshold
 				minSupport,
 				//all fancy additional options false
 				false, 0, 0, false, 0, false, 0, false, 0,
 				//activate cmap
-				dfs, !dfs, lowStorage);
+				null, dfs, cmap, lowStorage);
 	}
 
 	private void testHTPM(HybridEventSequenceDatabase database, HTPMListener listener,
@@ -374,6 +360,7 @@ public class HTPMTest {
 						  boolean patternSize, int minSizeForOutput, int maxSize,
 						  boolean episodeMining, int minOccurrences, boolean duration, double maxDuration,
 						  boolean gap, double prefixMaxGap,
+						  HTPMConstraint otherConstraints,
 						  boolean dfs, boolean cmap,
 						  boolean lowStorage) {
 
@@ -392,22 +379,29 @@ public class HTPMTest {
 		} else {
 			defaultConstraint = new AgrawalSupportConstraint(database.size(), minSupport);
 			constraints.add(defaultConstraint);
-			if (duration) {
-				maxDurationConstraint = new MaxDurationConstraint(maxDuration);
-				constraints.add(maxDurationConstraint);
-			}
 		}
-		if (cmap && !dfs) {
-			cmapConstraint = new CMAPConstraint();
+		if (duration) {
+			maxDurationConstraint = new MaxDurationConstraint(maxDuration);
+			constraints.add(maxDurationConstraint);
+		}
+		if (cmap && (!patternSize || maxSize > 2)) {
+			ConstraintCollection constraintsForSubpatterns = new ConstraintCollection(new ArrayList<>(constraints));
+			cmapConstraint = new CMAPConstraint(database, constraintsForSubpatterns);
 			constraints.add(cmapConstraint);
 		}
 		if (patternSize) {
 			patternSizeConstraint = new PatternSizeConstraint(maxSize, minSizeForOutput);
 			constraints.add(patternSizeConstraint);
 		}
+
+
 		if (gap) {
 			maxGapConstraint = new MaxGapConstraint(prefixMaxGap);
 			constraints.add(maxGapConstraint);
+		}
+
+		if (otherConstraints != null) {
+			constraints.add(otherConstraints);
 		}
 
 		final ConstraintCollection combinedConstraint = new ConstraintCollection(constraints);

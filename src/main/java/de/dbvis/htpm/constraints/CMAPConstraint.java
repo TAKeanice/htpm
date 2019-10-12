@@ -1,5 +1,7 @@
 package de.dbvis.htpm.constraints;
 
+import de.dbvis.htpm.HTPM;
+import de.dbvis.htpm.db.HybridEventSequenceDatabase;
 import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.htp.eventnodes.*;
@@ -11,10 +13,25 @@ import static de.dbvis.htpm.htp.eventnodes.OrderRelation.EQUAL;
 import static de.dbvis.htpm.htp.eventnodes.OrderRelation.SMALLER;
 
 /**
- * Only applicable on BFS or when ALL two-patterns are built BEFORE switching to DFS
- * Has to be paired with a AgrawalSupportConstraint or some derived constraint
+ * This constraint is just for performance optimization, not for pruning any output.
+ * It tries to predict whether a join will be successful by looking which new 2-element subpatterns could be built
+ * and whether any of them fulfills the apriori criterion.
  */
 public class CMAPConstraint extends AcceptAllConstraint {
+
+    /**
+     * @param d the database on which HTPM will mine
+     * @param constraintsForSubpatterns all constraints which are going to be used that fulfill the Apriori-property with respect to subpatterns
+     *                                  Things like the RegexConstraint which applies to prefixes
+     *                                  or the SubPatternConstraint which prunes the output lead to wrong results.
+     */
+    public CMAPConstraint(HybridEventSequenceDatabase d, HTPMConstraint constraintsForSubpatterns) {
+        HTPMConstraint maxSizeConstraint = new PatternSizeConstraint(2, 2);
+        ConstraintCollection constraint = new ConstraintCollection(Arrays.asList(constraintsForSubpatterns, maxSizeConstraint));
+        HTPM htpm = new HTPM(d, constraint, false, 1);
+        htpm.run();
+        this.twoPatterns.addAll(htpm.getPatterns().keySet());
+    }
 
     private final Set<HybridTemporalPattern> twoPatterns = new HashSet<>();
 
@@ -59,14 +76,6 @@ public class CMAPConstraint extends AcceptAllConstraint {
     @Override
     public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
         return true;
-    }
-
-    @Override
-    public void foundPattern(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
-        if (k == 2) {
-            //save two-patterns to CMAP index
-            twoPatterns.add(p);
-        }
     }
 
     @Override
@@ -405,7 +414,7 @@ public class CMAPConstraint extends AcceptAllConstraint {
      * @param relations relations of nodes in pattern
      * @return the groups to which the suffix nodes in the pattern belong
      */
-    public IndexPair determineGroupIndices(List<EventNode> pa, List<EventNode> pre, List<OrderRelation> relations) {
+    private IndexPair determineGroupIndices(List<EventNode> pa, List<EventNode> pre, List<OrderRelation> relations) {
 
         int startGroup = -1;
         int startIndex = -1;
@@ -452,7 +461,7 @@ public class CMAPConstraint extends AcceptAllConstraint {
         return new IndexPair(startGroup, endGroup, startIndex, endIndex);
     }
 
-    public int determineGroupIndexOfNode(int nodeNumber, int currentGroupIndex, List<OrderRelation> relations) {
+    private int determineGroupIndexOfNode(int nodeNumber, int currentGroupIndex, List<OrderRelation> relations) {
         int index;
         if (0 < nodeNumber && relations.get(nodeNumber - 1) != SMALLER) {
             //we are at same position as current group
