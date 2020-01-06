@@ -25,7 +25,7 @@ public class HTPMDFS extends HTPM {
      * The method that actually runs the algorithm.
      */
     @Override
-    public void run() {
+    public void start() {
         this.patterns = new ArrayList<>();
 
         if (!constraint.shouldGeneratePatternsOfLength(1)) {

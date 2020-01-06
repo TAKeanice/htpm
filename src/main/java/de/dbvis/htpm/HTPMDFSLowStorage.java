@@ -28,7 +28,7 @@ public class HTPMDFSLowStorage extends HTPMDFS {
      * The method that actually runs the algorithm.
      */
     @Override
-    public void run() {
+    public void start() {
         if (!constraint.shouldGeneratePatternsOfLength(1)) {
             return;
         }

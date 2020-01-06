@@ -3,7 +3,6 @@ package de.dbvis.htpm.constraints;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-import java.util.List;
 import java.util.Set;
 
 public class AgrawalSupportConstraint extends AcceptAllConstraint implements SupportBasedConstraint {
@@ -79,22 +78,21 @@ public class AgrawalSupportConstraint extends AcceptAllConstraint implements Sup
      * Checks if there are enough sequences supporting the pattern
      */
     private boolean isSupported(final Set<Occurrence> occurrences) {
-        return this.getSupport(null, occurrences) >= this.minSupport;
+        return calculateSupport(occurrences, numSequences) >= this.minSupport;
     }
 
     @Override
     public double getSupport(HybridTemporalPattern p, Set<Occurrence> occurrences) {
-        return calculateSupport(p, occurrences, numSequences);
+        return calculateSupport(occurrences, numSequences);
     }
 
     /**
      * Returns the support (after the original definition by Agrawal) of a list of occurrences of some pattern
-     * @param p the pattern
      * @param occurrences occurrences of the pattern
      * @param numSequences the total number of sequences in the database
      * @return the support
      */
-    public static double calculateSupport(HybridTemporalPattern p, Set<Occurrence> occurrences, double numSequences) {
+    public static double calculateSupport(Set<Occurrence> occurrences, double numSequences) {
         //support is based on the number of sequences in which the pattern occurs
         long numSequencesWithOccurrence = occurrences.stream().map(Occurrence::getHybridEventSequence).distinct().count();
         return numSequencesWithOccurrence / numSequences;

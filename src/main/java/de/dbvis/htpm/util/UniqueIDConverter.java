@@ -12,32 +12,37 @@ public final class UniqueIDConverter {
      */
     private static Map<String, Integer> integerIDMap = new HashMap<>(100);
     private static List<String> stringIDList = new ArrayList<>(100);
-    public static final String forbiddenCharacters = "[\"]";
-    public static final String forbiddenUnquotedCharacters = "[-+<=]";
+    private static final String forbiddenCharacters = "[\"]";
+    private static final String forbiddenUnquotedCharacters = "[-+<=]";
 
     public static int getIntegerId(String eventId) {
-        if (!integerIDMap.containsKey(eventId)) {
 
+        String unquotedId = !isQuotedQuickTest(eventId) ? eventId : eventId.substring(1, eventId.length() - 1);
+
+        if (integerIDMap.containsKey(unquotedId)) {
+            return integerIDMap.get(unquotedId);
+        } else {
             if (!eventIDValid(eventId)) {
-                throw new IllegalArgumentException("Event name must not be null, empty or contain <,=,+,- (unless id is quoted). " +
+                throw new IllegalArgumentException("Problem with event name \"" + eventId + "\":\n" +
+                        "Event name must not be null, empty or contain <,=,+,- (unless it is quoted). " +
                         "Quotes are never allowed.");
             }
-
-            if (isQuoted(eventId)) {
-                eventId = eventId.substring(1, eventId.length() - 1);
-            }
-
-            integerIDMap.put(eventId, stringIDList.size());
-            stringIDList.add(eventId);
+            return addNewId(unquotedId);
         }
-        return integerIDMap.get(eventId);
     }
 
-    public static boolean eventIDValid(String eventId) {
+    private static int addNewId(String eventId) {
+        int newIntegerId = stringIDList.size();
+        integerIDMap.put(eventId, newIntegerId);
+        stringIDList.add(eventId);
+        return newIntegerId;
+    }
+
+    private static boolean eventIDValid(String eventId) {
         if (eventId == null || eventId.equals("")) {
             //must not be null or empty
             return false;
-        } else if (isQuoted(eventId)) {
+        } else if (isQuotedProperly(eventId)) {
             //must not contain any forbidden characters if quoted
             return !containsForbiddenChars(eventId.substring(1, eventId.length() - 1));
         } else {
@@ -46,8 +51,12 @@ public final class UniqueIDConverter {
         }
     }
 
-    private static boolean isQuoted(String eventId) {
-        return eventId.matches("\".*\"");
+    private static boolean isQuotedQuickTest(String eventId) {
+        return eventId.charAt(0) == '"' && eventId.charAt(eventId.length() - 1) == '"';
+    }
+
+    private static boolean isQuotedProperly(String eventId) {
+        return eventId.matches("\"[^\"]*\"");
     }
 
     private static boolean containsForbiddenChars(String eventIdQuotesRemoved) {

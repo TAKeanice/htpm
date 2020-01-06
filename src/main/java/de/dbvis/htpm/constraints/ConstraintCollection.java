@@ -6,7 +6,6 @@ import de.dbvis.htpm.occurrence.Occurrence;
 
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
 
 public class ConstraintCollection implements HTPMConstraint {
 
@@ -18,47 +17,78 @@ public class ConstraintCollection implements HTPMConstraint {
 
     @Override
     public boolean shouldGeneratePatternsOfLength(int k) {
-        return passesAll(c -> c.shouldGeneratePatternsOfLength(k));
+        for (HTPMConstraint c1 : constraints) {
+            if (!c1.shouldGeneratePatternsOfLength(k)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public boolean patternsQualifyForJoin(HybridTemporalPattern commonPrefix, HybridTemporalPattern firstPattern, HybridTemporalPattern secondPattern, int k) {
-        return passesAll(c -> c.patternsQualifyForJoin(commonPrefix, firstPattern, secondPattern, k));
+        for (HTPMConstraint c1 : constraints) {
+            if (!c1.patternsQualifyForJoin(commonPrefix, firstPattern, secondPattern, k)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public boolean occurrenceRecordsQualifyForJoin(HybridTemporalPattern firstPattern, Occurrence firstOccurrence, HybridTemporalPattern secondPattern, Occurrence secondOccurrence, int k) {
-        return passesAll(c -> c.occurrenceRecordsQualifyForJoin(firstPattern, firstOccurrence, secondPattern, secondOccurrence, k));
+        for (HTPMConstraint c1 : constraints) {
+            if (!c1.occurrenceRecordsQualifyForJoin(firstPattern, firstOccurrence, secondPattern, secondOccurrence, k)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public boolean newOccurrenceFulfillsConstraints(HybridTemporalPattern pattern, Occurrence occurrence, int k) {
-        return passesAll(c -> c.newOccurrenceFulfillsConstraints(pattern, occurrence, k));
+        for (HTPMConstraint c1 : constraints) {
+            if (!c1.newOccurrenceFulfillsConstraints(pattern, occurrence, k)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public boolean patternFulfillsConstraints(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
-        return passesAll(c -> c.patternFulfillsConstraints(p, occurrences, k));
+        for (HTPMConstraint c1 : constraints) {
+            if (!c1.patternFulfillsConstraints(p, occurrences, k)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public boolean branchCanProduceResults(List<PatternOccurrence> patternsWithOccurrences) {
-        return passesAll(c -> c.branchCanProduceResults(patternsWithOccurrences));
+        for (HTPMConstraint c1 : constraints) {
+            if (!c1.branchCanProduceResults(patternsWithOccurrences)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public boolean shouldOutputOccurrence(HybridTemporalPattern p, Occurrence occurrence) {
-        return passesAll(c -> c.shouldOutputOccurrence(p, occurrence));
+        for (HTPMConstraint c1 : constraints) {
+            if (!c1.shouldOutputOccurrence(p, occurrence)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public boolean shouldOutputPattern(HybridTemporalPattern p, Set<Occurrence> occurrences) {
-        return passesAll(c -> c.shouldOutputPattern(p, occurrences));
-    }
-
-    private boolean passesAll(Predicate<HTPMConstraint> constraintPredicate) {
-        for (HTPMConstraint c : constraints) {
-            if (!constraintPredicate.test(c)) {
+        for (HTPMConstraint c1 : constraints) {
+            if (!c1.shouldOutputPattern(p, occurrences)) {
                 return false;
             }
         }

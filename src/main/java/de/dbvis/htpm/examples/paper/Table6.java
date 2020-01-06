@@ -20,7 +20,7 @@ public class Table6 {
 	public static void main(String[] args) {
 		HybridEventSequenceDatabase db = ExampleDatabase.getExample();
 		HTPM htpm = new HTPM(db, new AgrawalSupportConstraint(db.size(), 0.5));
-		htpm.run();
+		htpm.start();
 		Map<HybridTemporalPattern, Set<Occurrence>> m = htpm.getPatternsSortedByLength();
 		for(HybridTemporalPattern p : m.keySet()) {
 			System.out.println(p.toString() + " ("+db.support(p)+") : "+ m.get(p));

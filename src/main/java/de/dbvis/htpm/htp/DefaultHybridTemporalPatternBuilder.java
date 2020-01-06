@@ -223,7 +223,7 @@ public class DefaultHybridTemporalPatternBuilder {
 
             } catch (NullPointerException npe) {
                 throw new RuntimeException("Could not find corresponding IntervalStartEventNode for key "
-                        + frompattern + " - " + eventNodeId + " - " + originalOccurrenceMark,
+                        + frompattern + " - " + eventNodeId + " - " + originalOccurrenceMark + " of event " + op,
                         npe);
             }
 

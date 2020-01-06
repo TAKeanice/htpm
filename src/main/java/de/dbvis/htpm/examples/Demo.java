@@ -158,7 +158,7 @@ public class Demo {
 		//This class implements the Runnable interface.
 		//Note the long runtime of this algorithm. More can be found
 		//in the wiki.
-		htpm.run();
+		htpm.start();
 		
 		//I'm curious what the algorithm found.
 		//The output is a map, each found pattern will be a key.

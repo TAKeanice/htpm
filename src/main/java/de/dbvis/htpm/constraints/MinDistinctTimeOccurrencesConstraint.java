@@ -35,7 +35,7 @@ public class MinDistinctTimeOccurrencesConstraint extends AcceptAllConstraint im
 
     @Override
     public boolean shouldOutputOccurrence(HybridTemporalPattern p, Occurrence occurrence) {
-        return false;
+        return true;
     }
 
     @Override
@@ -55,12 +55,12 @@ public class MinDistinctTimeOccurrencesConstraint extends AcceptAllConstraint im
 
     @Override
     public int getOccurrencesDiscardedCount() {
-        return 0;
+        return occurrencesDiscardedCount;
     }
 
     @Override
     public int getPatternsDiscardedCount() {
-        return 0;
+        return patternsDiscardedCount;
     }
 
     @Override

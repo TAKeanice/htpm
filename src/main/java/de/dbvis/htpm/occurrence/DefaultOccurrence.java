@@ -77,7 +77,10 @@ public class DefaultOccurrence implements Occurrence {
 
 	@Override
 	public int hashCode() {
-		return new HashCodeBuilder().append(getHybridEventSequence()).append(ops()).hashCode();
+		return new HashCodeBuilder()
+				.append(getHybridEventSequence())
+				.append(ops())
+				.hashCode();
 	}
 
 	@Override
@@ -86,7 +89,8 @@ public class DefaultOccurrence implements Occurrence {
 			final Occurrence other = (Occurrence) o;
 			return new EqualsBuilder()
 					.append(getHybridEventSequence(), other.getHybridEventSequence())
-					.append(ops(), other.ops()).isEquals();
+					.append(ops(), other.ops())
+					.isEquals();
 		}
 		return false;
 	}

@@ -1,9 +1,10 @@
 package de.dbvis.htpm.constraints;
 
+import de.dbvis.htpm.hes.events.HybridEvent;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -93,9 +94,14 @@ public class MinDistinctElementOccurrencesConstraint extends AcceptAllConstraint
         //It may still overestimate the number of occurrences, but it does fulfill the apriori-property.
         //Because by the mechanism of joining patterns,
         // it is not possible to increase the minimum number of distinct events in one slot in the pattern!
-        return IntStream.range(0, p.size()).map(i ->
-                (int) occurrences.stream().map(occ -> occ.get(i)).distinct().count()) //count distinct elements for slot i
-                .min().orElse(0); //0 if we put in an empty occurrence list
+        return IntStream.range(0, p.size()).map(i -> {
+            //count distinct elements for slot i
+            Set<HybridEvent> uniqueValues = new HashSet<>(occurrences.size());
+            for (Occurrence occ : occurrences) {
+                uniqueValues.add(occ.get(i));
+            }
+            return uniqueValues.size();
+        }).min().orElse(0); //0 if we put in an empty occurrence list
     }
 
     @Override

@@ -448,7 +448,8 @@ public class DefaultHybridEventSequence implements HybridEventSequence {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof HybridEventSequence && ((HybridEventSequence) obj).getSequenceId().equals(sequenceId);
+		return obj instanceof HybridEventSequence
+				&& ((HybridEventSequence) obj).getSequenceId().equals(sequenceId);
 	}
 
 	protected static class MyItem {

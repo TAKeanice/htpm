@@ -120,8 +120,9 @@ public final class HTPUtils {
     }
 
     public static int hashCode(HybridTemporalPattern pattern) {
-        return new HashCodeBuilder(13, 31)
-                .append(pattern.getPatternItemsInIntegerIdOrder())
+        return new HashCodeBuilder()
+                .append(pattern.getEventNodes())
+                .append(pattern.getOrderRelations())
                 .hashCode();
     }
 

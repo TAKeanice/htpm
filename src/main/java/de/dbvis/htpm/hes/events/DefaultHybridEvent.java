@@ -79,6 +79,14 @@ public class DefaultHybridEvent implements HybridEvent {
 		String s2 = (this.endpoint != null) ? ","+this.endpoint : "";
 		return "("+id+",("+this.startpoint+s2+"))";
 	}
+
+	public int hashCode() {
+		return new HashCodeBuilder()
+				.append(this.id)
+				.append(this.startpoint)
+				.append(this.endpoint)
+				.toHashCode();
+	}
 	
 	public boolean equals(Object o) {
 		if(!(o instanceof HybridEvent)) {
@@ -95,30 +103,6 @@ public class DefaultHybridEvent implements HybridEvent {
 				.append(this.getStartPoint(), o1.getStartPoint())
 				.append(this.getEndPoint(), o1.getEndPoint())
 				.isEquals();
-
-//
-//
-//		if(o != null && o instanceof HybridEvent) {
-//			HybridEvent e = (HybridEvent) o;
-//			return e.getEventId().equals(this.getEventId())
-//					&& e.getStartPoint() == this.getStartPoint()
-//					&& e.isPointEvent() == this.isPointEvent()
-//					&& ((e.getEndPoint() != null
-//						&& e.getEndPoint().equals(this.getEndPoint()
-//						)
-//						|| (e.getEndPoint() == null && this.getEndPoint() == null)
-//						)
-//				);
-//		}
-//		return false;
-	}
-
-	public int hashCode() {
-		return new HashCodeBuilder(7,13)
-				.append(this.id)
-				.append(this.startpoint)
-				.append(this.endpoint)
-				.toHashCode();
 	}
 
 	@Override

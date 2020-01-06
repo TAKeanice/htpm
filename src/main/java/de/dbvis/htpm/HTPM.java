@@ -42,7 +42,7 @@ import java.util.stream.Stream;
  * @author Wolfgang Jentner
  *
  */
-public class HTPM implements Runnable {
+public class HTPM implements TemporalPatternProducer {
 
 	private final int threadPoolSize;
 	private final boolean parallel;
@@ -208,10 +208,7 @@ public class HTPM implements Runnable {
 		return sortedmap;
 	}
 
-	/**
-	 * Adds an HTPMListener, which receives update events about the pattern mining process.
-	 * @param l - the HTPMListener to be added.
-	 */
+	@Override
 	public void addHTPMListener(HTPMListener l) {
 		if(l == null) {
 			return;
@@ -219,10 +216,7 @@ public class HTPM implements Runnable {
 		this.listeners.add(l);
 	}
 
-	/**
-	 * Removes an HTPMListener.
-	 * @param l - the HTPMListener to be removed.
-	 */
+	@Override
 	public void removeHTPMListener(HTPMListener l) {
 		this.listeners.remove(l);
 	}
@@ -272,7 +266,7 @@ public class HTPM implements Runnable {
 	 * The method that starts the algorithm.
 	 */
 	@Override
-	public void run() {
+	public void start() {
 
 		if (!saveMemory) {
 			this.patterns = new ArrayList<>();
@@ -472,9 +466,10 @@ public class HTPM implements Runnable {
 		List<PatternOccurrence.OccurrenceTreeLink> or2 = patternOccurrence2.occurrences;
 
 		//heuristic: the occurrence records are joined, from each pair in the same sequence we can have a new one.
-		// assumption here is that the number of occurrences is evenly distributed over sequences (which reduces the result)
-		// and that all joins yield the same pattern (which increases the result)
-		final int newOccurrenceCountHeuristic = or1.size() * or2.size() / (d.size() * d.size());
+		// assumption is that the number of occurrences is evenly distributed over sequences (which reduces the result)
+		// and that all joins yield the same pattern (which increases the result).
+		// additionally we assume that both joined patterns have the same likelyhood to be the parent pattern
+		final int newOccurrenceCountHeuristic = (or1.size() / (d.size() * 2)) * (or2.size() / (d.size() * 2));
 
 		final List<Map<HybridTemporalPattern, PatternOccurrence>> partitionedResult = new ArrayList<>(2);
 		final Map<HybridTemporalPattern, PatternOccurrence> parentP1 = new HashMap<>();
@@ -494,22 +489,14 @@ public class HTPM implements Runnable {
 			//int minI2 = or1 == or2 ? i1 + 1 : 0;
 			int maxI2 = or1 == or2 ? i1 - 1 : or2.size() - 1;
 
-			//int i2 = -1;
-			//for (Occurrence s2 : or2) {
-			//	i2++;
-			//	//if (i2 < minI2) {
-			//	//	continue;
-			//	//}
-			//	if (i2 > maxI2) {
-			//		break;
-			//	}
 			for (int i2 = 0; i2 <= maxI2; i2++) {
 				//for (int i2 = minI2; i2 < or2.size(); i2++) {
 				final PatternOccurrence.OccurrenceTreeLink link2 = or2.get(i2);
 				final Occurrence occurrencePrefix2 = link2.parent;
 				Occurrence s2 = link2.child;
 
-				if (occurrencePrefix1 != occurrencePrefix2 || !constraint.occurrenceRecordsQualifyForJoin(p1, s1, p2, s2, k)) {
+				if (occurrencePrefix1 != occurrencePrefix2
+						|| !constraint.occurrenceRecordsQualifyForJoin(p1, s1, p2, s2, k)) {
 					continue;
 				}
 
@@ -521,10 +508,12 @@ public class HTPM implements Runnable {
 				//prune new occurrence records
 				if (constraint.newOccurrenceFulfillsConstraints(newPattern, newOccurrence, k)) {
 					Map<HybridTemporalPattern, PatternOccurrence> map = newPatternPrefix == p1 ? parentP1 : parentP2;
-					//initialize with capacity as the average number per sequence of ORs multiplied
 					map.computeIfAbsent(
+							//initialize new arraylist for occurrences of the pattern
 							//newPattern, p -> new PatternOccurrence(newPatternPrefix, newPattern, new ArrayList<>()))
+							//initialize new linked list for occurrences of the pattern
 							//newPattern, p -> new PatternOccurrence(newPatternPrefix, newPattern, new LinkedList<>()))
+							//initialize array list with heuristically determined capacity
 							newPattern, p -> new PatternOccurrence(newPatternPrefix, newPattern, newOccurrenceCountHeuristic))
 							.occurrences.add(new PatternOccurrence.OccurrenceTreeLink(b.getOccurrencePrefix(), newOccurrence));
 				}

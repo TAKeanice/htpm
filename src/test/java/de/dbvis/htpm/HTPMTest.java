@@ -10,7 +10,6 @@ import de.dbvis.htpm.htp.DefaultHybridTemporalPattern;
 import de.dbvis.htpm.htp.HybridTemporalPattern;
 import de.dbvis.htpm.occurrence.Occurrence;
 import de.dbvis.htpm.util.HTPMEvent;
-import de.dbvis.htpm.util.HTPMListener;
 import de.dbvis.htpm.util.HTPMOutputEvent;
 import de.dbvis.htpm.util.HTPMOutputListener;
 import org.junit.Assert;
@@ -54,36 +53,48 @@ public class HTPMTest {
 		
 		d.add(s);
 
-		final AgrawalSupportConstraint defaultConstraint = new AgrawalSupportConstraint(d.size(), 0.5);
+		double minSupport = 0.5;
+		final AgrawalSupportConstraint defaultConstraint = new AgrawalSupportConstraint(d.size(), minSupport);
 		HTPM htpm = new HTPM(d, defaultConstraint);
 		
 		htpm.addHTPMListener(event -> System.out.println("Generation: " + event.getGeneration() + " Number of patterns: " + event.getNumberOfPatterns()));
 		
-		htpm.run();
+		htpm.start();
 
 		final List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> patterns =
-				getPatternsSortedWithFixedOccurrenceOrder(htpm);
+				getPatternsSortedWithFixedOccurrenceOrder(htpm.getPatternsSortedByLength());
 
-		Assert.assertEquals("[" +
-						"(a+0<a-0)=[1(5.0,10.0), 1(8.0,12.0), 2(8.0,11.0), 3(4.0,10.0), 3(9.0,12.0)], " +
-						"(b+0<b-0)=[1(6.0,12.0), 2(6.0,11.0), 3(4.0,12.0)], " +
-						"(c)=[1(6.0), 1(8.0), 2(6.0), 2(8.0), 3(4.0)], " +
-						"(a+0<a+1<a-0<a-1)=[1(5.0,8.0,10.0,12.0), 3(4.0,9.0,10.0,12.0)], " +
-						"(a+0=c<a-0)=[1(8.0,8.0,12.0), 2(8.0,8.0,11.0), 3(4.0,4.0,10.0)], " +
-						"(b+0<a+0<a-0=b-0)=[1(6.0,8.0,12.0,12.0), 2(6.0,8.0,11.0,11.0), 3(4.0,9.0,12.0,12.0)], " +
-						"(b+0<c<b-0)=[1(6.0,8.0,12.0), 2(6.0,8.0,11.0)], " +
-						"(b+0=c<b-0)=[1(6.0,6.0,12.0), 2(6.0,6.0,11.0), 3(4.0,4.0,12.0)], " +
-						"(c<a+0<a-0)=[1(6.0,8.0,12.0), 2(6.0,8.0,11.0), 3(4.0,9.0,12.0)], " +
-						"(c<c)=[1(6.0,8.0), 2(6.0,8.0)], " +
-						"(b+0<a+0=c<a-0=b-0)=[1(6.0,8.0,8.0,12.0,12.0), 2(6.0,8.0,8.0,11.0,11.0)], " +
-						"(b+0=c<a+0<a-0=b-0)=[1(6.0,6.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,11.0,11.0), 3(4.0,4.0,9.0,12.0,12.0)], " +
-						"(b+0=c<c<b-0)=[1(6.0,6.0,8.0,12.0), 2(6.0,6.0,8.0,11.0)], " +
-						"(c<a+0=c<a-0)=[1(6.0,8.0,8.0,12.0), 2(6.0,8.0,8.0,11.0)], " +
-						"(b+0=c<a+0=c<a-0=b-0)=[1(6.0,6.0,8.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,8.0,11.0,11.0)]" +
-						"]",
-				patterns.toString());
+		String expected = "[" +
+				"(a+0<a-0)=[1(5.0,10.0), 1(8.0,12.0), 2(8.0,11.0), 3(4.0,10.0), 3(9.0,12.0)], " +
+				"(b+0<b-0)=[1(6.0,12.0), 2(6.0,11.0), 3(4.0,12.0)], " +
+				"(c)=[1(6.0), 1(8.0), 2(6.0), 2(8.0), 3(4.0)], " +
+				"(a+0<a+1<a-0<a-1)=[1(5.0,8.0,10.0,12.0), 3(4.0,9.0,10.0,12.0)], " +
+				"(a+0=c<a-0)=[1(8.0,8.0,12.0), 2(8.0,8.0,11.0), 3(4.0,4.0,10.0)], " +
+				"(b+0<a+0<a-0=b-0)=[1(6.0,8.0,12.0,12.0), 2(6.0,8.0,11.0,11.0), 3(4.0,9.0,12.0,12.0)], " +
+				"(b+0<c<b-0)=[1(6.0,8.0,12.0), 2(6.0,8.0,11.0)], " +
+				"(b+0=c<b-0)=[1(6.0,6.0,12.0), 2(6.0,6.0,11.0), 3(4.0,4.0,12.0)], " +
+				"(c<a+0<a-0)=[1(6.0,8.0,12.0), 2(6.0,8.0,11.0), 3(4.0,9.0,12.0)], " +
+				"(c<c)=[1(6.0,8.0), 2(6.0,8.0)], " +
+				"(b+0<a+0=c<a-0=b-0)=[1(6.0,8.0,8.0,12.0,12.0), 2(6.0,8.0,8.0,11.0,11.0)], " +
+				"(b+0=c<a+0<a-0=b-0)=[1(6.0,6.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,11.0,11.0), 3(4.0,4.0,9.0,12.0,12.0)], " +
+				"(b+0=c<c<b-0)=[1(6.0,6.0,8.0,12.0), 2(6.0,6.0,8.0,11.0)], " +
+				"(c<a+0=c<a-0)=[1(6.0,8.0,8.0,12.0), 2(6.0,8.0,8.0,11.0)], " +
+				"(b+0=c<a+0=c<a-0=b-0)=[1(6.0,6.0,8.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,8.0,11.0,11.0)]" +
+				"]";
 
-		//second run with subpattern constraint
+		Assert.assertEquals(expected, patterns.toString());
+
+		//run other HTPMs to compare
+
+		TemporalPatternProducer originalHTPM = new OriginalHTPM(d, minSupport);
+		final List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> patterns2 = getPatternsSortedByLength(originalHTPM);
+		Assert.assertEquals(expected, patterns2.toString());
+
+		TemporalPatternProducer fullyParallelHTPM = new HTPMFullyParallel(d, defaultConstraint, 10);
+		final List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> patterns3 = getPatternsSortedByLength(fullyParallelHTPM);
+		Assert.assertEquals(expected, patterns3.toString());
+
+		//run with subpattern constraint
 
 		String subpattern = "b+0<a+0<a-0=b-0";
 		SubPatternConstraint sbp = new SubPatternConstraint(subpattern);
@@ -91,19 +102,36 @@ public class HTPMTest {
 		ConstraintCollection constraintCollection = new ConstraintCollection(Arrays.asList(defaultConstraint, sbp, cmap));
 
 		htpm = new HTPM(d, constraintCollection);
-		htpm.run();
+		htpm.start();
 
-		final List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> patterns2 = getPatternsSortedWithFixedOccurrenceOrder(htpm);
+		final List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> patterns4 = getPatternsSortedWithFixedOccurrenceOrder(htpm.getPatternsSortedByLength());
 		Assert.assertEquals("[" +
 						"(b+0<a+0<a-0=b-0)=[1(6.0,8.0,12.0,12.0), 2(6.0,8.0,11.0,11.0), 3(4.0,9.0,12.0,12.0)], " +
 						"(b+0<a+0=c<a-0=b-0)=[1(6.0,8.0,8.0,12.0,12.0), 2(6.0,8.0,8.0,11.0,11.0)], " +
 						"(b+0=c<a+0<a-0=b-0)=[1(6.0,6.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,11.0,11.0), 3(4.0,4.0,9.0,12.0,12.0)], " +
 						"(b+0=c<a+0=c<a-0=b-0)=[1(6.0,6.0,8.0,8.0,12.0,12.0), 2(6.0,6.0,8.0,8.0,11.0,11.0)]]",
-				patterns2.toString());
+				patterns4.toString());
+
+
 	}
 
-	private List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> getPatternsSortedWithFixedOccurrenceOrder(HTPM htpm) {
-		return htpm.getPatternsSortedByLength().entrySet()
+	private List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> getPatternsSortedByLength(TemporalPatternProducer htpm) {
+		List<Stream<HTPMOutputEvent.PatternOccurrence>> output = new ArrayList<>();
+		HTPMOutputListener listener = createAccumulatingListener(output);
+		htpm.addHTPMListener(listener);
+		htpm.start();
+		Set<HTPMOutputEvent.PatternOccurrence> patternOccurrenceSet = patternOccurrencesFromAccumulatedStreams(output);
+
+		TreeMap<HybridTemporalPattern, Set<Occurrence>> hybridTemporalPatternListTreeMap = new TreeMap<>(HybridTemporalPattern::compareTo);
+
+		hybridTemporalPatternListTreeMap.putAll(patternOccurrenceSet.stream().collect(Collectors.toMap(po -> po.pattern, po -> po.occurrences)));
+
+		return getPatternsSortedWithFixedOccurrenceOrder(hybridTemporalPatternListTreeMap);
+	}
+
+	private List<Map.Entry<HybridTemporalPattern, List<Occurrence>>> getPatternsSortedWithFixedOccurrenceOrder(
+			Map<HybridTemporalPattern, Set<Occurrence>> patternsSortedByLength) {
+		return patternsSortedByLength.entrySet()
 				.stream().map((Map.Entry<HybridTemporalPattern, Set<Occurrence>> entry) ->
 						Map.entry(entry.getKey(),
 								entry.getValue().stream()
@@ -226,17 +254,22 @@ public class HTPMTest {
 
 		boolean[] options = new boolean[]{false, true};
 
-		for (boolean dfs : options) {
-			for (boolean lowStorage : options) {
-				for (boolean cmap : options) {
-					List<Stream<HTPMOutputEvent.PatternOccurrence>> output1 = new ArrayList<>();
-					testPlainHTPM(d, createAccumulatingListener(output1), minsupport, dfs, lowStorage, cmap);
-					List<HybridTemporalPattern> algorithmResults1 = new ArrayList<>(patternsFromAccumulatedStreams(output1));
-					algorithmResults1.sort(HybridTemporalPattern::compareTo);
-					Assert.assertEquals(expected, algorithmResults1);
+		for (boolean fullyParallel : options) {
+			for (boolean dfs : options) {
+				for (boolean lowStorage : options) {
+					for (boolean cmap : options) {
+						List<HybridTemporalPattern> algorithmResults = new ArrayList<>(runHTPM(d, minsupport, dfs, !dfs && fullyParallel, lowStorage, cmap));
+						algorithmResults.sort(HybridTemporalPattern::compareTo);
+						Assert.assertEquals(expected, algorithmResults);
+					}
 				}
 			}
 		}
+
+		OriginalHTPM htpm = new OriginalHTPM(d, minsupport);
+		List<HybridTemporalPattern> algorithmResults = new ArrayList<>(runHTPM(htpm));
+		algorithmResults.sort(HybridTemporalPattern::compareTo);
+		Assert.assertEquals(expected, algorithmResults);
 	}
 
 	@Test
@@ -290,38 +323,14 @@ public class HTPMTest {
 		d.add(s8);
 		d.add(s9);
 
-		List<HTPMOutputEvent.PatternOccurrence> outputs1 = new ArrayList<>();
-
-		final HTPMOutputListener listener1 = new HTPMOutputListener() {
-			@Override
-			public void outputGenerated(HTPMOutputEvent event) {
-				List<HTPMOutputEvent.PatternOccurrence> events = event.getPatternOccurrenceStream().collect(Collectors.toList());
-				outputs1.addAll(events);
-				System.out.println(events.stream()
-						.map(e -> " " + e.pattern + " : " + e.occurrences.stream()
-								.map(Occurrence::toString)
-								.collect(Collectors.joining("|")))
-						.collect(Collectors.joining("\n")));
-			}
-
-			@Override
-			public void generationCalculated(HTPMEvent event) {
-				System.out.println("gen " + event.getGeneration() + " patterns: " + event.getNumberOfPatterns());
-			}
-		};
-
-		testPlainHTPM(d, listener1, 0.2, false, false, false);
-		final Set<HybridTemporalPattern> output1Patterns = outputs1.stream().map(po -> po.pattern).collect(Collectors.toSet());
+		final Set<HybridTemporalPattern> output1Patterns = 	runHTPM(d, 0.2, false, false, false, false);
 
 		boolean[] options = new boolean[]{false, true};
 
 		for (boolean dfs : options) {
 			for (boolean lowStorage : options) {
 				for (boolean cmap : options) {
-					List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams = new ArrayList<>();
-					final HTPMOutputListener listener4 = createAccumulatingListener(outputStreams);
-					testPlainHTPM(d, listener4, 0.2, dfs, lowStorage, cmap);
-					Assert.assertEquals(output1Patterns, patternsFromAccumulatedStreams(outputStreams));
+					Assert.assertEquals(output1Patterns, runHTPM(d, 0.2, dfs, false, lowStorage, cmap));
 				}
 			}
 		}
@@ -331,11 +340,15 @@ public class HTPMTest {
 		return outputStreams.stream().flatMap(s -> s.map(po -> po.pattern)).collect(Collectors.toSet());
 	}
 
+	private Set<HTPMOutputEvent.PatternOccurrence> patternOccurrencesFromAccumulatedStreams(List<Stream<HTPMOutputEvent.PatternOccurrence>> outputStreams) {
+		return outputStreams.stream().flatMap(s -> s).collect(Collectors.toSet());
+	}
+
 	private HTPMOutputListener createAccumulatingListener(List<Stream<HTPMOutputEvent.PatternOccurrence>> streams) {
 		return new HTPMOutputListener() {
 			@Override
 			public void outputGenerated(HTPMOutputEvent event) {
-				synchronized (this) {streams.add(event.getPatternOccurrenceStream());}
+				synchronized (this) { streams.add(event.getPatternOccurrenceStream()); }
 			}
 
 			@Override
@@ -344,65 +357,25 @@ public class HTPMTest {
 		};
 	}
 
-	private void testPlainHTPM(HybridEventSequenceDatabase database, HTPMListener listener,
-							   double minSupport, boolean dfs, boolean lowStorage, boolean cmap) {
-		testHTPM(database, listener,
-				//plain (no episode mining) support threshold
-				minSupport,
-				//all fancy additional options false
-				false, 0, 0, false, 0, false, 0, false, 0,
-				//activate cmap
-				null, dfs, cmap, lowStorage);
-	}
+	private Set<HybridTemporalPattern> runHTPM(HybridEventSequenceDatabase database,
+											   double minSupport, boolean dfs, boolean fullyParallel, boolean lowStorage, boolean cmap) {
 
-	private void testHTPM(HybridEventSequenceDatabase database, HTPMListener listener,
-						  double minSupport,
-						  boolean patternSize, int minSizeForOutput, int maxSize,
-						  boolean episodeMining, int minOccurrences, boolean duration, double maxDuration,
-						  boolean gap, double prefixMaxGap,
-						  HTPMConstraint otherConstraints,
-						  boolean dfs, boolean cmap,
-						  boolean lowStorage) {
+		//plain (no episode mining) support threshold
+		//activate cmap
 
-		AgrawalSupportConstraint defaultConstraint = null;
-		MinDistinctElementOccurrencesConstraint minOccurrencesConstraint = null;
-		MaxDurationConstraint maxDurationConstraint = null;
-		PatternSizeConstraint patternSizeConstraint = null;
+		AgrawalSupportConstraint defaultConstraint;
 		CMAPConstraint cmapConstraint = null;
-		MaxGapConstraint maxGapConstraint = null;
 
 		final List<HTPMConstraint> constraints = new ArrayList<>();
 
-		if (episodeMining) {
-			minOccurrencesConstraint = new MinDistinctElementOccurrencesConstraint(minOccurrences);
-			constraints.add(minOccurrencesConstraint);
-		} else {
-			defaultConstraint = new AgrawalSupportConstraint(database.size(), minSupport);
-			constraints.add(defaultConstraint);
-		}
-		if (duration) {
-			maxDurationConstraint = new MaxDurationConstraint(maxDuration);
-			constraints.add(maxDurationConstraint);
-		}
-		if (cmap && (!patternSize || maxSize > 2)) {
+		defaultConstraint = new AgrawalSupportConstraint(database.size(), minSupport);
+		constraints.add(defaultConstraint);
+		if (cmap) {
 			ConstraintCollection constraintsForSubpatterns = new ConstraintCollection(new ArrayList<>(constraints));
 			cmapConstraint = new CMAPConstraint(database, constraintsForSubpatterns);
 			constraints.add(cmapConstraint);
 		}
-		if (patternSize) {
-			patternSizeConstraint = new PatternSizeConstraint(maxSize, minSizeForOutput);
-			constraints.add(patternSizeConstraint);
-		}
 
-
-		if (gap) {
-			maxGapConstraint = new MaxGapConstraint(prefixMaxGap);
-			constraints.add(maxGapConstraint);
-		}
-
-		if (otherConstraints != null) {
-			constraints.add(otherConstraints);
-		}
 
 		final ConstraintCollection combinedConstraint = new ConstraintCollection(constraints);
 
@@ -416,33 +389,30 @@ public class HTPMTest {
 			} else {
 				htpm = new HTPMDFS(database, combinedConstraint);
 			}
+		} else if (fullyParallel) {
+			htpm = new HTPMFullyParallel(database, combinedConstraint, 10);
 		} else {
 			htpm = new HTPM(database, combinedConstraint, lowStorage, 1);
 		}
 
-		htpm.addHTPMListener(listener);
-		htpm.run();
+		Set<HybridTemporalPattern> output = runHTPM(htpm);
 
 		System.out.println("duration: " + (System.currentTimeMillis() - startTime));
 
-		if (episodeMining) {
-			System.out.println("discarded patterns by episodeMining constraint: " + minOccurrencesConstraint.getPatternsDiscardedCount());
-			System.out.println("discarded occurrences by episodeMining constraint: " + minOccurrencesConstraint.getOccurrencesDiscardedCount());
-			System.out.println("prevented occurrence joins by maxDuration constraint: " + minOccurrencesConstraint.getOccurrenceJoinPreventedCount());
-			System.out.println("discarded occurrences by maxDuration constraint: " + minOccurrencesConstraint.getOccurrencesDiscardedCount());
-		} else {
-			System.out.println("discarded patterns by default constraint: " + defaultConstraint.getPatternsDiscardedCount());
-			System.out.println("discarded occurrences by default constraint: " + defaultConstraint.getOccurrencesDiscardedCount());
-			if (duration) {
-				System.out.println("prevented occurrence joins by maxDuration constraint: " + maxDurationConstraint.getOccurrenceJoinPreventedCount());
-				System.out.println("discarded occurrences by maxDuration constraint: " + maxDurationConstraint.getOccurrencesDiscardedCount());
-			}
-		}
+		System.out.println("discarded patterns by default constraint: " + defaultConstraint.getPatternsDiscardedCount());
+		System.out.println("discarded occurrences by default constraint: " + defaultConstraint.getOccurrencesDiscardedCount());
 		if (cmap && !dfs) {
 			System.out.println("prevented joins by CMAP constraint: " + cmapConstraint.getPatternJoinPreventedCount());
 		}
-		if (gap) {
-			System.out.println("discarded occurrences by prefixMaxGap constraint: " + maxGapConstraint.getOccurrencesDiscardedCount());
-		}
+
+		return output;
+	}
+
+	private Set<HybridTemporalPattern> runHTPM(TemporalPatternProducer htpm) {
+		List<Stream<HTPMOutputEvent.PatternOccurrence>> output = new ArrayList<>();
+		HTPMOutputListener listener = createAccumulatingListener(output);
+		htpm.addHTPMListener(listener);
+		htpm.start();
+		return patternsFromAccumulatedStreams(output);
 	}
 }

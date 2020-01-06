@@ -29,7 +29,7 @@ public class CMAPConstraint extends AcceptAllConstraint {
         HTPMConstraint maxSizeConstraint = new PatternSizeConstraint(2, 2);
         ConstraintCollection constraint = new ConstraintCollection(Arrays.asList(constraintsForSubpatterns, maxSizeConstraint));
         HTPM htpm = new HTPM(d, constraint, false, 1);
-        htpm.run();
+        htpm.start();
         this.twoPatterns.addAll(htpm.getPatterns().keySet());
     }
 
