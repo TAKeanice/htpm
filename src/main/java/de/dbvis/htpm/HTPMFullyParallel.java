@@ -2,10 +2,9 @@ package de.dbvis.htpm;
 
 import de.dbvis.htpm.constraints.HTPMConstraint;
 import de.dbvis.htpm.db.HybridEventSequenceDatabase;
+import de.dbvis.htpm.htp.HybridTemporalPattern;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class HTPMFullyParallel extends HTPMDFS {
@@ -52,6 +51,49 @@ public class HTPMFullyParallel extends HTPMDFS {
             shutdown();
         }
     }
+
+    /* Parallelization overhead does not justify this. Additionally, to fully parallelize
+       we would have to call ORAlign in parallel
+
+    protected void calculateBranch(List<PatternOccurrence> m, int depth,
+                                   List<List<PatternOccurrence>> partitions, int index) {
+
+        PatternOccurrence first = m.get(index);
+
+        List<Callable<List<Map<HybridTemporalPattern, PatternOccurrence>>>> joinTasks = new ArrayList<>();
+
+        for (int j = index; j < m.size(); j++) {
+            PatternOccurrence second = m.get(j);
+
+            joinTasks.add(() -> {
+                if (!constraint.patternsQualifyForJoin(first.prefix, first.pattern, second.pattern, depth)) {
+                    return Arrays.asList(Collections.emptyMap(), Collections.emptyMap());
+                }
+                return join(first, second, depth);
+            });
+        }
+
+        List<Future<List<Map<HybridTemporalPattern, PatternOccurrence>>>> results = miningExecutor.invokeAll(joinTasks);
+
+        for (int j = index; j < m.size(); j++) {
+            //parse into pattern occurrences
+
+            List<Map<HybridTemporalPattern, PatternOccurrence>> joined;
+            try {
+                joined = results.get(j - index).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException("could not retrieve result from join", e);
+            }
+
+            List<PatternOccurrence> parentFirst = new ArrayList<>(joined.get(0).values());
+            partitions.get(index).addAll(parentFirst);
+
+            if (index != j) {
+                List<PatternOccurrence> parentSecond = new ArrayList<>(joined.get(1).values());
+                partitions.get(j).addAll(parentSecond);
+            }
+        }
+    }*/
 
     private void shutdown() {
         miningExecutor.shutdown();

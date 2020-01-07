@@ -26,7 +26,7 @@ public class OriginalHTPM implements TemporalPatternProducer {
     private final HybridEventSequenceDatabase d;
     private final AgrawalSupportConstraint constraint;
 
-    OriginalHTPM(HybridEventSequenceDatabase d, double minSupport) {
+    public OriginalHTPM(HybridEventSequenceDatabase d, double minSupport) {
         this.d = d;
         constraint = new AgrawalSupportConstraint(d.size(), minSupport);
     }
@@ -149,10 +149,7 @@ public class OriginalHTPM implements TemporalPatternProducer {
         List<PatternOccurrence.OccurrenceTreeLink> or1 = patternOccurrence1.occurrences;
         List<PatternOccurrence.OccurrenceTreeLink> or2 = patternOccurrence2.occurrences;
 
-        //heuristic: the occurrence records are joined, from each pair in the same sequence we can have a new one.
-        // assumption here is that the number of occurrences is evenly distributed over sequences (which reduces the result)
-        // and that all joins yield the same pattern (which increases the result)
-        final int newOccurrenceCountHeuristic = or1.size() * or2.size() / (d.size() * d.size());
+        final int newOccurrenceCountHeuristic = (or1.size() / (d.size() * 2)) * (or2.size() / (d.size() * 2));
 
         final Map<HybridTemporalPattern, PatternOccurrence> result = new HashMap<>(2);
 

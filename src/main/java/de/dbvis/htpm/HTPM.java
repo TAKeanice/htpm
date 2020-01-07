@@ -18,10 +18,7 @@ import de.dbvis.htpm.util.HTPMOutputEvent;
 import de.dbvis.htpm.util.HTPMOutputListener;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,6 +44,8 @@ public class HTPM implements TemporalPatternProducer {
 	private final int threadPoolSize;
 	private final boolean parallel;
 	private final boolean saveMemory;
+
+	private ExecutorService es;
 
 	/**
 	 * The database the HTPM operates on
@@ -268,6 +267,10 @@ public class HTPM implements TemporalPatternProducer {
 	@Override
 	public void start() {
 
+		if (parallel) {
+			es = Executors.newFixedThreadPool(threadPoolSize);
+		}
+
 		if (!saveMemory) {
 			this.patterns = new ArrayList<>();
 		}
@@ -300,6 +303,8 @@ public class HTPM implements TemporalPatternProducer {
 
 				k++;
 			}
+			es.shutdown();
+			es.awaitTermination(10, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -361,14 +366,9 @@ public class HTPM implements TemporalPatternProducer {
 
 		List<List<Map<HybridTemporalPattern, PatternOccurrence>>> partitionResults = new ArrayList<>(partitionedOccurrences.size());
 
-		final ExecutorService es;
-		if (parallel) {
-			es = Executors.newFixedThreadPool(threadPoolSize);
-		} else {
-			es = null;
-		}
-
 		//AtomicInteger joined = new AtomicInteger(0);
+
+		List<Callable<Void>> joinCallables = new ArrayList<>();
 
 		for (int partition = 0; partition < partitionedOccurrences.size(); partition++) {
 			List<PatternOccurrence> joinablePatterns = partitionedOccurrences.get(partition);
@@ -423,7 +423,10 @@ public class HTPM implements TemporalPatternProducer {
 				};
 
 				if (parallel) {
-					es.execute(join);
+					joinCallables.add(() -> {
+						join.run();
+						return null;
+					});
 				} else {
 					join.run();
 				}
@@ -431,8 +434,7 @@ public class HTPM implements TemporalPatternProducer {
 		}
 
 		if (parallel) {
-			es.shutdown();
-			es.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+			es.invokeAll(joinCallables);
 		}
 
 		//Flatten maps into PatternOccurrence list
