@@ -20,8 +20,6 @@ public class MinDistinctTimeOccurrencesConstraint extends AcceptAllConstraint im
         this.minMinimalOccurrences = minMinimalOccurrences;
     }
 
-    //TODO: minimal occurrences counting --> is it valid to use maximal number of nonoverlapping intervals algorighm?
-
 
     @Override
     public boolean patternFulfillsConstraints(HybridTemporalPattern p, Set<Occurrence> occurrences, int k) {
