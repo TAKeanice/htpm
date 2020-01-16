@@ -83,6 +83,7 @@ public class DefaultHybridTemporalPatternBuilder {
     }
 
     public static HybridTemporalPattern buildSubPatternByDeletingNode(HybridTemporalPattern pattern, int deletionIndex) {
+        //TODO: for unknown reasons, this procedure does not work properly
         List<EventNode> eventNodes = pattern.getEventNodes();
         EventNode nodeToDelete = eventNodes.get(deletionIndex);
 

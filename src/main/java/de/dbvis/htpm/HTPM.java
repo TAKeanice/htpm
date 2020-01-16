@@ -284,29 +284,32 @@ public class HTPM implements TemporalPatternProducer {
 		if (!saveMemory) {
 			this.patterns.add(m);
 		}
-		
+
 		int totalNumPatterns = m.get(0).size();
 		output(m, 1);
 
 		int k = 2;
 
-		try {
-			while(totalNumPatterns > 1 && constraint.shouldGeneratePatternsOfLength(k)) {
-				m = this.genLk(m, k);
+		while(totalNumPatterns > 1 && constraint.shouldGeneratePatternsOfLength(k)) {
+			m = this.genLk(m, k);
 
-				if (!saveMemory) {
-					this.patterns.add(m);
-				}
-
-				totalNumPatterns = m.stream().mapToInt(List::size).sum();
-				output(m, k);
-
-				k++;
+			if (!saveMemory) {
+				this.patterns.add(m);
 			}
-			es.shutdown();
-			es.awaitTermination(10, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+
+			totalNumPatterns = m.stream().mapToInt(List::size).sum();
+			output(m, k);
+
+			k++;
+		}
+
+		if (parallel) {
+			try {
+				es.shutdown();
+				es.awaitTermination(10, TimeUnit.SECONDS);
+			} catch (Exception e) {
+				throw new RuntimeException("Interrupted while waiting for execution to end", e);
+			}
 		}
 	}
 	
@@ -362,7 +365,7 @@ public class HTPM implements TemporalPatternProducer {
 	 * @param k the generation number (length of patterns to be generated)
 	 * @return Returns a map of all patterns that satisfy all constraints. In addition all occurences of each pattern.
 	 */
-	protected List<List<PatternOccurrence>> genLk(final List<List<PatternOccurrence>> partitionedOccurrences, int k) throws InterruptedException {
+	protected List<List<PatternOccurrence>> genLk(final List<List<PatternOccurrence>> partitionedOccurrences, int k) {
 
 		List<List<Map<HybridTemporalPattern, PatternOccurrence>>> partitionResults = new ArrayList<>(partitionedOccurrences.size());
 
@@ -434,7 +437,11 @@ public class HTPM implements TemporalPatternProducer {
 		}
 
 		if (parallel) {
-			es.invokeAll(joinCallables);
+			try {
+				es.invokeAll(joinCallables);
+			} catch (InterruptedException e) {
+				throw new RuntimeException("interrupted while generating patterns of size " + k, e);
+			}
 		}
 
 		//Flatten maps into PatternOccurrence list

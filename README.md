@@ -16,8 +16,10 @@ BibTeX:
 }
 ```
 
-It adds some index-structures and modifications to increase the performance.
-Also one extension is added called eHTPM which adds one useful constraint.
+The performance is improved over the original version by search space partitioning and parallelization.
+It also features a constraint framework, which enables a much more flexible use and exploring larger search spaces by better pruning.
+Additionally, a low-memory depth-first variant of HTPM was developed.
+An experimental, even more parallelized but less performant version based on the depth-first variant is part of the package.
 
 Usage
 ===================

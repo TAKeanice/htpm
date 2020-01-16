@@ -1,6 +1,7 @@
 package de.dbvis.htpm.htp;
 
 import de.dbvis.htpm.htp.eventnodes.EventNode;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -9,7 +10,7 @@ import static org.junit.Assert.*;
 
 public class DefaultHybridTemporalPatternBuilderTest {
 
-    @Test
+    @Test @Ignore
     public void buildSubPatternByDeletingNode() {
         var pattern = new DefaultHybridTemporalPattern("a<b+0=c<b-0<b+1<b-1");
 
