@@ -224,7 +224,11 @@ public class DefaultHybridTemporalPattern implements HybridTemporalPattern {
 
 	@Override
 	public boolean equals(Object o) {
-		if (o instanceof DefaultHybridTemporalPattern) {
+		if (o == null) {
+			return false;
+		} else if (o == this) {
+			return true;
+		} else if (o instanceof DefaultHybridTemporalPattern) {
 			DefaultHybridTemporalPattern other = (DefaultHybridTemporalPattern) o;
 			//we know that the other pattern is defined by its two arrays, just like this pattern
 			//thus we can directly compare them.

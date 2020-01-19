@@ -14,9 +14,11 @@ import de.dbvis.htpm.occurrence.Occurrence;
 import de.dbvis.htpm.util.HTPMListener;
 import de.dbvis.htpm.util.HTPMOutputEvent;
 import de.dbvis.htpm.util.HTPMOutputListener;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class OriginalHTPM implements TemporalPatternProducer {
@@ -44,7 +46,7 @@ public class OriginalHTPM implements TemporalPatternProducer {
 
         int k = 2;
 
-        while(totalNumPatterns > 1 && constraint.shouldGeneratePatternsOfLength(k)) {
+        while(totalNumPatterns > 1) {
             m = this.genLk(m, k);
 
             totalNumPatterns = m.size();
@@ -81,10 +83,8 @@ public class OriginalHTPM implements TemporalPatternProducer {
                 HybridTemporalPattern p = builder.getPattern();
 
                 //set empty occurrence as prefix
-                if (constraint.newOccurrenceFulfillsConstraints(p, occ, 1)) {
-                    map.computeIfAbsent(p, pattern -> new ArrayList<>())
+                map.computeIfAbsent(p, pattern -> new ArrayList<>())
                             .add(new PatternOccurrence.OccurrenceTreeLink(emptyOccurrencePrefix, occ));
-                }
             }
         }
 
@@ -113,7 +113,7 @@ public class OriginalHTPM implements TemporalPatternProducer {
             for (int j = 0; j <= i; j++) {
                 final PatternOccurrence second = patternOccurrences.get(j);
 
-                if (first.prefix != second.prefix) {
+                if (!comparePatterns(first.prefix, second.prefix)) {
                     continue;
                 }
 
@@ -124,6 +124,13 @@ public class OriginalHTPM implements TemporalPatternProducer {
         }
 
         return allJoined;
+    }
+
+    private boolean comparePatterns(HybridTemporalPattern htp1, HybridTemporalPattern htp2) {
+        return htp1 == null && htp2 == null
+                || htp1 != null
+                    && htp2 != null
+                    && htp1.getPatternItemsInIntegerIdOrder().equals(htp2.getPatternItemsInIntegerIdOrder());
     }
 
     /**
@@ -180,7 +187,7 @@ public class OriginalHTPM implements TemporalPatternProducer {
                 final Occurrence occurrencePrefix2 = link2.parent;
                 Occurrence s2 = link2.child;
 
-                if (occurrencePrefix1 != occurrencePrefix2 || !constraint.occurrenceRecordsQualifyForJoin(p1, s1, p2, s2, k)) {
+                if (!compareOccurrences(occurrencePrefix1, occurrencePrefix2)) {
                     continue;
                 }
 
@@ -211,6 +218,25 @@ public class OriginalHTPM implements TemporalPatternProducer {
         result.forEach((key, value) -> ((ArrayList) value.occurrences).trimToSize());
 
         return result.values();
+    }
+
+    private boolean compareOccurrences(Occurrence o1, Occurrence o2) {
+        if (o1.size() != o2.size()) {
+            return false;
+        } else {
+            return o1.getHybridEventSequence().equals(o2.getHybridEventSequence())
+                    && IntStream.range(0, o1.size())
+                    .allMatch(i -> compareHybridEvents(o1.get(i), o2.get(i)));
+        }
+    }
+
+    private boolean compareHybridEvents(HybridEvent h1, HybridEvent h2) {
+        return new EqualsBuilder()
+                .append(h1.getEventId(), h2.getEventId())
+                .append(h1.isPointEvent(), h2.isPointEvent())
+                .append(h1.getStartPoint(), h2.getStartPoint())
+                .append(h1.getEndPoint(), h2.getEndPoint())
+                .isEquals();
     }
 
     /**
