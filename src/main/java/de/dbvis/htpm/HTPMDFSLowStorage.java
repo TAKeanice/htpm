@@ -43,6 +43,7 @@ public class HTPMDFSLowStorage extends HTPMDFS {
     private void patternDFS(List<PatternOccurrence> m, int depth) {
 
         if (!constraint.branchCanProduceResults(m)) {
+            m.clear();
             return;
         }
 
@@ -64,6 +65,8 @@ public class HTPMDFSLowStorage extends HTPMDFS {
 
             if (constraint.shouldGeneratePatternsOfLength(depth + 1)) {
                 patternDFS(partitions.get(i), depth + 1);
+            } else {
+                partitions.get(i).clear();
             }
         }
     }
